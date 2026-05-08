@@ -463,8 +463,8 @@
                                 id="preview-bg-video" autoplay loop muted></video>
                             <div class="absolute inset-0 overflow-hidden" id="preview-canvas-wrap">
                                 <div id="preview-virtual-canvas" style="width:960px;height:540px;transform-origin:center;position:absolute;top:50%;left:50%;">
-                                    <div id="preview-text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:444px;overflow:hidden;">
-                                        <p id="preview-lyrics-text" style="color:#fff;text-align:center;font-weight:bold;white-space:pre-wrap;line-height:1.4;-webkit-text-stroke:5px black;paint-order:stroke fill;width:100%;"></p>
+                                    <div id="preview-text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:454px;overflow:hidden;">
+                                        <p id="preview-lyrics-text" style="color:#fff;text-align:center;font-weight:bold;white-space:pre-wrap;line-height:1.4;-webkit-text-stroke:3px black;paint-order:stroke fill;width:100%;"></p>
                                     </div>
                                 </div>
                             </div>
@@ -521,8 +521,8 @@
                                 id="live-bg-video" autoplay loop muted></video>
                             <div class="absolute inset-0 overflow-hidden" id="live-canvas-wrap">
                                 <div id="live-virtual-canvas" style="width:960px;height:540px;transform-origin:center;position:absolute;top:50%;left:50%;">
-                                    <div id="live-text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:444px;overflow:hidden;">
-                                        <p id="live-lyrics-text" style="color:#fff;text-align:center;font-weight:bold;white-space:pre-wrap;line-height:1.4;-webkit-text-stroke:5px black;paint-order:stroke fill;width:100%;"></p>
+                                    <div id="live-text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:454px;overflow:hidden;">
+                                        <p id="live-lyrics-text" style="color:#fff;text-align:center;font-weight:bold;white-space:pre-wrap;line-height:1.4;-webkit-text-stroke:3px black;paint-order:stroke fill;width:100%;"></p>
                                     </div>
                                 </div>
                             </div>
@@ -806,10 +806,10 @@
                     <div class="flex-1 flex items-center justify-center">
                         <div class="aspect-video w-full max-w-xl bg-black shadow-lg overflow-hidden relative" id="editor-preview-box">
                             <div id="editor-virtual-canvas" style="width:960px;height:540px;transform-origin:center;position:absolute;top:50%;left:50%;">
-                                <div id="editor-text-box" class="text-layer-box editor-active" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:444px;overflow:hidden;">
+                                <div id="editor-text-box" class="text-layer-box editor-active" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:454px;overflow:hidden;">
                                     <div class="drag-handle" id="editor-drag-handle">⠿⠿⠿</div>
                                     <p id="editor-preview-text" contenteditable="true"
-                                        style="color:#fff;text-align:center;font-weight:bold;white-space:pre-wrap;line-height:1.4;-webkit-text-stroke:16px black;paint-order:stroke fill; outline:none; width: 100%;"
+                                        style="color:#fff;text-align:center;font-weight:bold;white-space:pre-wrap;line-height:1.4;-webkit-text-stroke:12px black;paint-order:stroke fill; outline:none; width: 100%;"
                                         class="text-center outline-none">Song lyrics preview will appear here</p>
                                 </div>
                             </div>
@@ -925,13 +925,7 @@
             });
         });
 
-        window.addEventListener('resize', () => {
-            scaleVirtualCanvas('preview-virtual-canvas', 'preview-output-box');
-            scaleVirtualCanvas('live-virtual-canvas', 'live-output-box');
-            if (document.getElementById('song-editor-modal').style.display === 'flex') {
-                scaleVirtualCanvas('editor-virtual-canvas', 'editor-preview-box');
-            }
-        });
+        // resize handler moved and debounced below
 
         async function loadBible() {
             try {
@@ -1072,6 +1066,7 @@
                 document.body.style.cursor = 'default';
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
+                scaleAllCanvases();
             }
         }
 
@@ -1693,8 +1688,10 @@
             currentEditingSong = null;
         }
 
+        let _filterTimer = null;
         function filterLibrary() {
-            renderLibrary();
+            clearTimeout(_filterTimer);
+            _filterTimer = setTimeout(renderLibrary, 150);
         }
 
         // --- Schedule Logic ---
@@ -1965,6 +1962,7 @@
         }
 
         let _previewShouldScroll = false;
+        let _liveShouldScroll = false;
 
         function renderPreview() {
             const container = document.getElementById('preview-slides-container');
@@ -2091,7 +2089,10 @@
             `;
                 div.onclick = () => { goLiveSlide(index); };
                 container.appendChild(div);
-                if (isActive) div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                if (isActive && _liveShouldScroll) {
+                    div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    _liveShouldScroll = false;
+                }
             });
         }
 
@@ -2121,9 +2122,9 @@
                 );
 
                 if (isMainCanvas) {
-                    el.style.webkitTextStroke = "8px black";
+                    el.style.webkitTextStroke = "5px black";
                 } else {
-                    el.style.webkitTextStroke = "3px black";
+                    el.style.webkitTextStroke = "1px black";
                 }
                 el.style.paintOrder = "stroke fill";
                 el.style.textShadow = "none";
@@ -2140,7 +2141,7 @@
 
             textBox.style.left = left + 'px';
             textBox.style.width = width + 'px';
-            textBox.style.maxHeight = '444px';
+            textBox.style.maxHeight = '454px';
             textBox.style.overflow = 'hidden';
 
             if (tb && tb.top != null) {
@@ -2150,12 +2151,12 @@
             } else {
                 const align = style.verticalAlign || 'middle';
                 if (align === 'top') {
-                    textBox.style.top = '48px';
+                    textBox.style.top = '43px';
                     textBox.style.bottom = '';
                     textBox.style.transform = '';
                 } else if (align === 'bottom') {
                     textBox.style.top = 'auto';
-                    textBox.style.bottom = '48px';
+                    textBox.style.bottom = '43px';
                     textBox.style.transform = '';
                 } else {
                     textBox.style.top = '50%';
@@ -2517,11 +2518,18 @@
             }
         });
 
-        // Update all scales on window resize
-        window.addEventListener('resize', () => {
-            scaleVirtualCanvas('editor-virtual-canvas', 'editor-preview-box');
+        function scaleAllCanvases() {
             scaleVirtualCanvas('preview-virtual-canvas', 'preview-output-box');
             scaleVirtualCanvas('live-virtual-canvas', 'live-output-box');
+            if (document.getElementById('song-editor-modal').style.display === 'flex') {
+                scaleVirtualCanvas('editor-virtual-canvas', 'editor-preview-box');
+            }
+        }
+
+        let _resizeTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(_resizeTimer);
+            _resizeTimer = setTimeout(scaleAllCanvases, 80);
         });
 
         function setupEditorTextBoxInteraction() {

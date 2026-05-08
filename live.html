@@ -80,7 +80,7 @@
             font-weight: bold;
             text-align: center;
             line-height: 1.4;
-            -webkit-text-stroke: 8px black;
+            -webkit-text-stroke: 5px black;
             paint-order: stroke fill;
             text-shadow: none;
             white-space: pre-wrap;
@@ -125,7 +125,7 @@
     <!-- Text overlay with virtual canvas -->
     <div class="text-layer" id="text-layer">
         <div class="virtual-canvas" id="virtual-canvas">
-            <div id="text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:444px;overflow:hidden;">
+            <div id="text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:454px;overflow:hidden;">
                 <div class="lyrics-text" id="lyrics-text"></div>
             </div>
         </div>
@@ -223,7 +223,7 @@
             if (style.textAlign) el.style.textAlign = style.textAlign;
 
             el.style.textShadow = "none";
-            el.style.webkitTextStroke = "16px black";
+            el.style.webkitTextStroke = "12px black";
             el.style.paintOrder = "stroke fill";
             el.style.width = "100%";
             el.style.lineHeight = "1.4";
@@ -234,7 +234,7 @@
                 const width = (tb && tb.width != null) ? tb.width : 864;
                 textBox.style.left = left + 'px';
                 textBox.style.width = width + 'px';
-                textBox.style.maxHeight = '444px';
+                textBox.style.maxHeight = '454px';
                 textBox.style.overflow = 'hidden';
 
                 if (tb && tb.top != null) {
@@ -244,12 +244,12 @@
                 } else {
                     const align = style.verticalAlign || 'middle';
                     if (align === 'top') {
-                        textBox.style.top = '48px';
+                        textBox.style.top = '43px';
                         textBox.style.bottom = '';
                         textBox.style.transform = '';
                     } else if (align === 'bottom') {
                         textBox.style.top = 'auto';
-                        textBox.style.bottom = '48px';
+                        textBox.style.bottom = '43px';
                         textBox.style.transform = '';
                     } else {
                         textBox.style.top = '50%';
