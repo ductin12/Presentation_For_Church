@@ -21,6 +21,7 @@
       "edit-song.html",
       "src/**/*",
       "data/Bible_Vietnamese.xml",
+      "data/songs.json",
       "fonts/**/*",
       "package.json"
     ],

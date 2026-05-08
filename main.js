@@ -68,10 +68,12 @@ function initializeData() {
 
   if (!fs.existsSync(mediaFolderPath)) fs.mkdirSync(mediaFolderPath, { recursive: true });
   if (!fs.existsSync(songsFilePath)) {
-    safeWriteSync(songsFilePath, [
-      { id: 1, title: '10,000 Reasons', lyrics: 'Verse 1\nBless the Lord, O my soul\nO my soul, worship His holy name' },
-      { id: 2, title: 'Amazing Grace', lyrics: 'Verse 1\nAmazing grace! How sweet the sound\nThat saved a wretch like me!' }
-    ]);
+    const bundledSongs = path.join(__dirname, 'data', 'songs.json');
+    if (fs.existsSync(bundledSongs)) {
+      fs.copyFileSync(bundledSongs, songsFilePath);
+    } else {
+      safeWriteSync(songsFilePath, []);
+    }
   }
   if (!fs.existsSync(bibleFilePath)) safeWriteSync(bibleFilePath, []);
 }

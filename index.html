@@ -1138,14 +1138,28 @@
                 })
                 : source;
 
-            if (filtered.length === 0) {
+            const sorted = currentLibraryTab === 'songs'
+                ? [...filtered].sort((a, b) => a.title.localeCompare(b.title, 'vi'))
+                : filtered;
+
+            if (sorted.length === 0) {
                 tbody.innerHTML = '<tr><td class="px-4 py-2 text-[10px] text-slate-400">Library is empty.</td></tr>';
                 return;
             }
-            filtered.forEach(item => {
+            sorted.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.className = 'cursor-pointer select-none';
-                tr.innerHTML = `<td class="px-4 py-2 text-[11px] font-medium text-slate-900 dark:text-slate-100">${item.title}</td>`;
+
+                let snippet = '';
+                if (lyricsQuery && item.lyrics) {
+                    const matchLine = item.lyrics.split('\n').find(l => l.trim() && normalizeForSearch(l).includes(lyricsQuery));
+                    if (matchLine) snippet = matchLine.trim().substring(0, 80);
+                }
+
+                tr.innerHTML = `<td class="px-3 py-1.5">
+                    <div class="text-[11px] font-medium text-slate-900 dark:text-slate-100">${item.title}</div>
+                    ${snippet ? `<div class="text-[9px] text-indigo-400 mt-0.5 truncate">${snippet}</div>` : ''}
+                </td>`;
                 tr.onclick = () => { selectItemInLibrary(item); };
                 tr.ondblclick = (e) => { e.stopPropagation(); addToSchedule(item); };
                 tr.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e, item); };
