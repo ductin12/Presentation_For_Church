@@ -3,7 +3,6 @@ const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
 const { validateItem, migrateItem } = require('./src/schema.js');
-const { autoUpdater } = require('electron-updater');
 
 // 1. Register custom protocol
 protocol.registerSchemesAsPrivileged([
@@ -380,23 +379,7 @@ app.whenReady().then(() => {
 
   createWindow();
 
-  if (app.isPackaged) {
-    autoUpdater.checkForUpdates().catch(() => {});
-
-    autoUpdater.on('update-available', () => {
-      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update-available');
-    });
-
-    autoUpdater.on('download-progress', (p) => {
-      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update-progress', Math.round(p.percent));
-    });
-
-    autoUpdater.on('update-downloaded', () => {
-      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update-downloaded');
-    });
-  }
 });
 
-ipcMain.handle('install-update', () => { autoUpdater.quitAndInstall(); });
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

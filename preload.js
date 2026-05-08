@@ -41,18 +41,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onLiveClear: (callback) => {
     ipcRenderer.removeAllListeners('live-clear');
     ipcRenderer.on('live-clear', callback);
-  },
-  onUpdateAvailable: (callback) => {
-    ipcRenderer.removeAllListeners('update-available');
-    ipcRenderer.on('update-available', callback);
-  },
-  onUpdateProgress: (callback) => {
-    ipcRenderer.removeAllListeners('update-progress');
-    ipcRenderer.on('update-progress', callback);
-  },
-  onUpdateDownloaded: (callback) => {
-    ipcRenderer.removeAllListeners('update-downloaded');
-    ipcRenderer.on('update-downloaded', callback);
-  },
-  installUpdate: () => ipcRenderer.invoke('install-update')
+  }
 });
