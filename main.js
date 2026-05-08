@@ -387,6 +387,10 @@ app.whenReady().then(() => {
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update-available');
     });
 
+    autoUpdater.on('download-progress', (p) => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update-progress', Math.round(p.percent));
+    });
+
     autoUpdater.on('update-downloaded', () => {
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update-downloaded');
     });

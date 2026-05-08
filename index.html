@@ -407,11 +407,17 @@
     <!-- <header ...> ... </div> -->
     <!-- </header> -->
     <!-- Update notification banner -->
-    <div id="update-banner" class="hidden items-center justify-between px-4 py-2 bg-green-600 text-white text-sm shrink-0">
-        <span id="update-banner-msg"></span>
-        <div class="flex items-center gap-2">
-            <button id="update-install-btn" class="hidden px-3 py-1 bg-white text-green-700 rounded font-semibold hover:bg-green-100 transition-colors" onclick="installUpdate()">Khởi động lại để cập nhật</button>
-            <button class="opacity-70 hover:opacity-100 text-white" onclick="document.getElementById('update-banner').classList.add('hidden')">✕</button>
+    <div id="update-banner" class="hidden items-center justify-between px-3 py-1 bg-blue-600 text-white text-xs shrink-0 transition-colors duration-500">
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+            <span id="update-banner-msg" class="shrink-0"></span>
+            <div id="update-progress-wrap" class="hidden flex-1 max-w-40 h-1.5 bg-white/30 rounded-full overflow-hidden">
+                <div id="update-progress-bar" class="h-full bg-white rounded-full transition-all duration-300" style="width:0%"></div>
+            </div>
+            <span id="update-progress-pct" class="hidden text-white/80 text-[10px] shrink-0"></span>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            <button id="update-install-btn" class="hidden px-2 py-0.5 bg-white text-green-700 rounded font-semibold hover:bg-green-100 transition-colors text-xs" onclick="installUpdate()">Khởi động lại</button>
+            <button class="opacity-60 hover:opacity-100 text-white leading-none" onclick="document.getElementById('update-banner').classList.remove('flex');document.getElementById('update-banner').classList.add('hidden')">✕</button>
         </div>
     </div>
     <!-- Main Content Area -->
@@ -2423,23 +2429,31 @@
         }
 
         // --- Auto-update Handlers ---
-        function showUpdateBanner(msg, showInstallBtn) {
-            const banner = document.getElementById('update-banner');
-            document.getElementById('update-banner-msg').textContent = msg;
-            const btn = document.getElementById('update-install-btn');
-            if (showInstallBtn) btn.classList.remove('hidden'); else btn.classList.add('hidden');
-            banner.classList.remove('hidden');
-            banner.classList.add('flex');
-        }
-
         function installUpdate() { window.electronAPI.installUpdate(); }
 
         window.electronAPI.onUpdateAvailable(() => {
-            showUpdateBanner('Đang tải bản cập nhật mới...', false);
+            const banner = document.getElementById('update-banner');
+            banner.classList.remove('hidden', 'bg-green-600');
+            banner.classList.add('flex', 'bg-blue-600');
+            document.getElementById('update-banner-msg').textContent = 'Đang tải bản cập nhật...';
+            document.getElementById('update-progress-wrap').classList.remove('hidden');
+            document.getElementById('update-progress-pct').classList.remove('hidden');
+            document.getElementById('update-install-btn').classList.add('hidden');
+        });
+
+        window.electronAPI.onUpdateProgress((event, percent) => {
+            document.getElementById('update-progress-bar').style.width = percent + '%';
+            document.getElementById('update-progress-pct').textContent = percent + '%';
         });
 
         window.electronAPI.onUpdateDownloaded(() => {
-            showUpdateBanner('Đã tải xong bản cập nhật mới!', true);
+            const banner = document.getElementById('update-banner');
+            banner.classList.remove('bg-blue-600');
+            banner.classList.add('bg-green-600');
+            document.getElementById('update-banner-msg').textContent = 'Tải xong! Sẵn sàng cập nhật.';
+            document.getElementById('update-progress-wrap').classList.add('hidden');
+            document.getElementById('update-progress-pct').classList.add('hidden');
+            document.getElementById('update-install-btn').classList.remove('hidden');
         });
 
         // --- Native Menu Handlers ---
