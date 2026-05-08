@@ -34,10 +34,19 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Presentation For Church"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "PhuocTDT",
+      "repo": "Presentation_For_Church"
     }
   },
   "devDependencies": {
     "electron": "^41.0.2",
     "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.3",
+    "mammoth": "^1.12.0"
   }
 }

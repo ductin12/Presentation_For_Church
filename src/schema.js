@@ -2,7 +2,7 @@ const SongSchema = {
   required: ['id', 'title', 'lyrics'],
   defaults: {
     type: 'song', // default type
-    style: { fontSize: 36, fontColor: '#ffffff', textAlign: 'center' },
+    style: { fontSize: '80px', fontColor: '#ffffff', textAlign: 'center' },
     background: null // null means use default background
   }
 };
@@ -16,14 +16,25 @@ function validateItem(data) {
 }
 
 function migrateItem(data) {
-  // Ensure the object has all default fields if they are missing
   const migrated = { ...SongSchema.defaults, ...data };
-  
-  // Ensure style object has defaults if partially provided
+
   if (migrated.style) {
     migrated.style = { ...SongSchema.defaults.style, ...migrated.style };
+
+    // Normalize legacy field: fontColor → color
+    if (migrated.style.fontColor && !migrated.style.color) {
+      migrated.style.color = migrated.style.fontColor;
+    }
+    delete migrated.style.fontColor;
+
+    // Normalize fontSize: plain number → 'px', legacy 'pt' → 'px'
+    if (typeof migrated.style.fontSize === 'number') {
+      migrated.style.fontSize = migrated.style.fontSize + 'px';
+    } else if (typeof migrated.style.fontSize === 'string' && migrated.style.fontSize.endsWith('pt')) {
+      migrated.style.fontSize = Math.round(parseFloat(migrated.style.fontSize) * 2 / 3) + 'px';
+    }
   }
-  
+
   return migrated;
 }
 

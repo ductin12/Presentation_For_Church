@@ -60,8 +60,8 @@
         }
 
         .virtual-canvas {
-            width: 1920px;
-            height: 1080px;
+            width: 960px;
+            height: 540px;
             transform-origin: center;
             position: absolute;
             top: 50%;
@@ -76,11 +76,11 @@
         .lyrics-text {
             color: #fff;
             font-family: 'Times New Roman', serif;
-            font-size: 120pt;
+            font-size: 80px;
             font-weight: bold;
             text-align: center;
             line-height: 1.4;
-            -webkit-text-stroke: 16px black;
+            -webkit-text-stroke: 8px black;
             paint-order: stroke fill;
             text-shadow: none;
             white-space: pre-wrap;
@@ -125,7 +125,7 @@
     <!-- Text overlay with virtual canvas -->
     <div class="text-layer" id="text-layer">
         <div class="virtual-canvas" id="virtual-canvas">
-            <div id="text-box" class="text-layer-box" style="left:96px;top:50%;transform:translateY(-50%);width:1728px;">
+            <div id="text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:444px;overflow:hidden;">
                 <div class="lyrics-text" id="lyrics-text"></div>
             </div>
         </div>
@@ -143,7 +143,7 @@
             const w = window.innerWidth;
             const h = window.innerHeight;
             // Scale để vừa khít 1920x1080 vào cửa sổ hiện tại (giữ nguyên tỉ lệ)
-            const scale = Math.min(w / 1920, h / 1080);
+            const scale = Math.min(w / 960, h / 540);
             canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
             console.log(`[Live] Scaled to: ${scale} (Window: ${w}x${h})`);
         }
@@ -230,10 +230,12 @@
 
             if (textBox) {
                 const tb = style.textBox;
-                const left = (tb && tb.left != null) ? tb.left : 96;
-                const width = (tb && tb.width != null) ? tb.width : 1728;
+                const left = (tb && tb.left != null) ? tb.left : 48;
+                const width = (tb && tb.width != null) ? tb.width : 864;
                 textBox.style.left = left + 'px';
                 textBox.style.width = width + 'px';
+                textBox.style.maxHeight = '444px';
+                textBox.style.overflow = 'hidden';
 
                 if (tb && tb.top != null) {
                     textBox.style.top = tb.top + 'px';
@@ -242,12 +244,12 @@
                 } else {
                     const align = style.verticalAlign || 'middle';
                     if (align === 'top') {
-                        textBox.style.top = '96px';
+                        textBox.style.top = '48px';
                         textBox.style.bottom = '';
                         textBox.style.transform = '';
                     } else if (align === 'bottom') {
                         textBox.style.top = 'auto';
-                        textBox.style.bottom = '96px';
+                        textBox.style.bottom = '48px';
                         textBox.style.transform = '';
                     } else {
                         textBox.style.top = '50%';

@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
 const { validateItem, migrateItem } = require('./src/schema.js');
+const { autoUpdater } = require('electron-updater');
 
 // 1. Register custom protocol
 protocol.registerSchemesAsPrivileged([
@@ -351,7 +352,45 @@ app.whenReady().then(() => {
   ipcMain.handle('live-send-background', (e, d) => { if (liveWindow && !liveWindow.isDestroyed()) liveWindow.webContents.send('live-update-background', d); });
   ipcMain.handle('live-send-clear', () => { if (liveWindow && !liveWindow.isDestroyed()) liveWindow.webContents.send('live-clear'); });
 
+  ipcMain.handle('show-open-dialog-multi', async (event, options) => {
+    const result = await dialog.showOpenDialog({ ...options, properties: ['openFile', 'multiSelections'] });
+    return result;
+  });
+
+  ipcMain.handle('import-songs-from-file', async (event, filePaths) => {
+    let mammoth = null;
+    try { mammoth = require('mammoth'); } catch (e) { /* not installed */ }
+    const results = [];
+    for (const filePath of filePaths) {
+      const ext = path.extname(filePath).toLowerCase();
+      const title = path.basename(filePath, ext);
+      let lyrics = '';
+      if (ext === '.txt') {
+        lyrics = fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n').trim();
+      } else if (ext === '.docx' && mammoth) {
+        const r = await mammoth.extractRawText({ path: filePath });
+        lyrics = r.value.trim();
+      }
+      results.push({ title, lyrics, ext });
+    }
+    return results;
+  });
+
   createWindow();
+
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdates().catch(() => {});
+
+    autoUpdater.on('update-available', () => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update-available');
+    });
+
+    autoUpdater.on('update-downloaded', () => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update-downloaded');
+    });
+  }
 });
+
+ipcMain.handle('install-update', () => { autoUpdater.quitAndInstall(); });
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

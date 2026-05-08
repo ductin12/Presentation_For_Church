@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showSaveDialog: (data) => ipcRenderer.invoke('show-save-dialog', data),
   importMedia: () => ipcRenderer.invoke('import-media'),
   loadMedia: () => ipcRenderer.invoke('load-media'),
+  showOpenDialogMulti: (opts) => ipcRenderer.invoke('show-open-dialog-multi', opts),
+  importSongsFromFile: (filePaths) => ipcRenderer.invoke('import-songs-from-file', filePaths),
   openLiveWindow: () => ipcRenderer.invoke('open-live-window'),
   closeLiveWindow: () => ipcRenderer.invoke('close-live-window'),
   liveSendContent: (data) => ipcRenderer.invoke('live-send-content', data),
@@ -39,5 +41,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onLiveClear: (callback) => {
     ipcRenderer.removeAllListeners('live-clear');
     ipcRenderer.on('live-clear', callback);
-  }
+  },
+  onUpdateAvailable: (callback) => {
+    ipcRenderer.removeAllListeners('update-available');
+    ipcRenderer.on('update-available', callback);
+  },
+  onUpdateDownloaded: (callback) => {
+    ipcRenderer.removeAllListeners('update-downloaded');
+    ipcRenderer.on('update-downloaded', callback);
+  },
+  installUpdate: () => ipcRenderer.invoke('install-update')
 });

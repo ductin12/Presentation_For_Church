@@ -406,6 +406,14 @@
     <!-- Top Navigation Bar -->
     <!-- <header ...> ... </div> -->
     <!-- </header> -->
+    <!-- Update notification banner -->
+    <div id="update-banner" class="hidden items-center justify-between px-4 py-2 bg-green-600 text-white text-sm shrink-0">
+        <span id="update-banner-msg"></span>
+        <div class="flex items-center gap-2">
+            <button id="update-install-btn" class="hidden px-3 py-1 bg-white text-green-700 rounded font-semibold hover:bg-green-100 transition-colors" onclick="installUpdate()">Khởi động lại để cập nhật</button>
+            <button class="opacity-70 hover:opacity-100 text-white" onclick="document.getElementById('update-banner').classList.add('hidden')">✕</button>
+        </div>
+    </div>
     <!-- Main Content Area -->
     <main class="flex-1 flex flex-col overflow-hidden p-1 pt-0 gap-0" id="main-container">
 
@@ -454,8 +462,8 @@
                             <video class="absolute inset-0 w-full h-full object-cover hidden"
                                 id="preview-bg-video" autoplay loop muted></video>
                             <div class="absolute inset-0 overflow-hidden" id="preview-canvas-wrap">
-                                <div id="preview-virtual-canvas" style="width:1920px;height:1080px;transform-origin:center;position:absolute;top:50%;left:50%;">
-                                    <div id="preview-text-box" class="text-layer-box" style="left:96px;top:50%;transform:translateY(-50%);width:1728px;">
+                                <div id="preview-virtual-canvas" style="width:960px;height:540px;transform-origin:center;position:absolute;top:50%;left:50%;">
+                                    <div id="preview-text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:444px;overflow:hidden;">
                                         <p id="preview-lyrics-text" style="color:#fff;text-align:center;font-weight:bold;white-space:pre-wrap;line-height:1.4;-webkit-text-stroke:5px black;paint-order:stroke fill;width:100%;"></p>
                                     </div>
                                 </div>
@@ -512,8 +520,8 @@
                             <video class="absolute inset-0 w-full h-full object-cover hidden"
                                 id="live-bg-video" autoplay loop muted></video>
                             <div class="absolute inset-0 overflow-hidden" id="live-canvas-wrap">
-                                <div id="live-virtual-canvas" style="width:1920px;height:1080px;transform-origin:center;position:absolute;top:50%;left:50%;">
-                                    <div id="live-text-box" class="text-layer-box" style="left:96px;top:50%;transform:translateY(-50%);width:1728px;">
+                                <div id="live-virtual-canvas" style="width:960px;height:540px;transform-origin:center;position:absolute;top:50%;left:50%;">
+                                    <div id="live-text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:444px;overflow:hidden;">
                                         <p id="live-lyrics-text" style="color:#fff;text-align:center;font-weight:bold;white-space:pre-wrap;line-height:1.4;-webkit-text-stroke:5px black;paint-order:stroke fill;width:100%;"></p>
                                     </div>
                                 </div>
@@ -539,24 +547,28 @@
             <section
                 class="panel bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm"
                 style="width: 25%;">
-                <div class="px-3 py-1 bg-slate-800 dark:bg-black flex items-center justify-between shrink-0">
+                <div class="px-3 py-2 bg-slate-800 dark:bg-black flex items-center justify-between shrink-0">
                     <div class="flex items-center gap-4">
                         <div class="flex border-b border-white/20">
                             <button id="tab-songs"
-                                class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white border-b-2 border-primary"
+                                class="px-2 py-1 text-xs font-bold uppercase tracking-wider text-white border-b-2 border-primary"
                                 onclick="switchLibraryTab('songs')">Songs</button>
                             <button id="tab-bible"
-                                class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white/40 hover:text-white/70"
+                                class="px-2 py-1 text-xs font-bold uppercase tracking-wider text-white/40 hover:text-white/70"
                                 onclick="openBibleSelector()">Bible</button>
                         </div>
                         <div class="relative">
                             <span
-                                class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">search</span>
+                                class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">search</span>
                             <input id="library-search"
-                                class="pl-5 pr-2 py-0 bg-white border-none rounded text-[9px] text-slate-900 placeholder-slate-400 focus:ring-1 focus:ring-primary/30 w-40 h-5"
+                                class="pl-5 pr-2 py-0 bg-white border-none rounded text-[10px] text-slate-900 placeholder-slate-400 focus:ring-1 focus:ring-primary/30 w-44 h-6"
                                 placeholder="Search..." type="text" oninput="filterLibrary()" />
                         </div>
                     </div>
+                    <button onclick="importSongsFromFile()" title="Import bài hát từ file"
+                        class="size-6 flex items-center justify-center rounded bg-white/10 hover:bg-white/25 transition-colors">
+                        <span class="material-symbols-outlined text-white" style="font-size:14px">upload_file</span>
+                    </button>
                 </div>
                 <div class="flex-1 overflow-y-auto custom-scrollbar">
                     <table class="w-full text-left">
@@ -571,6 +583,11 @@
                             <!-- Data will be injected here -->
                         </tbody>
                     </table>
+                </div>
+                <div class="px-3 pb-2 pt-2 border-t border-slate-200 dark:border-slate-700 shrink-0">
+                    <input id="lyrics-search" type="text" placeholder="Tìm lời bài hát..."
+                        class="w-full px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 text-[10px] placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                        oninput="filterLibrary()" />
                 </div>
             </section>
 
@@ -703,8 +720,9 @@
                     </select>
 
                     <div class="hybrid-size-control" id="size-control-container">
-                        <input type="number" id="font-size-input" class="hybrid-size-input" value="120" min="1"
+                        <input type="number" id="font-size-input" class="hybrid-size-input" value="80" min="1"
                             max="500">
+                        <span style="font-size:10px;color:#666;padding:0 2px;user-select:none;">px</span>
                         <div class="hybrid-size-btn" onclick="toggleSizeDropdown()">
                             <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
                         </div>
@@ -787,8 +805,8 @@
                 <section class="flex-1 bg-[#d0d0d0] flex flex-col p-4 overflow-hidden">
                     <div class="flex-1 flex items-center justify-center">
                         <div class="aspect-video w-full max-w-xl bg-black shadow-lg overflow-hidden relative" id="editor-preview-box">
-                            <div id="editor-virtual-canvas" style="width:1920px;height:1080px;transform-origin:center;position:absolute;top:50%;left:50%;">
-                                <div id="editor-text-box" class="text-layer-box editor-active" style="left:96px;top:50%;transform:translateY(-50%);width:1728px;">
+                            <div id="editor-virtual-canvas" style="width:960px;height:540px;transform-origin:center;position:absolute;top:50%;left:50%;">
+                                <div id="editor-text-box" class="text-layer-box editor-active" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:444px;overflow:hidden;">
                                     <div class="drag-handle" id="editor-drag-handle">⠿⠿⠿</div>
                                     <p id="editor-preview-text" contenteditable="true"
                                         style="color:#fff;text-align:center;font-weight:bold;white-space:pre-wrap;line-height:1.4;-webkit-text-stroke:16px black;paint-order:stroke fill; outline:none; width: 100%;"
@@ -1070,10 +1088,20 @@
         }, 100);
 
         // --- Song Library & Editor ---
+        function normalizeForSearch(str) {
+            return str.toLowerCase().normalize('NFC').replace(/[-\/,.!?():;"']/g, '');
+        }
+
         async function loadLibrary() {
             try {
                 console.log('Fetching songs/bible from main process...');
                 songLibrary = await window.electronAPI.loadSongs();
+                songLibrary = songLibrary.map(song => {
+                    if (song.style && typeof song.style.fontSize === 'string' && song.style.fontSize.endsWith('pt')) {
+                        song.style.fontSize = Math.round(parseFloat(song.style.fontSize) * 2 / 3) + 'px';
+                    }
+                    return song;
+                });
                 savedBibleList = await window.electronAPI.loadBible();
                 console.log('Songs loaded:', songLibrary.length);
                 console.log('Saved Bible loaded:', savedBibleList.length);
@@ -1104,8 +1132,16 @@
                 });
             }
             
-            const query = document.getElementById('library-search').value.toLowerCase();
-            const filtered = query ? source.filter(s => s.title.toLowerCase().includes(query)) : source;
+            const titleQuery = normalizeForSearch(document.getElementById('library-search').value);
+            const lyricsEl = document.getElementById('lyrics-search');
+            const lyricsQuery = lyricsEl ? normalizeForSearch(lyricsEl.value) : '';
+            const filtered = (titleQuery || lyricsQuery)
+                ? source.filter(s => {
+                    const titleMatch = !titleQuery || normalizeForSearch(s.title).startsWith(titleQuery);
+                    const lyricsMatch = !lyricsQuery || (s.lyrics && normalizeForSearch(s.lyrics).includes(lyricsQuery));
+                    return titleMatch && lyricsMatch;
+                })
+                : source;
 
             if (filtered.length === 0) {
                 tbody.innerHTML = '<tr><td class="px-4 py-2 text-[10px] text-slate-400">Library is empty.</td></tr>';
@@ -1120,6 +1156,32 @@
                 tr.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e, item); };
                 tbody.appendChild(tr);
             });
+        }
+
+        async function importSongsFromFile() {
+            const result = await window.electronAPI.showOpenDialogMulti({
+                title: 'Import bài hát',
+                filters: [{ name: 'Song files', extensions: ['txt', 'docx'] }]
+            });
+            if (result.canceled || !result.filePaths.length) return;
+            const imported = await window.electronAPI.importSongsFromFile(result.filePaths);
+            let count = 0;
+            for (const item of imported) {
+                if (!item.lyrics) continue;
+                const newSong = {
+                    id: Date.now() + count,
+                    title: item.title,
+                    lyrics: item.lyrics,
+                    type: 'song',
+                    style: { fontSize: '80px', fontFamily: 'CMG Sans', color: '#ffffff' },
+                    background: null
+                };
+                await window.electronAPI.saveSong(newSong);
+                count++;
+            }
+            songLibrary = await window.electronAPI.loadSongs();
+            renderLibrary();
+            if (count > 0) alert(`Đã import ${count} bài hát.`);
         }
 
         function selectItemInLibrary(item) {
@@ -1294,16 +1356,16 @@
 
             if (song && song.style) {
                 editorStyle = { ...song.style };
-                if (!editorStyle.textBox) editorStyle.textBox = { left: 96, top: null, width: 1728 };
+                if (!editorStyle.textBox) editorStyle.textBox = { left: 48, top: null, width: 864 };
                 // Đồng bộ UI
                 document.getElementById('font-family').value = editorStyle.fontFamily || 'Times New Roman';
-                document.getElementById('font-size-input').value = parseInt(editorStyle.fontSize) || 120;
+                document.getElementById('font-size-input').value = parseInt(editorStyle.fontSize) || 80;
                 document.getElementById('color-indicator').style.backgroundColor = editorStyle.color || '#ffffff';
             } else {
                 // Reset về mặc định cho bài mới
                 const isBible = (song && song.type === 'bible') || title.includes('Bible');
-                const defaultFontSize = isBible ? '72pt' : '120pt';
-                
+                const defaultFontSize = isBible ? '48px' : '80px';
+
                 editorStyle = {
                     fontFamily: 'Times New Roman',
                     fontSize: defaultFontSize,
@@ -1313,7 +1375,7 @@
                     textDecoration: 'none',
                     textAlign: 'center',
                     verticalAlign: 'middle',
-                    textBox: { left: 96, top: null, width: 1728 }
+                    textBox: { left: 48, top: null, width: 864 }
                 };
                 document.getElementById('font-family').value = 'Times New Roman';
                 document.getElementById('font-size-input').value = parseInt(defaultFontSize);
@@ -1389,7 +1451,7 @@
         });
 
         function setFontSize(size) {
-            editorStyle.fontSize = size + 'pt';
+            editorStyle.fontSize = size + 'px';
             applyEditorStyle();
         }
 
@@ -1469,9 +1531,9 @@
             };
 
             // Insert block into container
-            if (focus && container.children[index]) {
-                // Splitting: insert AFTER the current block
-                container.children[index].after(block);
+            if (focus && index > 0 && container.children[index - 1]) {
+                // Splitting: insert AFTER the source block (index - 1)
+                container.children[index - 1].after(block);
             } else if (index < container.children.length) {
                 container.insertBefore(block, container.children[index]);
             } else {
@@ -1751,10 +1813,10 @@
                         if (fromIndex === toIndex || fromIndex + 1 === toIndex) return;
                         reorderScheduleItem(fromIndex, toIndex);
                     } else {
-                        // Media drop → assign background
+                        // Media drop → show menu: add as item or set as background
                         try {
                             const mediaItem = JSON.parse(e.dataTransfer.getData('application/json'));
-                            assignBackgroundToScheduleItem(index, mediaItem);
+                            showMediaDropMenu(e.clientX, e.clientY, index, mediaItem);
                         } catch (err) { console.error('Drop error:', err); }
                     }
                 });
@@ -1856,7 +1918,7 @@
             // Cập nhật style cho preview từ bài hát (hoặc dùng mặc định)
             const defaultStyle = {
                 fontFamily: 'Times New Roman',
-                fontSize: song.type === 'bible' ? '72pt' : '120pt',
+                fontSize: song.type === 'bible' ? '48px' : '80px',
                 color: '#ffffff',
                 fontWeight: 'bold',
                 fontStyle: 'normal',
@@ -1902,6 +1964,8 @@
             return '';
         }
 
+        let _previewShouldScroll = false;
+
         function renderPreview() {
             const container = document.getElementById('preview-slides-container');
             if (!container) return;
@@ -1923,7 +1987,10 @@
                 div.onclick = () => { selectSlide(index); };
                 div.ondblclick = (e) => { e.stopPropagation(); goLiveFromSlide(index); };
                 container.appendChild(div);
-                if (isActive) div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                if (isActive && _previewShouldScroll) {
+                    div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    _previewShouldScroll = false;
+                }
             });
         }
 
@@ -2054,9 +2121,9 @@
                 );
 
                 if (isMainCanvas) {
-                    el.style.webkitTextStroke = "16px black";
+                    el.style.webkitTextStroke = "8px black";
                 } else {
-                    el.style.webkitTextStroke = "5px black";
+                    el.style.webkitTextStroke = "3px black";
                 }
                 el.style.paintOrder = "stroke fill";
                 el.style.textShadow = "none";
@@ -2068,11 +2135,13 @@
         function positionTextBox(textBox, style) {
             if (!textBox) return;
             const tb = style.textBox;
-            const left = (tb && tb.left != null) ? tb.left : 96;
-            const width = (tb && tb.width != null) ? tb.width : 1728;
+            const left = (tb && tb.left != null) ? tb.left : 48;
+            const width = (tb && tb.width != null) ? tb.width : 864;
 
             textBox.style.left = left + 'px';
             textBox.style.width = width + 'px';
+            textBox.style.maxHeight = '444px';
+            textBox.style.overflow = 'hidden';
 
             if (tb && tb.top != null) {
                 textBox.style.top = tb.top + 'px';
@@ -2081,12 +2150,12 @@
             } else {
                 const align = style.verticalAlign || 'middle';
                 if (align === 'top') {
-                    textBox.style.top = '96px';
+                    textBox.style.top = '48px';
                     textBox.style.bottom = '';
                     textBox.style.transform = '';
                 } else if (align === 'bottom') {
                     textBox.style.top = 'auto';
-                    textBox.style.bottom = '96px';
+                    textBox.style.bottom = '48px';
                     textBox.style.transform = '';
                 } else {
                     textBox.style.top = '50%';
@@ -2104,7 +2173,7 @@
             const cw = container.clientWidth;
             const ch = container.clientHeight;
             if (cw <= 0 || ch <= 0) return;
-            const scale = Math.min(cw / 1920, ch / 1080);
+            const scale = Math.min(cw / 960, ch / 540);
             canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
         }
 
@@ -2208,6 +2277,62 @@
             }
         }
 
+        function showMediaDropMenu(x, y, scheduleIndex, mediaItem) {
+            // Remove existing menu if any
+            const old = document.getElementById('media-drop-menu');
+            if (old) old.remove();
+
+            const menu = document.createElement('div');
+            menu.id = 'media-drop-menu';
+            menu.style.cssText = `position:fixed;left:${x}px;top:${y}px;z-index:9999;background:#fff;border:1px solid #ccc;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);overflow:hidden;min-width:180px;`;
+            menu.innerHTML = `
+                <div class="media-drop-option" style="padding:8px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;" data-action="add">
+                    <span class="material-symbols-outlined" style="font-size:16px;">add_circle</span> Thêm vào schedule
+                </div>
+                <div class="media-drop-option" style="padding:8px 14px;cursor:pointer;font-size:13px;border-top:1px solid #eee;display:flex;align-items:center;gap:6px;" data-action="bg">
+                    <span class="material-symbols-outlined" style="font-size:16px;">wallpaper</span> Đặt làm background
+                </div>
+            `;
+
+            menu.querySelectorAll('.media-drop-option').forEach(opt => {
+                opt.addEventListener('mouseenter', () => opt.style.backgroundColor = '#f0f0f0');
+                opt.addEventListener('mouseleave', () => opt.style.backgroundColor = '');
+                opt.addEventListener('click', () => {
+                    if (opt.dataset.action === 'add') {
+                        addMediaToScheduleAt(mediaItem, scheduleIndex + 1);
+                    } else {
+                        assignBackgroundToScheduleItem(scheduleIndex, mediaItem);
+                    }
+                    menu.remove();
+                });
+            });
+
+            document.body.appendChild(menu);
+
+            // Close on click outside
+            const closeHandler = (e) => {
+                if (!menu.contains(e.target)) {
+                    menu.remove();
+                    document.removeEventListener('mousedown', closeHandler);
+                }
+            };
+            setTimeout(() => document.addEventListener('mousedown', closeHandler), 0);
+        }
+
+        function addMediaToScheduleAt(mediaItem, atIndex) {
+            const url = `app-media://${encodeURIComponent(mediaItem.name)}`;
+            const item = {
+                id: null,
+                title: mediaItem.name,
+                lyrics: '',
+                scheduleId: Date.now(),
+                background: { mediaName: mediaItem.name, mediaType: mediaItem.type, url: url },
+                isMediaOnly: true
+            };
+            schedule.splice(atIndex, 0, item);
+            renderSchedule();
+        }
+
         function assignBackgroundToScheduleItem(scheduleIndex, mediaItem) {
             const url = `app-media://${encodeURIComponent(mediaItem.name)}`;
             schedule[scheduleIndex].background = {
@@ -2281,6 +2406,26 @@
             data.style = { ...currentLiveStyle };
             window.electronAPI.liveSendContent(data);
         }
+
+        // --- Auto-update Handlers ---
+        function showUpdateBanner(msg, showInstallBtn) {
+            const banner = document.getElementById('update-banner');
+            document.getElementById('update-banner-msg').textContent = msg;
+            const btn = document.getElementById('update-install-btn');
+            if (showInstallBtn) btn.classList.remove('hidden'); else btn.classList.add('hidden');
+            banner.classList.remove('hidden');
+            banner.classList.add('flex');
+        }
+
+        function installUpdate() { window.electronAPI.installUpdate(); }
+
+        window.electronAPI.onUpdateAvailable(() => {
+            showUpdateBanner('Đang tải bản cập nhật mới...', false);
+        });
+
+        window.electronAPI.onUpdateDownloaded(() => {
+            showUpdateBanner('Đã tải xong bản cập nhật mới!', true);
+        });
 
         // --- Native Menu Handlers ---
         window.electronAPI.onMenuAction((event, action) => {

@@ -12,7 +12,9 @@
       "Read(//d/Desktop/projectForChurch/presentationWorship/$APPDATA/easyworship-app/media/**)",
       "Bash(ie4uinit.exe -show)",
       "Bash(taskkill //F //IM explorer.exe)",
-      "Bash(start explorer.exe)"
+      "Bash(start explorer.exe)",
+      "Bash(ls -la /d/Desktop/projectForChurch/presentationWorship/*.html)",
+      "Bash(find /d/Desktop/projectForChurch/presentationWorship -type f \\\\\\(-name *.test.js -o -name *.spec.js -o -name test* -o -name *test* \\\\\\))"
     ],
     "additionalDirectories": [
       "d:\\Desktop\\projectForChurch\\presentationWorship\\$APPDATA\\easyworship-app",
