@@ -1374,6 +1374,8 @@
             if (result && result.success) {
                 alert(`Đã import thành công bản dịch: ${result.displayName || result.name}`);
                 await loadBibleVersions();
+            } else if (result && result.error) {
+                alert(`Không thể import bản Kinh Thánh: ${result.error}`);
             }
         }
 

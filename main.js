@@ -30,14 +30,135 @@ function saveAndBackupSync(filePath, data) {
 }
 
 // 2. Global State
-let userDataPath, songsFilePath, bibleFilePath, settingsFilePath, defaultMediaFolderPath;
+let userDataPath, songsFilePath, bibleFilePath, settingsFilePath, defaultMediaFolderPath, userBibleDataPath;
 let liveWindow = null;
 let mainWindow = null;
 let globalSettings = {};
+let liveWindowTargetDisplayId = null;
+const bundledBibleDataPath = path.join(__dirname, 'data');
+const defaultBibleXmlName = 'Bible_Vietnamese_Version_1925.xml';
+const bibleMigrationMarkerPath = () => path.join(userBibleDataPath || userDataPath || app.getPath('userData'), '.bible-versions-migrated');
 
 // 3. Helper Functions
 function getMediaFolderPath() {
   return (globalSettings && globalSettings.mediaPath) ? globalSettings.mediaPath : defaultMediaFolderPath;
+}
+
+function normalizeBibleFileName(fileName) {
+  return path.basename(String(fileName || '')).normalize('NFC');
+}
+
+function getBibleDataDirs() {
+  return [userBibleDataPath, bundledBibleDataPath].filter(Boolean);
+}
+
+function resolveBibleXmlPath(fileName) {
+  const normalizedName = normalizeBibleFileName(fileName);
+  if (!normalizedName) return null;
+
+  for (const dir of getBibleDataDirs()) {
+    const directPath = path.join(dir, normalizedName);
+    if (fs.existsSync(directPath)) return directPath;
+
+    const nfdPath = path.join(dir, normalizedName.normalize('NFD'));
+    if (fs.existsSync(nfdPath)) return nfdPath;
+  }
+
+  return null;
+}
+
+function listBibleXmlFiles() {
+  const versions = new Map();
+
+  for (const dir of getBibleDataDirs()) {
+    if (!fs.existsSync(dir)) continue;
+
+    let files = [];
+    try {
+      files = fs.readdirSync(dir);
+    } catch (e) {
+      continue;
+    }
+
+    for (const file of files) {
+      if (!file.toLowerCase().endsWith('.xml')) continue;
+
+      const normalizedName = normalizeBibleFileName(file);
+      if (!normalizedName || versions.has(normalizedName)) continue;
+
+      versions.set(normalizedName, {
+        fileName: normalizedName,
+        fullPath: path.join(dir, file),
+        source: dir === userBibleDataPath ? 'user' : 'bundled'
+      });
+    }
+  }
+
+  return [...versions.values()];
+}
+
+function getPreferredLiveDisplay() {
+  const displays = screen.getAllDisplays();
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const currentTarget = liveWindowTargetDisplayId
+    ? displays.find(display => display.id === liveWindowTargetDisplayId)
+    : null;
+
+  if (currentTarget && currentTarget.id !== primaryDisplay.id) {
+    return currentTarget;
+  }
+
+  const externalDisplay = displays.find(display => display.id !== primaryDisplay.id);
+  return externalDisplay || primaryDisplay;
+}
+
+function syncLiveWindowToPreferredDisplay() {
+  if (!liveWindow || liveWindow.isDestroyed()) return;
+
+  const display = getPreferredLiveDisplay();
+  if (!display) return;
+
+  const bounds = display.workAreaBounds || display.bounds;
+  liveWindowTargetDisplayId = display.id;
+  liveWindow.setBounds(bounds, false);
+  liveWindow.setAlwaysOnTop(true, 'screen-saver');
+  try {
+    liveWindow.moveTop();
+  } catch (e) {
+    // moveTop is not supported on every platform; alwaysOnTop remains the fallback.
+  }
+  if (!liveWindow.isVisible()) {
+    liveWindow.show();
+  }
+}
+
+function migrateBundledBibleVersionsToUserData() {
+  if (!userBibleDataPath || !fs.existsSync(userBibleDataPath) || !fs.existsSync(bundledBibleDataPath)) return;
+  const markerPath = bibleMigrationMarkerPath();
+
+  try {
+    if (fs.existsSync(markerPath)) return;
+  } catch (e) {
+    // If we cannot read the marker, fall through and try migration best-effort.
+  }
+
+  try {
+    const bundledFiles = fs.readdirSync(bundledBibleDataPath).filter(file => file.toLowerCase().endsWith('.xml'));
+    for (const file of bundledFiles) {
+      const source = path.join(bundledBibleDataPath, file);
+      const target = path.join(userBibleDataPath, normalizeBibleFileName(file));
+      if (!fs.existsSync(target) && fs.existsSync(source) && fs.statSync(source).isFile()) {
+        fs.copyFileSync(source, target);
+      }
+    }
+    fs.writeFileSync(markerPath, JSON.stringify({
+      migratedAt: new Date().toISOString(),
+      source: bundledBibleDataPath,
+      destination: userBibleDataPath
+    }, null, 2), 'utf8');
+  } catch (e) {
+    console.error('[Bible] Failed to migrate bundled versions to userData:', e);
+  }
 }
 
 function isVideo(fileName) {
@@ -66,8 +187,11 @@ function initializeData() {
   bibleFilePath = path.join(userDataPath, 'bible.json');
   settingsFilePath = path.join(userDataPath, 'settings.json');
   defaultMediaFolderPath = path.join(userDataPath, 'media');
+  userBibleDataPath = path.join(userDataPath, 'bible-versions');
 
   if (!fs.existsSync(defaultMediaFolderPath)) fs.mkdirSync(defaultMediaFolderPath, { recursive: true });
+  if (!fs.existsSync(userBibleDataPath)) fs.mkdirSync(userBibleDataPath, { recursive: true });
+  migrateBundledBibleVersionsToUserData();
   
   if (!fs.existsSync(songsFilePath)) {
     const bundledSongs = path.join(__dirname, 'data', 'songs.json');
@@ -112,35 +236,36 @@ function initializeData() {
 
 function createLiveWindow() {
   const enforceLiveWindowPriority = () => {
-    if (!liveWindow || liveWindow.isDestroyed()) return;
-    liveWindow.setAlwaysOnTop(true, 'screen-saver');
-    try {
-      liveWindow.moveTop();
-    } catch (e) {
-      // moveTop is not supported on every platform; alwaysOnTop remains the fallback.
-    }
+    syncLiveWindowToPreferredDisplay();
   };
 
   if (liveWindow) {
-    liveWindow.show();
-    enforceLiveWindowPriority();
+    syncLiveWindowToPreferredDisplay();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('live-window-opened');
+    }
     return;
   }
-  const displays = screen.getAllDisplays();
-  const externalDisplay = displays.find(d => d.bounds.x !== 0 || d.bounds.y !== 0);
-  const useKiosk = !!externalDisplay;
+  const display = getPreferredLiveDisplay();
+  const targetBounds = display.workAreaBounds || display.bounds;
+  liveWindowTargetDisplayId = display.id;
 
   liveWindow = new BrowserWindow({
-    width: 1280,
-    height: 720,
-    x: externalDisplay ? externalDisplay.bounds.x : undefined,
-    y: externalDisplay ? externalDisplay.bounds.y : undefined,
-    fullscreen: !!externalDisplay,
-    kiosk: useKiosk,
+    x: targetBounds.x,
+    y: targetBounds.y,
+    width: targetBounds.width,
+    height: targetBounds.height,
+    frame: false,
+    fullscreen: false,
+    kiosk: false,
+    simpleFullscreen: false,
+    fullscreenable: false,
     alwaysOnTop: true,
     visibleOnAllWorkspaces: true,
     skipTaskbar: true,
     autoHideMenuBar: true,
+    hasShadow: false,
+    show: false,
     backgroundColor: '#000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -150,15 +275,25 @@ function createLiveWindow() {
 
   liveWindow.setAlwaysOnTop(true, 'screen-saver');
   liveWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  liveWindow.setMenuBarVisibility(false);
   liveWindow.on('show', enforceLiveWindowPriority);
   liveWindow.on('focus', enforceLiveWindowPriority);
   liveWindow.on('blur', () => setTimeout(enforceLiveWindowPriority, 0));
-  liveWindow.on('enter-full-screen', enforceLiveWindowPriority);
-  liveWindow.on('leave-full-screen', enforceLiveWindowPriority);
-  liveWindow.on('restore', enforceLiveWindowPriority);
   liveWindow.loadFile('live.html');
-  liveWindow.once('ready-to-show', enforceLiveWindowPriority);
-  liveWindow.on('closed', () => { liveWindow = null; });
+  liveWindow.once('ready-to-show', () => {
+    if (!liveWindow || liveWindow.isDestroyed()) return;
+    syncLiveWindowToPreferredDisplay();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('live-window-opened');
+    }
+  });
+  liveWindow.on('closed', () => {
+    liveWindow = null;
+    liveWindowTargetDisplayId = null;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('live-window-closed');
+    }
+  });
 }
 
 function createWindow() {
@@ -211,6 +346,9 @@ function setupMenu(win) {
 // 4. App Lifecycle
 app.whenReady().then(() => {
   initializeData();
+  screen.on('display-added', syncLiveWindowToPreferredDisplay);
+  screen.on('display-removed', syncLiveWindowToPreferredDisplay);
+  screen.on('display-metrics-changed', syncLiveWindowToPreferredDisplay);
 
   // Register app-media:// protocol to serve local media files
   protocol.handle('app-media', (request) => {
@@ -269,8 +407,8 @@ app.whenReady().then(() => {
 
   ipcMain.handle('load-bible-xml', () => {
     try {
-      const p = path.join(__dirname, 'data', 'Bible_Vietnamese.xml');
-      if (fs.existsSync(p)) {
+      const p = resolveBibleXmlPath(defaultBibleXmlName) || resolveBibleXmlPath('Bible_Vietnamese.xml');
+      if (p && fs.existsSync(p)) {
         return fs.readFileSync(p, 'utf8');
       }
       return null;
@@ -346,7 +484,7 @@ app.whenReady().then(() => {
   }
 
   function getBibleVersionDisplayName(fileName, language = 'unknown') {
-    const baseName = path.basename(fileName, '.xml').replace(/_/g, ' ').trim();
+    const baseName = path.basename(fileName).replace(/\.xml$/i, '').replace(/_/g, ' ').trim();
     return `${baseName} - ${getBibleLanguageLabel(language)}`;
   }
 
@@ -371,65 +509,69 @@ app.whenReady().then(() => {
 
   ipcMain.handle('load-bible-versions', () => {
     try {
-      const dataDir = path.join(__dirname, 'data');
-      return fs.readdirSync(dataDir)
-        .filter(f => f.toLowerCase().endsWith('.xml'))
-        .map((f) => {
-          let language = detectBibleLanguage('', f);
-          try {
-            const fullPath = path.join(dataDir, f);
-            const header = fs.readFileSync(fullPath, 'utf8').slice(0, 2000);
-            const detected = detectBibleLanguage(header, f);
-            if (detected !== 'unknown') language = detected;
-          } catch (e) {
-            // Keep best-effort fallback.
-          }
+      return listBibleXmlFiles().map(({ fileName, fullPath, source }) => {
+        let language = detectBibleLanguage('', fileName);
+        try {
+          const header = fs.readFileSync(fullPath, 'utf8').slice(0, 2000);
+          const detected = detectBibleLanguage(header, fileName);
+          if (detected !== 'unknown') language = detected;
+        } catch (e) {
+          // Keep best-effort fallback.
+        }
 
-          return {
-            name: f.replace(/\.xml$/i, '').replace(/_/g, ' '),
-            displayName: getBibleVersionDisplayName(f, language),
-            language,
-            fileName: f
-          };
-        });
+        return {
+          name: fileName.replace(/\.xml$/i, '').replace(/_/g, ' '),
+          displayName: getBibleVersionDisplayName(fileName, language),
+          language,
+          fileName,
+          source
+        };
+      });
     } catch (e) { return []; }
   });
 
   ipcMain.handle('import-bible-version', async () => {
-    const r = await dialog.showOpenDialog({ 
-      properties: ['openFile'], 
-      filters: [{ name: 'Bible XML', extensions: ['xml'] }] 
-    });
-    if (!r.canceled && r.filePaths.length > 0) {
-      const src = r.filePaths[0];
-      const name = path.basename(src);
-      const dest = path.join(__dirname, 'data', name);
-      fs.copyFileSync(src, dest);
-      let language = 'unknown';
-      try {
-        const sample = fs.readFileSync(dest, 'utf8').slice(0, 2000);
-        language = detectBibleLanguage(sample, name);
-      } catch (e) {
-        // ignore
+    try {
+      const r = await dialog.showOpenDialog({ 
+        properties: ['openFile'], 
+        filters: [{ name: 'Bible XML', extensions: ['xml'] }] 
+      });
+      if (!r.canceled && r.filePaths.length > 0) {
+        const src = r.filePaths[0];
+        const name = normalizeBibleFileName(path.basename(src));
+        const dest = path.join(userBibleDataPath, name);
+        if (path.resolve(src) !== path.resolve(dest)) {
+          fs.copyFileSync(src, dest);
+        }
+        let language = 'unknown';
+        try {
+          const sample = fs.readFileSync(dest, 'utf8').slice(0, 2000);
+          language = detectBibleLanguage(sample, name);
+        } catch (e) {
+          // ignore
+        }
+        return {
+          success: true,
+          name: name.replace(/\.xml$/i, '').replace(/_/g, ' '),
+          displayName: getBibleVersionDisplayName(name, language),
+          language,
+          fileName: name,
+          source: 'user'
+        };
       }
-      return {
-        success: true,
-        name: name.replace(/\.xml$/i, '').replace(/_/g, ' '),
-        displayName: getBibleVersionDisplayName(name, language),
-        language,
-        fileName: name
-      };
+      return { success: false, error: 'No file selected' };
+    } catch (e) {
+      console.error('[Bible] Import failed:', e);
+      return { success: false, error: e.message || 'Import failed' };
     }
-    return null;
   });
 
   ipcMain.handle('load-bible-parsed', (event, fileName) => {
-    let xmlName = fileName || 'Bible_Vietnamese_Version_1925.xml';
-
-    // Normalize filename (NFC/NFD issue with Vietnamese)
-    xmlName = xmlName.normalize('NFC');
+    const xmlName = normalizeBibleFileName(fileName || defaultBibleXmlName);
     const cacheName = `bible-cache-${xmlName.replace(/[^a-zA-Z0-9.-]/g, '_')}.json`;
     const cachePath = path.join(userDataPath, cacheName);
+    const xmlPath = resolveBibleXmlPath(xmlName);
+    const sourceStat = xmlPath && fs.existsSync(xmlPath) ? fs.statSync(xmlPath) : null;
 
     console.log(`[Bible] Loading Version: ${xmlName}`);
 
@@ -437,10 +579,21 @@ app.whenReady().then(() => {
     try {
       if (fs.existsSync(cachePath)) {
         const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
-        if (Array.isArray(cached) && cached.length > 0) {
-          console.log(`[Bible] ${cached.length} chapters loaded from cache.`);
-          return cached;
+
+        const cachedItems = Array.isArray(cached)
+          ? cached
+          : (cached && Array.isArray(cached.items) ? cached.items : null);
+
+        if (cachedItems && cachedItems.length > 0) {
+          const cachedSource = cached && !Array.isArray(cached) ? cached.source : null;
+          const cacheMatchesSource = !!(sourceStat && cachedSource && cachedSource.mtimeMs === sourceStat.mtimeMs && cachedSource.size === sourceStat.size);
+
+          if (!sourceStat || cacheMatchesSource) {
+            console.log(`[Bible] ${cachedItems.length} chapters loaded from cache.`);
+            return cachedItems;
+          }
         }
+
         fs.unlinkSync(cachePath);
       }
     } catch (e) {
@@ -449,16 +602,8 @@ app.whenReady().then(() => {
 
     // Parse XML and build cache
     try {
-      let xmlPath = path.join(__dirname, 'data', xmlName);
-
-      // Fallback check for file if NFD normalization is needed
-      if (!fs.existsSync(xmlPath)) {
-        const nfdPath = path.join(__dirname, 'data', xmlName.normalize('NFD'));
-        if (fs.existsSync(nfdPath)) xmlPath = nfdPath;
-      }
-
-      if (!fs.existsSync(xmlPath)) {
-        console.error(`[Bible] File not found: ${xmlPath}`);
+      if (!xmlPath) {
+        console.error(`[Bible] File not found: ${xmlName}`);
         return [];
       }
 
@@ -522,7 +667,14 @@ app.whenReady().then(() => {
       }
 
       if (bibleLibrary.length > 0) {
-        safeWriteSync(cachePath, bibleLibrary);
+        safeWriteSync(cachePath, {
+          source: sourceStat ? {
+            fileName: xmlName,
+            size: sourceStat.size,
+            mtimeMs: sourceStat.mtimeMs
+          } : null,
+          items: bibleLibrary
+        });
         console.log(`[Bible] Successfully parsed ${bibleLibrary.length} chapters.`);
       } else {
         console.warn(`[Bible] Warning: 0 chapters parsed from ${xmlName}.`);
@@ -604,25 +756,27 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('open-live-window', () => { createLiveWindow(); return true; });
-  ipcMain.handle('close-live-window', () => { if (liveWindow) liveWindow.close(); return true; });
+  ipcMain.handle('close-live-window', () => {
+    if (liveWindow && !liveWindow.isDestroyed()) {
+      liveWindow.destroy();
+    }
+    return true;
+  });
   ipcMain.handle('live-send-content', (e, d) => {
     if (liveWindow && !liveWindow.isDestroyed()) {
-      liveWindow.setAlwaysOnTop(true, 'screen-saver');
-      try { liveWindow.moveTop(); } catch (err) {}
+      syncLiveWindowToPreferredDisplay();
       liveWindow.webContents.send('live-update-content', d);
     }
   });
   ipcMain.handle('live-send-background', (e, d) => {
     if (liveWindow && !liveWindow.isDestroyed()) {
-      liveWindow.setAlwaysOnTop(true, 'screen-saver');
-      try { liveWindow.moveTop(); } catch (err) {}
+      syncLiveWindowToPreferredDisplay();
       liveWindow.webContents.send('live-update-background', d);
     }
   });
   ipcMain.handle('live-send-clear', () => {
     if (liveWindow && !liveWindow.isDestroyed()) {
-      liveWindow.setAlwaysOnTop(true, 'screen-saver');
-      try { liveWindow.moveTop(); } catch (err) {}
+      syncLiveWindowToPreferredDisplay();
       liveWindow.webContents.send('live-clear');
     }
   });
@@ -687,3 +841,11 @@ app.whenReady().then(() => {
 
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+app.on('before-quit', () => {
+  if (liveWindow && !liveWindow.isDestroyed()) {
+    liveWindow.destroy();
+  }
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.destroy();
+  }
+});

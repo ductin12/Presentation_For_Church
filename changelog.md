@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [1.0.3] - 2026-05-11
+
+### Đã thêm (Added)
+- Hỗ trợ build release cho cả Windows (`nsis`, `portable`) và macOS (`dmg`) trong cùng cấu hình `electron-builder`.
+- Chuẩn hóa tên artifact release theo mẫu `Presentation.For.Church.Setup.[version].[ext]`.
+- Bổ sung thêm các bản Kinh Thánh XML (VI/EN) để mở rộng nội dung trình chiếu.
+
+### Đã sửa (Fixed)
+- Sửa lỗi `Import Media` không phản hồi do callback menu bị nuốt.
+- Sửa luồng load video media (MIME type, `playsinline`, autoplay policy) để preview/live ổn định hơn.
+- Sửa các trường hợp video hiển thị nền đen dù file đã import.
+- Tăng độ ổn định cửa sổ Screen Live với ưu tiên hiển thị và đồng bộ trạng thái foreground.
+
+### Thay đổi (Changed)
+- Nâng cấp trải nghiệm Bible: truy cập trực tiếp theo chương, chọn bản dịch ngay trong tab Bible, cải tiến tìm kiếm.
+- Thêm hệ thống Settings toàn cục (theme, font, cỡ chữ, màu, căn lề, phím tắt) và lưu cấu hình bền vững.
+- Đồng bộ cấu trúc dữ liệu/style giữa editor, preview, schedule và live output để giảm lệch trạng thái hiển thị.
+
+## [1.1.5] - 2026-05-11
+
+### Đã thêm (Added)
+- Thêm target Windows `portable` bên cạnh installer `nsis`.
+- Đổi tên artifact đóng gói theo mẫu `Presentation.For.Church.Setup.[version].[type]`.
+
+### Thay đổi (Changed)
+- Đồng bộ cấu hình build để xuất được file `.exe` cho Windows và `.dmg` cho macOS từ cùng một `electron-builder` config.
+
 ## [1.1.4] - 2026-05-11
 
 ### Đã sửa (Fixed)
