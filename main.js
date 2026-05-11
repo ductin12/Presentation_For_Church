@@ -42,12 +42,22 @@ function getMediaFolderPath() {
 
 function isVideo(fileName) {
   const ext = fileName.toLowerCase();
-  return ext.endsWith('.mp4') || ext.endsWith('.mov') || ext.endsWith('.m4v') || ext.endsWith('.webm') || ext.endsWith('.wmv');
+  return ext.endsWith('.mp4') || ext.endsWith('.mov') || ext.endsWith('.m4v') || ext.endsWith('.webm');
 }
 
 function isSupportedMedia(fileName) {
   const ext = fileName.toLowerCase();
-  return ['.jpg', '.jpeg', '.png', '.mp4', '.mov', '.wmv'].some(e => ext.endsWith(e));
+  return ['.jpg', '.jpeg', '.png', '.mp4', '.mov', '.m4v', '.webm'].some(e => ext.endsWith(e));
+}
+
+function getMediaMimeType(fileName) {
+  const ext = fileName.toLowerCase();
+  if (ext.endsWith('.webm')) return 'video/webm';
+  if (ext.endsWith('.mov')) return 'video/quicktime';
+  if (ext.endsWith('.m4v') || ext.endsWith('.mp4')) return 'video/mp4';
+  if (ext.endsWith('.png')) return 'image/png';
+  if (ext.endsWith('.jpeg') || ext.endsWith('.jpg')) return 'image/jpeg';
+  return 'application/octet-stream';
 }
 
 function initializeData() {
@@ -132,7 +142,10 @@ function createLiveWindow() {
     skipTaskbar: true,
     autoHideMenuBar: true,
     backgroundColor: '#000000',
-    webPreferences: { preload: path.join(__dirname, 'preload.js') }
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      autoplayPolicy: 'no-user-gesture-required'
+    }
   });
 
   liveWindow.setAlwaysOnTop(true, 'screen-saver');
@@ -155,7 +168,8 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      autoplayPolicy: 'no-user-gesture-required'
     }
   });
 
@@ -563,14 +577,14 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('import-media', async () => {
-    const r = await dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'], filters: [{ name: 'Media Files', extensions: ['jpg', 'png', 'mp4', 'mov', 'wmv'] }] });
+    const r = await dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'], filters: [{ name: 'Media Files', extensions: ['jpg', 'jpeg', 'png', 'mp4', 'mov', 'm4v', 'webm'] }] });
     const mediaPath = getMediaFolderPath();
     if (!r.canceled && r.filePaths.length > 0) {
       return r.filePaths.map(p => {
         const name = path.basename(p);
         const dest = path.join(mediaPath, name);
         fs.copyFileSync(p, dest);
-        return { name, path: dest, url: pathToFileURL(dest).toString(), type: isVideo(name) ? 'video' : 'image' };
+        return { name, path: dest, url: pathToFileURL(dest).toString(), type: isVideo(name) ? 'video' : 'image', mimeType: getMediaMimeType(name) };
       });
     }
     return null;
@@ -584,7 +598,7 @@ app.whenReady().then(() => {
         .filter(f => fs.statSync(path.join(mediaPath, f)).isFile() && isSupportedMedia(f))
         .map(f => {
           const fullPath = path.join(mediaPath, f);
-          return { name: f, path: fullPath, url: pathToFileURL(fullPath).toString(), type: isVideo(f) ? 'video' : 'image' };
+          return { name: f, path: fullPath, url: pathToFileURL(fullPath).toString(), type: isVideo(f) ? 'video' : 'image', mimeType: getMediaMimeType(f) };
         });
     } catch (e) { return []; }
   });

@@ -357,6 +357,21 @@
             border-color: #94a3b8;
         }
 
+        #bible-version-select {
+            height: auto;
+            min-height: 28px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            line-height: 1.35;
+        }
+
+        #bible-version-select option {
+            padding: 6px 10px;
+            line-height: 1.45;
+            font-size: 12px;
+            white-space: normal;
+        }
+
         /* Lyrics Editor Styles */
         .lyrics-slide-block {
             border: 1px dashed #fff;
@@ -600,7 +615,7 @@
                             class="w-32 aspect-video bg-black rounded-md border border-slate-200 dark:border-slate-700 shrink-0 overflow-hidden relative" id="preview-output-box">
                             <img class="absolute inset-0 w-full h-full object-cover hidden" id="preview-bg-img" />
                             <video class="absolute inset-0 w-full h-full object-cover hidden"
-                                id="preview-bg-video" autoplay loop muted preload="auto"></video>
+                                id="preview-bg-video" autoplay loop muted playsinline preload="auto"></video>
                             <div class="absolute inset-0 overflow-hidden" id="preview-canvas-wrap">
                                 <div id="preview-virtual-canvas" style="width:960px;height:540px;transform-origin:center;position:absolute;top:50%;left:50%;">
                                     <div id="preview-text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:454px;overflow:hidden;">
@@ -658,7 +673,7 @@
                             class="w-32 aspect-video bg-black rounded-md border border-slate-200 dark:border-slate-700 overflow-hidden relative shrink-0 shadow-md" id="live-output-box">
                             <img class="absolute inset-0 w-full h-full object-cover hidden" id="live-bg-img" />
                             <video class="absolute inset-0 w-full h-full object-cover hidden"
-                                id="live-bg-video" autoplay loop muted preload="auto"></video>
+                                id="live-bg-video" autoplay loop muted playsinline preload="auto"></video>
                             <div class="absolute inset-0 overflow-hidden" id="live-canvas-wrap">
                                 <div id="live-virtual-canvas" style="width:960px;height:540px;transform-origin:center;position:absolute;top:50%;left:50%;">
                                     <div id="live-text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:454px;overflow:hidden;">
@@ -1368,12 +1383,6 @@
             loadLibrary();
             loadBibleVersions();
             loadMedia();
-
-            // Menu actions
-            window.electronAPI.onMenuAction((action) => {
-                if (action === 'open-settings') openSettings();
-                // other actions...
-            });
 
             // Schedule container: drop media to add as standalone item
             const scheduleContainer = document.getElementById('schedule-container');
@@ -2893,10 +2902,13 @@
             mediaLibrary.forEach(item => {
                 const div = document.createElement('div');
                 const url = item.url || `app-media://${encodeURIComponent(item.name)}`;
+                const mimeType = item.mimeType || (item.type === 'video' ? 'video/mp4' : '');
                 div.className = 'aspect-video rounded-md overflow-hidden relative border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-primary transition-all';
                 if (item.type === 'video') {
                     div.innerHTML = `
-                    <video class="w-full h-full object-cover" src="${url}" muted preload="metadata"></video>
+                    <video class="w-full h-full object-cover" muted playsinline preload="metadata">
+                        <source src="${url}" type="${mimeType}" />
+                    </video>
                     <span class="material-symbols-outlined absolute inset-0 flex items-center justify-center text-white text-xs bg-black/20">play_circle</span>
                 `;
                 } else {
@@ -3111,6 +3123,7 @@
                 case 'save-schedule': saveSchedule(); break;
                 case 'open-schedule': openSchedule(); break;
                 case 'close-schedule': schedule = []; renderSchedule(); break;
+                case 'open-settings': openSettings(); break;
                 case 'edit-song':
                     if (currentEditingSong) openSongEditor('Edit Song', currentEditingSong);
                     else alert('Please select a song in library first!');

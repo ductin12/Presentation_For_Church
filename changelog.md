@@ -2,6 +2,16 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [1.1.3] - 2026-05-11
+
+### Đã sửa (Fixed)
+- Sửa menu `Import Media` để callback menu action không bị nuốt và có thể mở hộp thoại import bình thường.
+- Cải thiện luồng load video media bằng MIME type đúng, `playsinline`, và autoplay policy phù hợp cho Electron.
+- Giới hạn định dạng video vào nhóm phát ổn định hơn để tránh trường hợp file xuất hiện nhưng chỉ hiện nền đen.
+
+### Thay đổi (Changed)
+- Đồng bộ lại cách render thumbnail và background video giữa media library, preview, live output và Screen Live.
+
 ## [1.1.2] - 2026-05-11
 
 ### Đã sửa (Fixed)
