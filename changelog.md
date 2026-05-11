@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [1.1.1] - 2026-05-11
+
+### Đã thêm (Added)
+- **Bộ tài liệu vận hành chuẩn:**
+    - Thêm `docs/` với các hướng dẫn về architecture, rules, debugging, feature workflow, UI guidelines và data contracts.
+    - Thêm skill repo-local để thống nhất quy trình phân tích, debug và mở rộng tính năng.
+
+### Đã sửa (Fixed)
+- **Bible parser và selector:**
+    - Bổ sung fallback rõ hơn cho XML không có header ngôn ngữ.
+    - Hiển thị tên version kèm ngôn ngữ trong selector để dễ nhận biết bản đang dùng.
+    - Đồng bộ tên sách theo đúng ngôn ngữ của từng version Kinh Thánh.
+- **Giao diện modal Edit Song / Bible / Settings:**
+    - Tăng tương phản text, icon, toolbar, input, placeholder và border trên nền trắng.
+    - Sửa lỗi font name và các label trong modal bị chìm do kế thừa màu sáng từ shell.
+
+### Thay đổi (Changed)
+- **Chuẩn hóa data và hiển thị:**
+    - Cập nhật contract style/background, schedule normalization và các helper liên quan để giảm lỗi lệch trạng thái giữa preview, editor và live window.
+    - Chuẩn hóa thêm cấu trúc import/export schedule và Bible version metadata.
+
 ## [1.1.0] - 2026-05-11
 
 ### Đã thêm (Added)

@@ -2,6 +2,18 @@
 
 Ứng dụng trình chiếu cho nhà thờ — quản lý bài hát, Kinh Thánh (Tiếng Việt), media và lịch trình thờ phượng.
 
+## Tài liệu chuẩn
+
+Các tài liệu vận hành và quy ước phát triển nằm trong `docs/`:
+
+- `docs/README.md` - trang mục lục
+- `docs/architecture.md` - kiến trúc và luồng dữ liệu
+- `docs/rules.md` - quy tắc làm việc bắt buộc
+- `docs/debugging-playbook.md` - quy trình debug
+- `docs/feature-workflow.md` - quy trình thêm tính năng
+- `docs/ui-guidelines.md` - chuẩn giao diện
+- `docs/data-contracts.md` - chuẩn dữ liệu và migration
+
 ## Tính năng
 
 - Quản lý thư viện bài hát (thêm, sửa, xóa)

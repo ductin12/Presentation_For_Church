@@ -2,12 +2,32 @@ const { app, BrowserWindow, Menu, ipcMain, dialog, protocol, net, screen } = req
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
-const { validateItem, migrateItem } = require('./src/schema.js');
+const { validateItem, migrateItem } = require('./src/schema');
 
-// 1. Register custom protocol
-protocol.registerSchemesAsPrivileged([
-  { scheme: 'app-media', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, bypassCSP: true, corsEnabled: true } }
-]);
+// 1. Storage Helpers
+function safeWriteSync(filePath, data) {
+  const tmpPath = filePath + '.tmp';
+  try {
+    fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf8');
+    fs.renameSync(tmpPath, filePath);
+    return true;
+  } catch (e) {
+    if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+    return false;
+  }
+}
+
+function saveAndBackupSync(filePath, data) {
+  if (fs.existsSync(filePath)) {
+    for (let i = 2; i >= 1; i--) {
+      const old = `${filePath.replace('.json', '')}.backup.${i}.json`;
+      const next = `${filePath.replace('.json', '')}.backup.${i + 1}.json`;
+      if (fs.existsSync(old)) fs.renameSync(old, next);
+    }
+    fs.copyFileSync(filePath, `${filePath.replace('.json', '')}.backup.1.json`);
+  }
+  return safeWriteSync(filePath, data);
+}
 
 // 2. Global State
 let userDataPath, songsFilePath, bibleFilePath, settingsFilePath, defaultMediaFolderPath;
@@ -27,40 +47,7 @@ function isVideo(fileName) {
 
 function isSupportedMedia(fileName) {
   const ext = fileName.toLowerCase();
-  return ext.endsWith('.mp4') || ext.endsWith('.mov') || ext.endsWith('.jpg') || ext.endsWith('.jpeg') || ext.endsWith('.png') || ext.endsWith('.webp');
-}
-
-function safeWriteSync(filePath, data) {
-  const tmp = filePath + '.tmp';
-  try {
-    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
-    fs.renameSync(tmp, filePath);
-  } catch (err) {
-    console.error(`Failed to safeWriteSync ${filePath}:`, err);
-    throw err;
-  }
-}
-
-function backupBeforeWriteSync(filePath) {
-  if (!fs.existsSync(filePath)) return;
-  try {
-    const ext = path.extname(filePath);
-    const base = filePath.slice(0, -ext.length);
-    const backup3 = `${base}.backup.3${ext}`;
-    const backup2 = `${base}.backup.2${ext}`;
-    const backup1 = `${base}.backup.1${ext}`;
-    
-    if (fs.existsSync(backup2)) fs.renameSync(backup2, backup3);
-    if (fs.existsSync(backup1)) fs.renameSync(backup1, backup2);
-    fs.copyFileSync(filePath, backup1);
-  } catch (err) {
-    console.error(`Failed to backup ${filePath}:`, err);
-  }
-}
-
-function saveAndBackupSync(filePath, data) {
-  backupBeforeWriteSync(filePath);
-  safeWriteSync(filePath, data);
+  return ['.jpg', '.jpeg', '.png', '.mp4', '.mov', '.wmv'].some(e => ext.endsWith(e));
 }
 
 function initializeData() {
@@ -119,48 +106,37 @@ function createLiveWindow() {
     return;
   }
   const displays = screen.getAllDisplays();
-  const primary = screen.getPrimaryDisplay();
-  const external = displays.find(d => d.id !== primary.id);
-  const targetDisplay = external || primary;
+  const externalDisplay = displays.find(d => d.bounds.x !== 0 || d.bounds.y !== 0);
 
   liveWindow = new BrowserWindow({
-    x: targetDisplay.bounds.x,
-    y: targetDisplay.bounds.y,
-    fullscreen: !!external,
-    width: external ? undefined : 800,
-    height: external ? undefined : 450,
-    frame: !external,
-    alwaysOnTop: true,
-    title: 'Screen Live',
-    webPreferences: { 
-      nodeIntegration: false, 
-      contextIsolation: true, 
-      webSecurity: false,
-      preload: path.join(__dirname, 'preload.js')
-    }
+    width: 1280,
+    height: 720,
+    x: externalDisplay ? externalDisplay.bounds.x : undefined,
+    y: externalDisplay ? externalDisplay.bounds.y : undefined,
+    fullscreen: !!externalDisplay,
+    autoHideMenuBar: true,
+    backgroundColor: '#000000',
+    webPreferences: { preload: path.join(__dirname, 'preload.js') }
   });
 
   liveWindow.loadFile('live.html');
-  liveWindow.on('closed', () => {
-    liveWindow = null;
-    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('live-window-closed');
-  });
+  liveWindow.on('closed', () => { liveWindow = null; });
 }
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
-    webPreferences: { 
-      nodeIntegration: false, 
-      contextIsolation: true, 
-      webSecurity: false,
-      preload: path.join(__dirname, 'preload.js')
-    },
-    title: "BlessingChurch"
+  const win = new BrowserWindow({
+    width: 1400,
+    height: 900,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
   });
-  mainWindow.loadFile('index.html');
-  setupMenu(mainWindow);
+
+  mainWindow = win;
+  win.loadFile('index.html');
+  setupMenu(win);
 }
 
 function setupMenu(win) {
@@ -186,21 +162,18 @@ function setupMenu(win) {
     },
     {
       label: 'View',
-      submenu: [
-        { label: 'Screen Live', accelerator: 'F5', click: () => { createLiveWindow(); win.webContents.send('live-window-opened'); } },
-        { role: 'reload' },
-        { role: 'toggleDevTools' }
-      ]
+      submenu: [{ role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' }, { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }]
     }
   ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
 }
 
-// 4. App Initialization
+// 4. App Lifecycle
 app.whenReady().then(() => {
   initializeData();
 
-  // Protocol Implementation
+  // Register app-media:// protocol to serve local media files
   protocol.handle('app-media', (request) => {
     try {
       const match = request.url.match(/^app-media:\/\/+(.+)$/);
@@ -285,12 +258,101 @@ app.whenReady().then(() => {
     "Revelation": "Khải Huyền"
   };
 
+  const bibleBookMapReverse = Object.fromEntries(
+    Object.entries(bibleBookMap).map(([en, vi]) => [vi, en])
+  );
+
+  // Standard Bible books in order (1-66) for mapping numbers to names if needed
+  const bibleBooksOrdered = [
+    "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
+    "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs",
+    "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos",
+    "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew",
+    "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians",
+    "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James",
+    "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"
+  ];
+
+  const bibleBooksOrderedVi = bibleBooksOrdered.map(name => bibleBookMap[name] || name);
+
+  function detectBibleLanguage(xmlData = '', xmlName = '') {
+    const sample = `${xmlName}\n${xmlData.slice(0, 2000)}`.toLowerCase();
+
+    if (/translation\s*=\s*["'][^"']*english|english niv|niv|esv|kjv/.test(sample)) return 'en';
+    if (/translation\s*=\s*["'][^"']*vietnamese|bpt|nvb|viet|thánh kinh|kinh thánh|ban đầu thượng đế|thượng đế/.test(sample)) return 'vi';
+    if (/bible_vietnamese|ban[_ -]?pho[_ -]?thong|ban[_ -]?dich[_ -]?moi|englishnivbible/i.test(xmlName)) {
+      return /englishnivbible/i.test(xmlName) ? 'en' : 'vi';
+    }
+
+    const hasVietnameseDiacritics = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(sample);
+    if (hasVietnameseDiacritics || /thượng đế|đức chúa trời|ban đầu|buổi chiều|buổi sáng|phúc âm/i.test(sample)) {
+      return 'vi';
+    }
+
+    const firstBookMatch = xmlData.match(/<(?:BIBLEBOOK|book)\s+[^>]*(?:bname|number)=['"]([^'"]+)['"]/i);
+    if (firstBookMatch) {
+      const bookRef = firstBookMatch[1];
+      if (bibleBookMap[bookRef]) return 'en';
+      if (bibleBookMapReverse[bookRef]) return 'vi';
+      if (/^\d+$/.test(bookRef)) return 'unknown';
+    }
+
+    return 'unknown';
+  }
+
+  function getBibleLanguageLabel(language) {
+    if (language === 'en') return 'English';
+    if (language === 'vi') return 'Tiếng Việt';
+    return 'Không rõ ngôn ngữ';
+  }
+
+  function getBibleVersionDisplayName(fileName, language = 'unknown') {
+    const baseName = path.basename(fileName, '.xml').replace(/_/g, ' ').trim();
+    return `${baseName} - ${getBibleLanguageLabel(language)}`;
+  }
+
+  function resolveBibleBookName(bookRef, language = 'unknown') {
+    if (/^\d+$/.test(String(bookRef))) {
+      const idx = parseInt(bookRef, 10) - 1;
+      if (language === 'en') return bibleBooksOrdered[idx] || `Book ${bookRef}`;
+      if (language === 'vi') return bibleBooksOrderedVi[idx] || `Sách ${bookRef}`;
+      return bibleBooksOrderedVi[idx] || bibleBooksOrdered[idx] || `Book ${bookRef}`;
+    }
+
+    if (language === 'en') {
+      return bookRef;
+    }
+
+    if (language === 'vi') {
+      return bibleBookMap[bookRef] || bookRef;
+    }
+
+    return bibleBookMap[bookRef] || bookRef;
+  }
+
   ipcMain.handle('load-bible-versions', () => {
     try {
       const dataDir = path.join(__dirname, 'data');
       return fs.readdirSync(dataDir)
         .filter(f => f.toLowerCase().endsWith('.xml'))
-        .map(f => ({ name: f.replace(/\.xml$/i, '').replace(/_/g, ' '), fileName: f }));
+        .map((f) => {
+          let language = detectBibleLanguage('', f);
+          try {
+            const fullPath = path.join(dataDir, f);
+            const header = fs.readFileSync(fullPath, 'utf8').slice(0, 2000);
+            const detected = detectBibleLanguage(header, f);
+            if (detected !== 'unknown') language = detected;
+          } catch (e) {
+            // Keep best-effort fallback.
+          }
+
+          return {
+            name: f.replace(/\.xml$/i, '').replace(/_/g, ' '),
+            displayName: getBibleVersionDisplayName(f, language),
+            language,
+            fileName: f
+          };
+        });
     } catch (e) { return []; }
   });
 
@@ -304,76 +366,116 @@ app.whenReady().then(() => {
       const name = path.basename(src);
       const dest = path.join(__dirname, 'data', name);
       fs.copyFileSync(src, dest);
-      return { success: true, name: name.replace(/\.xml$/i, '').replace(/_/g, ' '), fileName: name };
+      let language = 'unknown';
+      try {
+        const sample = fs.readFileSync(dest, 'utf8').slice(0, 2000);
+        language = detectBibleLanguage(sample, name);
+      } catch (e) {
+        // ignore
+      }
+      return {
+        success: true,
+        name: name.replace(/\.xml$/i, '').replace(/_/g, ' '),
+        displayName: getBibleVersionDisplayName(name, language),
+        language,
+        fileName: name
+      };
     }
     return null;
   });
 
   ipcMain.handle('load-bible-parsed', (event, fileName) => {
-    const xmlName = fileName || 'Bible_Vietnamese_Version_1925.xml';
-    const cacheName = `bible-cache-${xmlName}.json`;
+    let xmlName = fileName || 'Bible_Vietnamese_Version_1925.xml';
+
+    // Normalize filename (NFC/NFD issue with Vietnamese)
+    xmlName = xmlName.normalize('NFC');
+    const cacheName = `bible-cache-${xmlName.replace(/[^a-zA-Z0-9.-]/g, '_')}.json`;
     const cachePath = path.join(userDataPath, cacheName);
 
-    console.log(`Loading Bible: ${xmlName}`);
+    console.log(`[Bible] Loading Version: ${xmlName}`);
 
     // Try loading from cache first
     try {
       if (fs.existsSync(cachePath)) {
         const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
         if (Array.isArray(cached) && cached.length > 0) {
-          console.log(`Loaded ${cached.length} chapters from cache for ${xmlName}`);
+          console.log(`[Bible] ${cached.length} chapters loaded from cache.`);
           return cached;
-        } else {
-          console.warn(`Cache for ${xmlName} is invalid or empty, deleting...`);
-          fs.unlinkSync(cachePath);
         }
+        fs.unlinkSync(cachePath);
       }
     } catch (e) {
-      console.error('Bible cache corrupted, rebuilding...', e);
       if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
     }
 
     // Parse XML and build cache
     try {
-      const xmlPath = path.join(__dirname, 'data', xmlName);
+      let xmlPath = path.join(__dirname, 'data', xmlName);
+
+      // Fallback check for file if NFD normalization is needed
       if (!fs.existsSync(xmlPath)) {
-        console.error(`Bible XML not found at ${xmlPath}`);
+        const nfdPath = path.join(__dirname, 'data', xmlName.normalize('NFD'));
+        if (fs.existsSync(nfdPath)) xmlPath = nfdPath;
+      }
+
+      if (!fs.existsSync(xmlPath)) {
+        console.error(`[Bible] File not found: ${xmlPath}`);
         return [];
       }
 
       let xmlData = fs.readFileSync(xmlPath, 'utf8');
-      // Fix legacy encoding: Ð (U+00D0) → Đ (U+0110)
+      console.log(`[Bible] Reading file, size: ${xmlData.length} bytes`);
+
+      // Fix legacy encoding for Vietnamese
       xmlData = xmlData.replace(/\u00D0/g, '\u0110');
+      const bibleLanguage = detectBibleLanguage(xmlData, xmlName);
+      console.log(`[Bible] Detected language: ${bibleLanguage}`);
 
       const bibleLibrary = [];
-      // Robust regex: case-insensitive, handles single/double quotes, and optional attributes
-      const bookRegex = /<BIBLEBOOK[^>]*bname=['"]([^'"]*)['"][^>]*>([\s\S]*?)<\/BIBLEBOOK>/gi;
-      const chapterRegex = /<CHAPTER[^>]*cnumber=['"]([^'"]*)['"][^>]*>([\s\S]*?)<\/CHAPTER>/gi;
-      const verseRegex = /<VERS[^>]*vnumber=['"]([^'"]*)['"][^>]*>([\s\S]*?)<\/VERS>/gi;
+
+      // Improved robust regex
+      const bookRegex = /<(BIBLEBOOK|book)\s+([^>]*?)>([\s\S]*?)<\/\1>/gi;
+      const chapterRegex = /<(CHAPTER|chapter)\s+([^>]*?)>([\s\S]*?)<\/\1>/gi;
+      const verseRegex = /<(VERS|verse)\s+([^>]*?)>([\s\S]*?)<\/\1>/gi;
 
       let bookMatch;
       while ((bookMatch = bookRegex.exec(xmlData)) !== null) {
-        const bname = bookMatch[1];
-        const vnName = (bibleBookMap[bname] || bname).trim();
-        const bookContent = bookMatch[2];
+        const bookAttrs = bookMatch[2];
+        const bookContent = bookMatch[3];
+
+        // Extract bname or number from attributes
+        const nameMatch = bookAttrs.match(/(bname|number)=['"]([^'"]*)['"]/i);
+        if (!nameMatch) continue;
+
+        const attrValue = nameMatch[2];
+        const bookTitle = resolveBibleBookName(attrValue, bibleLanguage).trim();
 
         chapterRegex.lastIndex = 0;
         let chapterMatch;
         while ((chapterMatch = chapterRegex.exec(bookContent)) !== null) {
-          const cnumber = chapterMatch[1];
-          const chapterContent = chapterMatch[2];
-          let versesText = '';
+          const chapterAttrs = chapterMatch[2];
+          const chapterContent = chapterMatch[3];
 
+          const cNumMatch = chapterAttrs.match(/(cnumber|number)=['"]([^'"]*)['"]/i);
+          if (!cNumMatch) continue;
+          const cnumber = cNumMatch[2];
+
+          let versesText = '';
           verseRegex.lastIndex = 0;
           let verseMatch;
           while ((verseMatch = verseRegex.exec(chapterContent)) !== null) {
-            const vnumber = verseMatch[1];
-            const text = verseMatch[2].replace(/<[^>]*>/g, '').trim();
+            const vAttrs = verseMatch[2];
+            const vContent = verseMatch[3];
+
+            const vNumMatch = vAttrs.match(/(vnumber|number)=['"]([^'"]*)['"]/i);
+            const vnumber = vNumMatch ? vNumMatch[2] : '';
+
+            const text = vContent.replace(/<[^>]*>/g, '').trim();
             versesText += `${vnumber} ${text}\n\n`;
           }
 
           bibleLibrary.push({
-            title: `${vnName} ${cnumber}`,
+            title: `${bookTitle} ${cnumber}`,
             lyrics: versesText.trim(),
             type: 'bible'
           });
@@ -382,13 +484,13 @@ app.whenReady().then(() => {
 
       if (bibleLibrary.length > 0) {
         safeWriteSync(cachePath, bibleLibrary);
-        console.log(`Bible parsed and cached: ${bibleLibrary.length} chapters for ${xmlName}`);
+        console.log(`[Bible] Successfully parsed ${bibleLibrary.length} chapters.`);
       } else {
-        console.warn(`No chapters parsed from ${xmlName}. Check XML structure.`);
+        console.warn(`[Bible] Warning: 0 chapters parsed from ${xmlName}.`);
       }
       return bibleLibrary;
     } catch (e) {
-      console.error('Failed to parse Bible XML:', e);
+      console.error('[Bible] Critical error parsing XML:', e);
       return [];
     }
   });

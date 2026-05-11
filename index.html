@@ -198,6 +198,7 @@
             width: 770px;
             height: 60vh;
             background-color: #f0f0f0;
+            color: #111827;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -207,6 +208,114 @@
             min-width: 500px;
             min-height: 300px;
             position: absolute;
+        }
+
+        #song-editor-modal .win-modal-container,
+        #bible-selector-modal > div,
+        #settings-modal .win-modal-container {
+            color: #111827;
+        }
+
+        #song-editor-modal .win-modal-container input,
+        #song-editor-modal .win-modal-container select,
+        #settings-modal input,
+        #settings-modal select,
+        #bible-selector-modal input,
+        #bible-selector-modal select {
+            color: #111827;
+            background-color: #ffffff;
+            border-color: #94a3b8;
+        }
+
+        #song-editor-modal .win-modal-container select#font-family,
+        #song-editor-modal .win-modal-container select#font-family option,
+        #song-editor-modal .win-modal-container select#font-family optgroup {
+            color: #111827 !important;
+            background-color: #ffffff !important;
+            -webkit-text-fill-color: #111827;
+        }
+
+        #song-editor-modal .win-modal-container select#font-family option {
+            background-color: #ffffff !important;
+        }
+
+        #song-editor-modal .win-modal-container input::placeholder,
+        #settings-modal input::placeholder {
+            color: #64748b;
+            opacity: 1;
+        }
+
+        #song-editor-modal .win-modal-container label {
+            color: #334155 !important;
+        }
+
+        #song-editor-modal .win-modal-container .hybrid-size-control > span {
+            color: #334155 !important;
+        }
+
+        #song-editor-modal .win-modal-container .hybrid-size-control {
+            background-color: #ffffff;
+            border-color: #94a3b8;
+        }
+
+        #song-editor-modal .win-modal-container .hybrid-size-btn {
+            color: #334155;
+            border-left-color: #cbd5e1;
+        }
+
+        #song-editor-modal .win-modal-container .divider-win {
+            background-color: #cbd5e1;
+        }
+
+        #song-editor-modal .win-modal-container .toolbar-btn {
+            color: #111827;
+            background-color: #ffffff;
+            border-color: #94a3b8;
+        }
+
+        #song-editor-modal .win-modal-container .toolbar-btn:hover {
+            background-color: #e0f2fe;
+            border-color: #0284c7;
+        }
+
+        #song-editor-modal .win-modal-container .toolbar-btn.active {
+            background-color: #bfdbfe;
+            border-color: #2563eb;
+        }
+
+        #song-editor-modal .win-modal-container .material-symbols-outlined {
+            color: inherit;
+        }
+
+        #bible-selector-modal > div,
+        #settings-modal .win-modal-container {
+            background-color: #ffffff;
+        }
+
+        #bible-selector-modal label,
+        #settings-modal label,
+        #bible-selector-modal .text-slate-600,
+        #settings-modal .text-slate-500,
+        #settings-modal .text-slate-600 {
+            color: #334155;
+        }
+
+        #bible-selector-modal .text-slate-700,
+        #settings-modal .text-slate-700 {
+            color: #0f172a;
+        }
+
+        #bible-selector-modal input::placeholder,
+        #bible-selector-modal select::placeholder,
+        #settings-modal select::placeholder {
+            color: #64748b;
+            opacity: 1;
+        }
+
+        #bible-selector-modal select,
+        #settings-modal select,
+        #settings-modal input {
+            border-color: #94a3b8;
         }
 
         /* Lyrics Editor Styles */
@@ -549,13 +658,6 @@
                                 class="px-2 py-1 text-xs font-bold uppercase tracking-wider text-white/40 hover:text-white/70"
                                 onclick="switchLibraryTab('bible')">Bible</button>
                         </div>
-                        <!-- Version Selector (Bible Only) -->
-                        <div id="bible-version-selector-container" class="hidden">
-                            <select id="bible-version-select" onchange="changeBibleVersion(this.value)"
-                                class="bg-slate-700 text-white text-[10px] border-none rounded px-1.5 h-6 focus:ring-1 focus:ring-primary/30 max-w-[120px]">
-                                <!-- Options will be populated here -->
-                            </select>
-                        </div>
                         <div class="relative">
                             <span
                                 class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">search</span>
@@ -569,15 +671,23 @@
                         <span class="material-symbols-outlined text-white" style="font-size:14px">upload_file</span>
                     </button>
                 </div>
+                <!-- Version Selector (Bible Only) - Moved here -->
+                <div id="bible-version-selector-container" class="hidden px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                    <div class="flex flex-col gap-1.5">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold text-slate-500 uppercase shrink-0">Bản dịch:</span>
+                            <select id="bible-version-select" onchange="changeBibleVersion(this.value)"
+                                class="flex-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-[11px] border border-slate-200 dark:border-slate-600 rounded px-2 h-7 focus:outline-none focus:ring-1 focus:ring-primary/30">
+                                <!-- Options will be populated here -->
+                            </select>
+                        </div>
+                        <div id="bible-version-status" class="text-[9px] text-slate-500 dark:text-slate-400 truncate">
+                            Chưa chọn bản dịch
+                        </div>
+                    </div>
+                </div>
                 <div class="flex-1 overflow-y-auto custom-scrollbar">
                     <table class="w-full text-left">
-                        <thead
-                            class="bg-slate-50/50 dark:bg-slate-800/50 sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
-                            <tr>
-                                <th class="px-4 py-2 text-[9px] font-bold text-slate-500 uppercase tracking-wider">Title
-                                </th>
-                            </tr>
-                        </thead>
                         <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                             <!-- Data will be injected here -->
                         </tbody>
@@ -991,25 +1101,135 @@
             "2 Peter": "2 Phi-e-rơ", "1 John": "1 Giăng", "2 John": "2 Giăng", "3 John": "3 Giăng", "Jude": "Giu-đe",
             "Revelation": "Khải Huyền"
         };
-        let globalSettings = {
-            theme: 'dark',
-            fontFamily: 'CMG Sans',
-            fontSize: '80px',
-            color: '#ffffff',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            verticalAlign: 'middle',
-            shortcuts: {
-                nextSlide: 'ArrowRight',
-                prevSlide: 'ArrowLeft',
-                clearScreen: 'Escape'
+        function createDefaultGlobalSettings() {
+            return {
+                theme: 'dark',
+                fontFamily: 'CMG Sans',
+                fontSize: '80px',
+                color: '#ffffff',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                verticalAlign: 'middle',
+                mediaPath: '',
+                shortcuts: {
+                    nextSlide: 'ArrowRight',
+                    prevSlide: 'ArrowLeft',
+                    clearScreen: 'Escape'
+                }
+            };
+        }
+
+        function mergeGlobalSettings(saved = {}) {
+            const defaults = createDefaultGlobalSettings();
+            const merged = { ...defaults, ...(saved || {}) };
+            merged.shortcuts = { ...defaults.shortcuts, ...((saved && saved.shortcuts) || {}) };
+            if (!merged.mediaPath) merged.mediaPath = '';
+            return merged;
+        }
+
+        function createDefaultSlideStyle() {
+            return {
+                fontFamily: globalSettings.fontFamily || 'CMG Sans',
+                fontSize: globalSettings.fontSize || '80px',
+                color: globalSettings.color || '#ffffff',
+                fontWeight: globalSettings.fontWeight || 'bold',
+                fontStyle: 'normal',
+                textDecoration: 'none',
+                textAlign: globalSettings.textAlign || 'center',
+                verticalAlign: globalSettings.verticalAlign || 'middle',
+                textBox: { left: 48, width: 864, top: null }
+            };
+        }
+
+        function normalizeSlideStyle(style = {}, overrides = {}) {
+            const defaults = createDefaultSlideStyle();
+            const source = style && typeof style === 'object' ? style : {};
+            const extra = overrides && typeof overrides === 'object' ? overrides : {};
+            const normalized = { ...defaults, ...source, ...extra };
+
+            if (normalized.fontColor && !normalized.color) {
+                normalized.color = normalized.fontColor;
             }
-        };
+            delete normalized.fontColor;
+
+            normalized.textBox = {
+                ...defaults.textBox,
+                ...((source && source.textBox) || {}),
+                ...((extra && extra.textBox) || {})
+            };
+
+            if (!normalized.fontFamily) normalized.fontFamily = defaults.fontFamily;
+            if (!normalized.fontSize) normalized.fontSize = defaults.fontSize;
+            if (!normalized.color) normalized.color = defaults.color;
+            if (!normalized.fontWeight) normalized.fontWeight = defaults.fontWeight;
+            if (!normalized.fontStyle) normalized.fontStyle = defaults.fontStyle;
+            if (!normalized.textDecoration) normalized.textDecoration = defaults.textDecoration;
+            if (!normalized.textAlign) normalized.textAlign = defaults.textAlign;
+            if (!normalized.verticalAlign) normalized.verticalAlign = defaults.verticalAlign;
+
+            return normalized;
+        }
+
+        function normalizeSlideBackground(background) {
+            if (!background) return null;
+            if (!background.mediaName) {
+                const name = background.name || background.fileName;
+                if (!name) return null;
+                return {
+                    mediaName: name,
+                    mediaType: background.type === 'video' ? 'video' : 'image',
+                    url: background.url || `app-media://${encodeURIComponent(name)}`
+                };
+            }
+
+            return {
+                mediaName: background.mediaName,
+                mediaType: background.mediaType === 'video' ? 'video' : 'image',
+                url: background.url || `app-media://${encodeURIComponent(background.mediaName)}`
+            };
+        }
+
+        function normalizeScheduleItem(item) {
+            if (!item || typeof item !== 'object') return null;
+            const normalized = { ...item };
+            if (!normalized.scheduleId) {
+                normalized.scheduleId = Date.now() + Math.random();
+            }
+            normalized.background = normalizeSlideBackground(normalized.background);
+            if (normalized.lastBackground) {
+                normalized.lastBackground = normalizeSlideBackground(normalized.lastBackground);
+            }
+            if (normalized.style) {
+                normalized.style = normalizeSlideStyle(normalized.style);
+            }
+            if (normalized.type !== 'song' && normalized.type !== 'bible' && !normalized.isMediaOnly) {
+                normalized.type = normalized.background ? 'song' : (normalized.type || 'song');
+            }
+            return normalized;
+        }
+
+        function normalizeScheduleList(items) {
+            if (!Array.isArray(items)) return [];
+            return items.map(normalizeScheduleItem).filter(Boolean);
+        }
+
+        function prepareLivePayload(data = {}) {
+            const payload = { ...data };
+            payload.style = normalizeSlideStyle(payload.style || currentLiveStyle || {});
+            if ('background' in payload) {
+                payload.background = normalizeSlideBackground(payload.background);
+            }
+            return payload;
+        }
+
+        let globalSettings = createDefaultGlobalSettings();
+        let currentBibleVersionFileName = null;
 
         async function loadBibleVersions() {
             try {
                 bibleVersions = await window.electronAPI.loadBibleVersions();
                 console.log(`Loaded ${bibleVersions.length} bible versions`);
+                const preferredVersion = currentBibleVersionFileName || (bibleVersions[0] && bibleVersions[0].fileName) || null;
                 
                 const select = document.getElementById('bible-version-select');
                 if (select) {
@@ -1017,14 +1237,32 @@
                     bibleVersions.forEach(v => {
                         const opt = document.createElement('option');
                         opt.value = v.fileName;
-                        opt.textContent = v.name;
+                        opt.textContent = v.displayName || v.name;
                         select.appendChild(opt);
                     });
+
+                    if (preferredVersion) {
+                        const hasPreferred = bibleVersions.some(v => v.fileName === preferredVersion);
+                        if (hasPreferred) {
+                            select.value = preferredVersion;
+                        }
+                    }
+                }
+
+                const status = document.getElementById('bible-version-status');
+                const activeVersionName = preferredVersion
+                    ? (bibleVersions.find(v => v.fileName === preferredVersion)?.displayName || bibleVersions.find(v => v.fileName === preferredVersion)?.name || preferredVersion)
+                    : 'Chưa chọn bản dịch';
+                if (status) {
+                    status.textContent = activeVersionName === 'Chưa chọn bản dịch'
+                        ? activeVersionName
+                        : `Đang dùng: ${activeVersionName}`;
                 }
                 
                 // Load first version by default if bibleLibrary is empty
                 if (bibleVersions.length > 0 && bibleLibrary.length === 0) {
-                    await changeBibleVersion(bibleVersions[0].fileName);
+                    const targetVersion = currentBibleVersionFileName || bibleVersions[0].fileName;
+                    await changeBibleVersion(targetVersion);
                 }
 
                 renderLibrary();
@@ -1032,12 +1270,29 @@
         }
 
         async function changeBibleVersion(fileName) {
+            if (!fileName) return;
             console.log('Changing Bible version to:', fileName);
+            currentBibleVersionFileName = fileName;
             try {
                 const data = await window.electronAPI.loadBibleParsed(fileName);
                 if (data && data.length > 0) {
                     bibleLibrary = data;
                     renderLibrary();
+                }
+                if (!data || data.length === 0) {
+                    bibleLibrary = [];
+                    renderLibrary();
+                }
+                const select = document.getElementById('bible-version-select');
+                const status = document.getElementById('bible-version-status');
+                const activeVersion = bibleVersions.find(v => v.fileName === fileName);
+                if (select && select.value !== fileName) {
+                    select.value = fileName;
+                }
+                if (status) {
+                    status.textContent = activeVersion
+                        ? `Đang dùng: ${activeVersion.displayName || activeVersion.name}`
+                        : `Đang dùng: ${fileName}`;
                 }
             } catch (e) { console.error(e); }
         }
@@ -1046,7 +1301,7 @@
             console.log('importBibleVersion triggered');
             const result = await window.electronAPI.importBibleVersion();
             if (result && result.success) {
-                alert(`Đã import thành công bản dịch: ${result.name}`);
+                alert(`Đã import thành công bản dịch: ${result.displayName || result.name}`);
                 await loadBibleVersions();
             }
         }
@@ -1085,7 +1340,7 @@
         async function loadSettings() {
             const saved = await window.electronAPI.loadSettings();
             if (saved) {
-                globalSettings = { ...globalSettings, ...saved };
+                globalSettings = mergeGlobalSettings(saved);
                 applySettings();
             }
         }
@@ -1191,10 +1446,13 @@
 
             // Clear current library to ensure fresh load
             bibleLibrary = [];
+            if (fileName) currentBibleVersionFileName = fileName;
 
             // If a fileName is provided, load that version
             try {
-                const data = await window.electronAPI.loadBibleParsed(fileName || 'Bible_Vietnamese_Version_1925.xml');
+                const targetFileName = fileName || currentBibleVersionFileName || 'Bible_Vietnamese_Version_1925.xml';
+                currentBibleVersionFileName = targetFileName;
+                const data = await window.electronAPI.loadBibleParsed(targetFileName);
                 if (data && data.length > 0) {
                     bibleLibrary = data;
                 }
@@ -1390,7 +1648,6 @@
 
         function renderLibrary() {
             const tbody = document.querySelector('tbody');
-            const thead = document.querySelector('thead tr th');
             const importBtn = document.getElementById('import-btn-main');
             if (!tbody) return;
             tbody.innerHTML = '';
@@ -1398,7 +1655,6 @@
             const query = normalizeForSearch(document.getElementById('library-search').value);
 
             if (currentLibraryTab === 'songs') {
-                thead.innerText = 'TITLE';
                 if (importBtn) {
                     importBtn.innerHTML = `<span class="material-symbols-outlined text-sm">upload_file</span> IMPORT SONG`;
                 }
@@ -1435,7 +1691,6 @@
                     tbody.appendChild(tr);
                 });
             } else {
-                thead.innerText = 'BIBLE CHAPTER';
                 if (importBtn) {
                     importBtn.innerHTML = `<span class="material-symbols-outlined text-sm">auto_stories</span> IMPORT BIBLE`;
                 }
@@ -1659,20 +1914,20 @@
             scaleVirtualCanvas('editor-virtual-canvas', 'editor-preview-box');
 
             // Sync style to preview-output, live-output, and screen live
-            currentPreviewStyle = { ...editorStyle };
+            currentPreviewStyle = normalizeSlideStyle(editorStyle);
             const previewText = document.getElementById('preview-lyrics-text');
             if (previewText && previewText.innerText) {
                 applyStyleToElement(previewText, currentPreviewStyle);
                 scaleVirtualCanvas('preview-virtual-canvas', 'preview-output-box');
             }
             if (currentLiveIndex >= 0) {
-                currentLiveStyle = { ...editorStyle };
+                currentLiveStyle = normalizeSlideStyle(editorStyle);
                 const liveText = document.getElementById('live-lyrics-text');
                 if (liveText && liveText.innerText) {
                     applyStyleToElement(liveText, currentLiveStyle);
                     scaleVirtualCanvas('live-virtual-canvas', 'live-output-box');
                 }
-                sendToLiveWindow({ text: null, style: { ...currentLiveStyle } });
+                sendToLiveWindow({ text: null, style: currentLiveStyle });
             }
         }
 
@@ -1699,8 +1954,7 @@
             renderLyricsEditor(lyrics);
 
             if (song && song.style) {
-                editorStyle = { ...song.style };
-                if (!editorStyle.textBox) editorStyle.textBox = { left: 48, top: null, width: 864 };
+                editorStyle = normalizeSlideStyle(song.style);
                 // Đồng bộ UI
                 document.getElementById('font-family').value = editorStyle.fontFamily || 'Times New Roman';
                 document.getElementById('font-size-input').value = parseInt(editorStyle.fontSize) || 80;
@@ -1710,7 +1964,7 @@
                 const isBible = (song && song.type === 'bible') || title.includes('Bible');
                 const defaultFontSize = isBible ? '48px' : '80px';
 
-                editorStyle = {
+                editorStyle = normalizeSlideStyle({}, {
                     fontFamily: 'Times New Roman',
                     fontSize: defaultFontSize,
                     color: '#ffffff',
@@ -1720,7 +1974,7 @@
                     textAlign: 'center',
                     verticalAlign: 'middle',
                     textBox: { left: 48, top: null, width: 864 }
-                };
+                });
                 document.getElementById('font-family').value = 'Times New Roman';
                 document.getElementById('font-size-input').value = parseInt(defaultFontSize);
                 document.getElementById('color-indicator').style.backgroundColor = '#ffffff';
@@ -2047,24 +2301,20 @@
         function addToSchedule(song) {
             let bg = null;
             if (song.lastBackground && song.lastBackground.mediaName) {
-                bg = {
-                    mediaName: song.lastBackground.mediaName,
-                    mediaType: song.lastBackground.mediaType,
-                    url: `app-media://${encodeURIComponent(song.lastBackground.mediaName)}`
-                };
+                bg = normalizeSlideBackground(song.lastBackground);
             }
             schedule.push({ ...song, scheduleId: Date.now(), background: bg });
             renderSchedule();
         }
 
         function addMediaToSchedule(mediaItem) {
-            const url = `app-media://${encodeURIComponent(mediaItem.name)}`;
+            const background = normalizeSlideBackground(mediaItem);
             schedule.push({
                 id: null,
                 title: mediaItem.name,
                 lyrics: '',
                 scheduleId: Date.now(),
-                background: { mediaName: mediaItem.name, mediaType: mediaItem.type, url: url },
+                background,
                 isMediaOnly: true
             });
             renderSchedule();
@@ -2257,19 +2507,16 @@
                 currentPreviewIndex = 0;
                 renderPreview();
                 updatePreviewOutput('');
-                if (song.background) previewBackground({ name: song.background.mediaName, type: song.background.mediaType });
+                if (song.background) previewBackground(song.background);
                 return;
             }
 
             // Cập nhật style cho preview từ bài hát (ưu tiên bài hát, fallback là global)
-            currentPreviewStyle = {
-                ...globalSettings,
-                ...(song.style || {})
-            };
-            
+            currentPreviewStyle = normalizeSlideStyle(song.style);
+
             // Đặc biệt cho Bible nếu không có size riêng
             if (song.type === 'bible' && (!song.style || !song.style.fontSize)) {
-                currentPreviewStyle.fontSize = '48px';
+                currentPreviewStyle = normalizeSlideStyle(currentPreviewStyle, { fontSize: '48px' });
             }
 
             const lyrics = song.lyrics || "";
@@ -2351,7 +2598,7 @@
         function goLiveFromSlide(index) {
             currentLiveScheduleIndex = currentScheduleIndex;
             // Áp dụng style sang live
-            currentLiveStyle = { ...currentPreviewStyle };
+            currentLiveStyle = normalizeSlideStyle(currentPreviewStyle);
             
             // Push ALL slides to live
             liveSlides = [...currentSlides];
@@ -2396,7 +2643,7 @@
 
         function goLive(slide) {
             // Called from goLiveFromPreview / liveCurrent (single slide)
-            currentLiveStyle = { ...currentPreviewStyle }; // Đồng bộ style sang live
+            currentLiveStyle = normalizeSlideStyle(currentPreviewStyle); // Đồng bộ style sang live
             liveSlides = [...currentSlides];
             currentLiveIndex = currentPreviewIndex;
 
@@ -2445,10 +2692,7 @@
 
         function applyStyleToElement(el, styleOverride = null) {
             if (!el) return;
-            const style = {
-                ...globalSettings,
-                ...(styleOverride || editorStyle || {})
-            };
+            const style = normalizeSlideStyle(styleOverride || editorStyle || {});
 
             el.style.fontFamily = style.fontFamily;
             el.style.fontSize = style.fontSize;
@@ -2485,10 +2729,7 @@
 
         function positionTextBox(textBox, styleOverride = null) {
             if (!textBox) return;
-            const style = {
-                ...globalSettings,
-                ...(styleOverride || {})
-            };
+            const style = normalizeSlideStyle(styleOverride || {});
             const tb = style.textBox;
             const left = (tb && tb.left != null) ? tb.left : 48;
             const width = (tb && tb.width != null) ? tb.width : 864;
@@ -2536,7 +2777,7 @@
             const previewText = document.getElementById('preview-lyrics-text');
             if (previewText) {
                 previewText.innerText = content;
-                applyStyleToElement(previewText, currentPreviewStyle);
+                applyStyleToElement(previewText, normalizeSlideStyle(currentPreviewStyle));
             }
             scaleVirtualCanvas('preview-virtual-canvas', 'preview-output-box');
         }
@@ -2545,7 +2786,7 @@
             const liveOutputText = document.getElementById('live-lyrics-text');
             if (liveOutputText) {
                 liveOutputText.innerText = content;
-                applyStyleToElement(liveOutputText, currentLiveStyle);
+                applyStyleToElement(liveOutputText, normalizeSlideStyle(currentLiveStyle));
             }
             scaleVirtualCanvas('live-virtual-canvas', 'live-output-box');
         }
@@ -2615,20 +2856,21 @@
         function previewBackground(item) {
             const previewImg = document.getElementById('preview-bg-img');
             const previewVid = document.getElementById('preview-bg-video');
-            const url = `app-media://${encodeURIComponent(item.name)}`;
+            const background = normalizeSlideBackground(item);
+            if (!background) return;
 
             // Track current preview background
-            currentPreviewBackground = { mediaName: item.name, mediaType: item.type, url: url };
+            currentPreviewBackground = background;
 
             previewImg.classList.add('hidden');
             previewVid.classList.add('hidden');
 
-            if (item.type === 'video') {
+            if (background.mediaType === 'video') {
                 previewVid.classList.remove('hidden');
-                previewVid.src = url;
+                previewVid.src = background.url;
             } else {
                 previewImg.classList.remove('hidden');
-                previewImg.src = url;
+                previewImg.src = background.url;
             }
         }
 
@@ -2675,13 +2917,13 @@
         }
 
         function addMediaToScheduleAt(mediaItem, atIndex) {
-            const url = `app-media://${encodeURIComponent(mediaItem.name)}`;
+            const background = normalizeSlideBackground(mediaItem);
             const item = {
                 id: null,
                 title: mediaItem.name,
                 lyrics: '',
                 scheduleId: Date.now(),
-                background: { mediaName: mediaItem.name, mediaType: mediaItem.type, url: url },
+                background: background,
                 isMediaOnly: true
             };
             schedule.splice(atIndex, 0, item);
@@ -2689,12 +2931,8 @@
         }
 
         function assignBackgroundToScheduleItem(scheduleIndex, mediaItem) {
-            const url = `app-media://${encodeURIComponent(mediaItem.name)}`;
-            schedule[scheduleIndex].background = {
-                mediaName: mediaItem.name,
-                mediaType: mediaItem.type,
-                url: url
-            };
+            const background = normalizeSlideBackground(mediaItem);
+            schedule[scheduleIndex].background = background;
             renderSchedule();
 
             // Save lastBackground to song in DB for persistence
@@ -2723,8 +2961,8 @@
         function handleLiveDrop(e) {
             try {
                 const mediaItem = JSON.parse(e.dataTransfer.getData('application/json'));
-                const url = `app-media://${encodeURIComponent(mediaItem.name)}`;
-                const background = { mediaName: mediaItem.name, mediaType: mediaItem.type, url: url };
+                const background = normalizeSlideBackground(mediaItem);
+                if (!background) return;
 
                 // If there's a live schedule item, assign to it
                 if (currentLiveScheduleIndex >= 0) {
@@ -2741,25 +2979,25 @@
         function updateInAppLiveBackground(background) {
             const liveImg = document.getElementById('live-bg-img');
             const liveVid = document.getElementById('live-bg-video');
+            const normalizedBackground = normalizeSlideBackground(background);
 
             liveImg.classList.add('hidden');
             liveVid.classList.add('hidden');
 
-            if (!background) return;
+            if (!normalizedBackground) return;
 
-            if (background.mediaType === 'video') {
+            if (normalizedBackground.mediaType === 'video') {
                 liveVid.classList.remove('hidden');
-                liveVid.src = background.url;
+                liveVid.src = normalizedBackground.url;
             } else {
                 liveImg.classList.remove('hidden');
-                liveImg.src = background.url;
+                liveImg.src = normalizedBackground.url;
             }
         }
 
         function sendToLiveWindow(data) {
-            // Gửi kèm style hiện tại của live
-            data.style = { ...currentLiveStyle };
-            window.electronAPI.liveSendContent(data);
+            const payload = prepareLivePayload(data);
+            window.electronAPI.liveSendContent(payload);
         }
 
         // --- Auto-update Handlers ---
@@ -2786,7 +3024,7 @@
         async function saveSchedule() {
             if (schedule.length === 0) { alert('Schedule is empty!'); return; }
             try {
-                const result = await window.electronAPI.showSaveDialog(schedule);
+                const result = await window.electronAPI.showSaveDialog(normalizeScheduleList(schedule));
                 if (result) alert('Schedule saved successfully!');
             } catch (error) {
                 alert('Error saving schedule: ' + error.message);
@@ -2797,13 +3035,7 @@
             try {
                 const result = await window.electronAPI.showOpenDialog();
                 if (result) {
-                    schedule = result.data;
-                    // Recompute background URLs
-                    schedule.forEach(item => {
-                        if (item.background && item.background.mediaName) {
-                            item.background.url = `app-media://${encodeURIComponent(item.background.mediaName)}`;
-                        }
-                    });
+                    schedule = normalizeScheduleList(result.data);
                     renderSchedule();
                     alert('Schedule loaded successfully!');
                 }
