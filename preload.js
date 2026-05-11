@@ -2,6 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   loadSongs: () => ipcRenderer.invoke('load-songs'),
+  loadSettings: () => ipcRenderer.invoke('load-settings'),
+  saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   loadBible: () => ipcRenderer.invoke('load-bible'),
   loadBibleXml: () => ipcRenderer.invoke('load-bible-xml'),
   loadBibleParsed: () => ipcRenderer.invoke('load-bible-parsed'),
@@ -11,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showSaveDialog: (data) => ipcRenderer.invoke('show-save-dialog', data),
   importMedia: () => ipcRenderer.invoke('import-media'),
   loadMedia: () => ipcRenderer.invoke('load-media'),
+  selectFolder: () => ipcRenderer.invoke('select-folder'),
   showOpenDialogMulti: (opts) => ipcRenderer.invoke('show-open-dialog-multi', opts),
   importSongsFromFile: (filePaths) => ipcRenderer.invoke('import-songs-from-file', filePaths),
   openLiveWindow: () => ipcRenderer.invoke('open-live-window'),

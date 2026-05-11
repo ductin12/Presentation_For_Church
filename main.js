@@ -10,11 +10,16 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 // 2. Global State
-let userDataPath, songsFilePath, bibleFilePath, settingsFilePath, mediaFolderPath;
+let userDataPath, songsFilePath, bibleFilePath, settingsFilePath, defaultMediaFolderPath;
 let liveWindow = null;
 let mainWindow = null;
+let globalSettings = {};
 
 // 3. Helper Functions
+function getMediaFolderPath() {
+  return (globalSettings && globalSettings.mediaPath) ? globalSettings.mediaPath : defaultMediaFolderPath;
+}
+
 function isVideo(fileName) {
   const ext = fileName.toLowerCase();
   return ext.endsWith('.mp4') || ext.endsWith('.mov');
@@ -63,9 +68,10 @@ function initializeData() {
   songsFilePath = path.join(userDataPath, 'songs.json');
   bibleFilePath = path.join(userDataPath, 'bible.json');
   settingsFilePath = path.join(userDataPath, 'settings.json');
-  mediaFolderPath = path.join(userDataPath, 'media');
+  defaultMediaFolderPath = path.join(userDataPath, 'media');
 
-  if (!fs.existsSync(mediaFolderPath)) fs.mkdirSync(mediaFolderPath, { recursive: true });
+  if (!fs.existsSync(defaultMediaFolderPath)) fs.mkdirSync(defaultMediaFolderPath, { recursive: true });
+  
   if (!fs.existsSync(songsFilePath)) {
     const bundledSongs = path.join(__dirname, 'data', 'songs.json');
     if (fs.existsSync(bundledSongs)) {
@@ -74,7 +80,37 @@ function initializeData() {
       safeWriteSync(songsFilePath, []);
     }
   }
+  
   if (!fs.existsSync(bibleFilePath)) safeWriteSync(bibleFilePath, []);
+  
+  // Default Settings
+  if (!fs.existsSync(settingsFilePath)) {
+    globalSettings = {
+      theme: 'dark',
+      fontFamily: 'CMG Sans',
+      fontSize: '80px',
+      color: '#ffffff',
+      fontWeight: 'bold',
+      textAlign: 'center',
+      verticalAlign: 'middle',
+      mediaPath: defaultMediaFolderPath,
+      shortcuts: {
+        nextSlide: 'ArrowRight',
+        prevSlide: 'ArrowLeft',
+        clearScreen: 'Escape'
+      }
+    };
+    safeWriteSync(settingsFilePath, globalSettings);
+  } else {
+    try {
+      globalSettings = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
+      if (!globalSettings.mediaPath) {
+        globalSettings.mediaPath = defaultMediaFolderPath;
+      }
+    } catch (e) {
+      console.error('Failed to load settings:', e);
+    }
+  }
 }
 
 function createLiveWindow() {
@@ -139,6 +175,8 @@ function setupMenu(win) {
         { type: 'separator' },
         { label: 'Import Media', click: () => win.webContents.send('menu-action', 'import-media') },
         { type: 'separator' },
+        { label: 'Settings', click: () => win.webContents.send('menu-action', 'open-settings') },
+        { type: 'separator' },
         { role: 'quit' }
       ]
     },
@@ -168,13 +206,41 @@ app.whenReady().then(() => {
       const match = request.url.match(/^app-media:\/\/+(.+)$/);
       if (!match) return new Response('Invalid URL', { status: 400 });
       const fileName = decodeURIComponent(match[1]).split(/[?#]/)[0].replace(/\/+$/, '');
-      const fullPath = path.join(mediaFolderPath, fileName);
+      const fullPath = path.join(getMediaFolderPath(), fileName);
       if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) return new Response('Not Found', { status: 404 });
       return net.fetch(pathToFileURL(fullPath).toString());
     } catch (e) { return new Response('Error', { status: 500 }); }
   });
 
   // --- IPC Handlers ---
+  ipcMain.handle('select-folder', async () => {
+    const r = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+    if (!r.canceled && r.filePaths.length > 0) return r.filePaths[0];
+    return null;
+  });
+
+  ipcMain.handle('load-settings', () => {
+    try {
+      if (fs.existsSync(settingsFilePath)) {
+        return JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
+      }
+    } catch (e) {
+      console.error('Failed to load settings:', e);
+    }
+    return null;
+  });
+
+  ipcMain.handle('save-settings', (event, data) => {
+    try {
+      globalSettings = data; // Update local copy
+      safeWriteSync(settingsFilePath, data);
+      return { success: true };
+    } catch (e) {
+      console.error('Failed to save settings:', e);
+      return { success: false, error: e.message };
+    }
+  });
+
   ipcMain.handle('load-songs', () => {
     try {
       const items = JSON.parse(fs.readFileSync(songsFilePath, 'utf8') || '[]');
@@ -328,10 +394,11 @@ app.whenReady().then(() => {
 
   ipcMain.handle('import-media', async () => {
     const r = await dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'], filters: [{ name: 'Media Files', extensions: ['jpg', 'png', 'mp4', 'mov', 'wmv'] }] });
+    const mediaPath = getMediaFolderPath();
     if (!r.canceled && r.filePaths.length > 0) {
       return r.filePaths.map(p => {
         const name = path.basename(p);
-        const dest = path.join(mediaFolderPath, name);
+        const dest = path.join(mediaPath, name);
         fs.copyFileSync(p, dest);
         return { name, path: dest, type: isVideo(name) ? 'video' : 'image' };
       });
@@ -341,9 +408,11 @@ app.whenReady().then(() => {
 
   ipcMain.handle('load-media', () => {
     try {
-      return fs.readdirSync(mediaFolderPath)
-        .filter(f => fs.statSync(path.join(mediaFolderPath, f)).isFile() && isSupportedMedia(f))
-        .map(f => ({ name: f, path: path.join(mediaFolderPath, f), type: isVideo(f) ? 'video' : 'image' }));
+      const mediaPath = getMediaFolderPath();
+      if (!fs.existsSync(mediaPath)) return [];
+      return fs.readdirSync(mediaPath)
+        .filter(f => fs.statSync(path.join(mediaPath, f)).isFile() && isSupportedMedia(f))
+        .map(f => ({ name: f, path: path.join(mediaPath, f), type: isVideo(f) ? 'video' : 'image' }));
     } catch (e) { return []; }
   });
 
@@ -368,11 +437,41 @@ app.whenReady().then(() => {
       let lyrics = '';
       if (ext === '.txt') {
         lyrics = fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n').trim();
+        results.push({ title, lyrics, ext });
       } else if (ext === '.docx' && mammoth) {
         const r = await mammoth.extractRawText({ path: filePath });
         lyrics = r.value.trim();
+        results.push({ title, lyrics, ext });
+      } else if (ext === '.json') {
+        try {
+          const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          if (Array.isArray(content)) {
+            // Persistent Save: Merge imported songs into local songs.json
+            const currentItems = JSON.parse(fs.readFileSync(songsFilePath, 'utf8') || '[]');
+            const currentIds = new Set(currentItems.map(s => s.id));
+            let addedCount = 0;
+
+            for (let song of content) {
+              song = migrateItem(song);
+              if (!song.id) song.id = Date.now() + Math.random();
+              if (!currentIds.has(song.id)) {
+                currentItems.push(song);
+                currentIds.add(song.id);
+                addedCount++;
+              }
+            }
+            if (addedCount > 0) {
+              saveAndBackupSync(songsFilePath, currentItems);
+              console.log(`Imported and saved ${addedCount} songs from JSON array.`);
+            }
+            results.push({ type: 'json-array', data: content, imported: true });
+          } else {
+            results.push({ type: 'json-object', data: content });
+          }
+        } catch (e) {
+          console.error('Failed to parse JSON file:', filePath, e);
+        }
       }
-      results.push({ title, lyrics, ext });
     }
     return results;
   });

@@ -576,10 +576,11 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="px-3 pb-2 pt-2 border-t border-slate-200 dark:border-slate-700 shrink-0">
-                    <input id="lyrics-search" type="text" placeholder="Tìm lời bài hát..."
-                        class="w-full px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 text-[10px] placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                        oninput="filterLibrary()" />
+                <div class="px-3 py-2 border-t border-slate-200 dark:border-slate-700 shrink-0 flex justify-center bg-slate-50 dark:bg-slate-800/30">
+                    <button onclick="importSongsFromFile()" class="w-full py-2 bg-primary hover:bg-primary/90 text-white text-[11px] font-bold rounded flex items-center justify-center gap-2 transition-colors shadow-sm">
+                        <span class="material-symbols-outlined text-sm">upload_file</span>
+                        IMPORT SONG
+                    </button>
                 </div>
             </section>
 
@@ -819,38 +820,90 @@
     </div>
 
     <!-- Bible Selector Modal -->
-    <div class="modal-overlay" id="bible-selector-modal">
-        <div class="bg-white rounded-lg shadow-2xl border border-slate-300" style="width: 400px;">
-            <div class="bg-white px-3 py-2 flex items-center justify-between border-b border-slate-200 rounded-t-lg">
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="win-modal-container" style="width: 500px; height: auto; max-height: 80vh;">
+            <div class="bg-white px-2 py-1 flex items-center justify-between border-b border-win-border shrink-0">
                 <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-sm text-blue-600">menu_book</span>
-                    <span class="text-[12px] font-semibold">Chọn Kinh Thánh</span>
+                    <span class="material-symbols-outlined text-sm">settings</span>
+                    <span class="text-[11px] font-semibold">Cài đặt hệ thống</span>
                 </div>
-                <button class="w-6 h-5 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors rounded"
-                    onclick="closeBibleSelector()">
+                <button class="w-6 h-5 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"
+                    onclick="closeSettings()">
                     <span class="material-symbols-outlined text-xs">close</span>
                 </button>
             </div>
-            <div class="p-4 space-y-3">
-                <div class="flex gap-3">
-                    <div class="flex-1">
-                        <label class="block text-[10px] font-semibold text-slate-600 mb-1 uppercase tracking-wider">Sách</label>
-                        <select id="bible-book-select" class="w-full text-[11px] border border-slate-300 rounded px-2 py-1.5 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400" onchange="onBibleBookSelect()">
-                            <option value="">-- Chọn sách --</option>
+            <div class="p-4 bg-white space-y-4 overflow-y-auto custom-scrollbar">
+                <!-- Theme -->
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Giao diện</label>
+                    <select id="settings-theme" class="w-full text-[12px] border border-win-border px-2 py-1 focus:outline-none">
+                        <option value="dark">Dark Mode</option>
+                        <option value="light">Light Mode</option>
+                    </select>
+                </div>
+                <!-- Media Path -->
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Thư mục Media</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="settings-media-path" class="flex-1 text-[11px] border border-win-border px-2 py-1 bg-slate-50" readonly>
+                        <button class="win-button text-[11px]" onclick="selectMediaFolder()">Chọn...</button>
+                    </div>
+                </div>
+                <!-- Default Font -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Font mặc định</label>
+                        <select id="settings-font-family" class="w-full text-[12px] border border-win-border px-2 py-1 focus:outline-none">
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Tahoma">Tahoma</option>
+                            <option value="CMG Sans">CMG Sans</option>
                         </select>
                     </div>
-                    <div style="width: 100px;">
-                        <label class="block text-[10px] font-semibold text-slate-600 mb-1 uppercase tracking-wider">Chương</label>
-                        <select id="bible-chapter-select" class="w-full text-[11px] border border-slate-300 rounded px-2 py-1.5 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
-                            <option value="">--</option>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Size mặc định</label>
+                        <input type="number" id="settings-font-size" class="w-full text-[12px] border border-win-border px-2 py-1 focus:outline-none" value="80">
+                    </div>
+                </div>
+                <!-- Default Style -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Màu chữ mặc định</label>
+                        <input type="color" id="settings-font-color" class="w-full h-8 border border-win-border p-0 focus:outline-none" value="#ffffff">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Căn lề mặc định</label>
+                        <select id="settings-text-align" class="w-full text-[12px] border border-win-border px-2 py-1 focus:outline-none">
+                            <option value="left">Trái</option>
+                            <option value="center" selected>Giữa</option>
+                            <option value="right">Phải</option>
                         </select>
                     </div>
                 </div>
+                <!-- Shortcuts -->
+                <div class="border-t border-slate-100 pt-3">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Phím tắt (Keyboard Shortcuts)</label>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px]">Slide tiếp theo</span>
+                            <input id="settings-key-next" class="w-24 text-[11px] border border-win-border px-2 py-0.5 text-center bg-slate-50" readonly placeholder="Bấm phím...">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px]">Slide trước đó</span>
+                            <input id="settings-key-prev" class="w-24 text-[11px] border border-win-border px-2 py-0.5 text-center bg-slate-50" readonly placeholder="Bấm phím...">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px]">Xóa màn hình (Clear)</span>
+                            <input id="settings-key-clear" class="w-24 text-[11px] border border-win-border px-2 py-0.5 text-center bg-slate-50" readonly placeholder="Bấm phím...">
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2 rounded-b-lg">
-                <button class="px-4 py-1.5 text-[11px] bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium" onclick="onBibleOK()">OK</button>
-                <button class="px-4 py-1.5 text-[11px] bg-white text-slate-700 border border-slate-300 rounded hover:bg-slate-100 transition-colors" onclick="closeBibleSelector()">Cancel</button>
-            </div>
+            <footer class="bg-[#f0f0f0] border-t border-white h-12 shrink-0 flex items-center justify-end px-3 gap-2">
+                <button class="win-button text-[11px] text-slate-900" onclick="saveSettings()">Save</button>
+                <button class="win-button text-[11px] text-slate-900" onclick="closeSettings()">Cancel</button>
+            </footer>
         </div>
     </div>
 
@@ -894,12 +947,33 @@
             "2 Peter": "2 Phi-e-rơ", "1 John": "1 Giăng", "2 John": "2 Giăng", "3 John": "3 Giăng", "Jude": "Giu-đe",
             "Revelation": "Khải Huyền"
         };
+        let globalSettings = {
+            theme: 'dark',
+            fontFamily: 'CMG Sans',
+            fontSize: '80px',
+            color: '#ffffff',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            verticalAlign: 'middle',
+            shortcuts: {
+                nextSlide: 'ArrowRight',
+                prevSlide: 'ArrowLeft',
+                clearScreen: 'Escape'
+            }
+        };
 
         // --- Initialization ---
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadSettings();
             loadLibrary();
             loadBible();
             loadMedia();
+
+            // Menu actions
+            window.electronAPI.onMenuAction((action) => {
+                if (action === 'open-settings') openSettings();
+                // other actions...
+            });
 
             // Schedule container: drop media to add as standalone item
             const scheduleContainer = document.getElementById('schedule-container');
@@ -918,6 +992,95 @@
         });
 
         // resize handler moved and debounced below
+
+        async function loadSettings() {
+            const saved = await window.electronAPI.loadSettings();
+            if (saved) {
+                globalSettings = { ...globalSettings, ...saved };
+                applySettings();
+            }
+        }
+
+        function applySettings() {
+            // Apply Theme
+            if (globalSettings.theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            
+            // Refresh current views to apply new global defaults
+            if (currentScheduleIndex >= 0 && schedule[currentScheduleIndex]) {
+                loadToPreview(schedule[currentScheduleIndex]);
+            }
+            if (currentLiveScheduleIndex >= 0 && schedule[currentLiveScheduleIndex]) {
+                // If it's a song/bible, we might need to refresh the current slide style
+                const liveText = document.getElementById('live-lyrics-text');
+                if (liveText) {
+                    applyStyleToElement(liveText, currentLiveStyle);
+                }
+            }
+        }
+
+        function openSettings() {
+            const modal = document.getElementById('settings-modal');
+            document.getElementById('settings-theme').value = globalSettings.theme;
+            document.getElementById('settings-media-path').value = globalSettings.mediaPath || '';
+            document.getElementById('settings-font-family').value = globalSettings.fontFamily;
+            document.getElementById('settings-font-size').value = parseInt(globalSettings.fontSize);
+            document.getElementById('settings-font-color').value = globalSettings.color;
+            document.getElementById('settings-text-align').value = globalSettings.textAlign;
+
+            document.getElementById('settings-key-next').value = globalSettings.shortcuts.nextSlide;
+            document.getElementById('settings-key-prev').value = globalSettings.shortcuts.prevSlide;
+            document.getElementById('settings-key-clear').value = globalSettings.shortcuts.clearScreen;
+
+            // Setup shortcut recording
+            const shortcutInputs = ['settings-key-next', 'settings-key-prev', 'settings-key-clear'];
+            shortcutInputs.forEach(id => {
+                const input = document.getElementById(id);
+                input.onkeydown = (e) => {
+                    e.preventDefault();
+                    input.value = e.key;
+                };
+            });
+
+            modal.style.display = 'flex';
+        }
+
+        async function selectMediaFolder() {
+            const path = await window.electronAPI.selectFolder();
+            if (path) {
+                document.getElementById('settings-media-path').value = path;
+            }
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        async function saveSettings() {
+            const oldMediaPath = globalSettings.mediaPath;
+            globalSettings.theme = document.getElementById('settings-theme').value;
+            globalSettings.mediaPath = document.getElementById('settings-media-path').value;
+            globalSettings.fontFamily = document.getElementById('settings-font-family').value;
+            globalSettings.fontSize = document.getElementById('settings-font-size').value + 'px';
+            globalSettings.color = document.getElementById('settings-font-color').value;
+            globalSettings.textAlign = document.getElementById('settings-text-align').value;
+
+            globalSettings.shortcuts.nextSlide = document.getElementById('settings-key-next').value;
+            globalSettings.shortcuts.prevSlide = document.getElementById('settings-key-prev').value;
+            globalSettings.shortcuts.clearScreen = document.getElementById('settings-key-clear').value;
+
+            await window.electronAPI.saveSettings(globalSettings);
+            
+            if (oldMediaPath !== globalSettings.mediaPath) {
+                loadMedia();
+            }
+            
+            applySettings();
+            closeSettings();
+        }
 
         async function loadBible() {
             try {
@@ -1119,14 +1282,12 @@
                 });
             }
             
-            const titleQuery = normalizeForSearch(document.getElementById('library-search').value);
-            const lyricsEl = document.getElementById('lyrics-search');
-            const lyricsQuery = lyricsEl ? normalizeForSearch(lyricsEl.value) : '';
-            const filtered = (titleQuery || lyricsQuery)
+            const query = normalizeForSearch(document.getElementById('library-search').value);
+            const filtered = query
                 ? source.filter(s => {
-                    const titleMatch = !titleQuery || normalizeForSearch(s.title).startsWith(titleQuery);
-                    const lyricsMatch = !lyricsQuery || (s.lyrics && normalizeForSearch(s.lyrics).includes(lyricsQuery));
-                    return titleMatch && lyricsMatch;
+                    const titleMatch = normalizeForSearch(s.title).includes(query);
+                    const lyricsMatch = s.lyrics && normalizeForSearch(s.lyrics).includes(query);
+                    return titleMatch || lyricsMatch;
                 })
                 : source;
 
@@ -1143,8 +1304,8 @@
                 tr.className = 'cursor-pointer select-none';
 
                 let snippet = '';
-                if (lyricsQuery && item.lyrics) {
-                    const matchLine = item.lyrics.split('\n').find(l => l.trim() && normalizeForSearch(l).includes(lyricsQuery));
+                if (query && item.lyrics) {
+                    const matchLine = item.lyrics.split('\n').find(l => l.trim() && normalizeForSearch(l).includes(query));
                     if (matchLine) snippet = matchLine.trim().substring(0, 80);
                 }
 
@@ -1162,23 +1323,53 @@
         async function importSongsFromFile() {
             const result = await window.electronAPI.showOpenDialogMulti({
                 title: 'Import bài hát',
-                filters: [{ name: 'Song files', extensions: ['txt', 'docx'] }]
+                filters: [{ name: 'Song files', extensions: ['txt', 'docx', 'json'] }]
             });
             if (result.canceled || !result.filePaths.length) return;
             const imported = await window.electronAPI.importSongsFromFile(result.filePaths);
             let count = 0;
             for (const item of imported) {
-                if (!item.lyrics) continue;
-                const newSong = {
-                    id: Date.now() + count,
-                    title: item.title,
-                    lyrics: item.lyrics,
-                    type: 'song',
-                    style: { fontSize: '80px', fontFamily: 'CMG Sans', color: '#ffffff' },
-                    background: null
-                };
-                await window.electronAPI.saveSong(newSong);
-                count++;
+                if (item.imported) {
+                    // Already saved by main process
+                    count += (item.data ? item.data.length : 0);
+                    continue;
+                }
+                if (item.type === 'json-array') {
+                    for (const song of item.data) {
+                        if (!song.lyrics || !song.title) continue;
+                        const newSong = {
+                            ...song,
+                            id: song.id || Date.now() + count,
+                            type: song.type || 'song',
+                            style: song.style || { fontSize: '80px', fontFamily: 'CMG Sans', color: '#ffffff' }
+                        };
+                        await window.electronAPI.saveSong(newSong);
+                        count++;
+                    }
+                } else if (item.type === 'json-object') {
+                    const song = item.data;
+                    if (song.lyrics && song.title) {
+                        const newSong = {
+                            ...song,
+                            id: song.id || Date.now() + count,
+                            type: song.type || 'song',
+                            style: song.style || { fontSize: '80px', fontFamily: 'CMG Sans', color: '#ffffff' }
+                        };
+                        await window.electronAPI.saveSong(newSong);
+                        count++;
+                    }
+                } else if (item.lyrics) {
+                    const newSong = {
+                        id: Date.now() + count,
+                        title: item.title,
+                        lyrics: item.lyrics,
+                        type: 'song',
+                        style: { fontSize: '80px', fontFamily: 'CMG Sans', color: '#ffffff' },
+                        background: null
+                    };
+                    await window.electronAPI.saveSong(newSong);
+                    count++;
+                }
             }
             songLibrary = await window.electronAPI.loadSongs();
             renderLibrary();
@@ -1918,18 +2109,16 @@
                 return;
             }
 
-            // Cập nhật style cho preview từ bài hát (hoặc dùng mặc định)
-            const defaultStyle = {
-                fontFamily: 'Times New Roman',
-                fontSize: song.type === 'bible' ? '48px' : '80px',
-                color: '#ffffff',
-                fontWeight: 'bold',
-                fontStyle: 'normal',
-                textDecoration: 'none',
-                textAlign: 'center',
-                verticalAlign: 'middle'
+            // Cập nhật style cho preview từ bài hát (ưu tiên bài hát, fallback là global)
+            currentPreviewStyle = {
+                ...globalSettings,
+                ...(song.style || {})
             };
-            currentPreviewStyle = song.style ? { ...defaultStyle, ...song.style } : defaultStyle;
+            
+            // Đặc biệt cho Bible nếu không có size riêng
+            if (song.type === 'bible' && (!song.style || !song.style.fontSize)) {
+                currentPreviewStyle.fontSize = '48px';
+            }
 
             const lyrics = song.lyrics || "";
             const isBible = song.type === 'bible';
@@ -2104,7 +2293,10 @@
 
         function applyStyleToElement(el, styleOverride = null) {
             if (!el) return;
-            const style = styleOverride || editorStyle;
+            const style = {
+                ...globalSettings,
+                ...(styleOverride || editorStyle || {})
+            };
 
             el.style.fontFamily = style.fontFamily;
             el.style.fontSize = style.fontSize;
@@ -2139,8 +2331,12 @@
             }
         }
 
-        function positionTextBox(textBox, style) {
+        function positionTextBox(textBox, styleOverride = null) {
             if (!textBox) return;
+            const style = {
+                ...globalSettings,
+                ...(styleOverride || {})
+            };
             const tb = style.textBox;
             const left = (tb && tb.left != null) ? tb.left : 48;
             const width = (tb && tb.width != null) ? tb.width : 864;
@@ -2493,13 +2689,23 @@
         // --- Keyboard Support ---
         window.addEventListener('keydown', (e) => {
             if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) return;
+            
+            const keys = globalSettings.shortcuts || {
+                nextSlide: 'ArrowRight',
+                prevSlide: 'ArrowLeft',
+                clearScreen: 'Escape'
+            };
+
             // Arrow keys control live panel when it has slides
             if (liveSlides.length > 0) {
-                if (['ArrowRight', 'ArrowDown', ' '].includes(e.key)) {
+                if (e.key === keys.nextSlide || (keys.nextSlide === 'ArrowRight' && (e.key === 'ArrowDown' || e.key === ' '))) {
                     if (currentLiveIndex < liveSlides.length - 1) goLiveSlide(currentLiveIndex + 1);
                     e.preventDefault();
-                } else if (['ArrowLeft', 'ArrowUp'].includes(e.key)) {
+                } else if (e.key === keys.prevSlide || (keys.prevSlide === 'ArrowLeft' && e.key === 'ArrowUp')) {
                     if (currentLiveIndex > 0) goLiveSlide(currentLiveIndex - 1);
+                    e.preventDefault();
+                } else if (e.key === keys.clearScreen) {
+                    clearLive();
                     e.preventDefault();
                 }
             }
