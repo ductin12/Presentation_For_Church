@@ -2,7 +2,7 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
-## [1.0.4] - 2026-05-11
+## [1.0.5] - 2026-05-11
 
 ### Đã thêm (Added)
 - **Hệ thống (System):** Hiển thị **Phần trăm CPU thực tế** (cập nhật mỗi 3 giây) trên thanh trạng thái thay vì con số tĩnh 14%.
