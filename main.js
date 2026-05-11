@@ -1,8 +1,30 @@
 const { app, BrowserWindow, Menu, ipcMain, dialog, protocol, net, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { pathToFileURL } = require('url');
 const { validateItem, migrateItem } = require('./src/schema');
+
+// CPU Usage helper
+let lastCpuUsage = { idle: 0, total: 0 };
+function getCpuUsage() {
+  const cpus = os.cpus();
+  let idle = 0;
+  let total = 0;
+  cpus.forEach(core => {
+    for (type in core.times) {
+      total += core.times[type];
+    }
+    idle += core.times.idle;
+  });
+  
+  const diffIdle = idle - lastCpuUsage.idle;
+  const diffTotal = total - lastCpuUsage.total;
+  lastCpuUsage = { idle, total };
+  
+  if (diffTotal === 0) return 0;
+  return Math.round(100 * (1 - diffIdle / diffTotal));
+}
 
 // 1. Storage Helpers
 function safeWriteSync(filePath, data) {
@@ -38,6 +60,19 @@ let liveWindowTargetDisplayId = null;
 const bundledBibleDataPath = path.join(__dirname, 'data');
 const defaultBibleXmlName = 'Bible_Vietnamese_Version_1925.xml';
 const bibleMigrationMarkerPath = () => path.join(userBibleDataPath || userDataPath || app.getPath('userData'), '.bible-versions-migrated');
+
+function bootstrapGpuAccelerationPreference() {
+  try {
+    const bootstrapSettingsPath = path.join(app.getPath('userData'), 'settings.json');
+    if (!fs.existsSync(bootstrapSettingsPath)) return;
+    const saved = JSON.parse(fs.readFileSync(bootstrapSettingsPath, 'utf8'));
+    if (saved && saved.gpuAcceleration === false) {
+      app.disableHardwareAcceleration();
+    }
+  } catch (e) {
+    console.error('Failed to bootstrap GPU acceleration preference:', e);
+  }
+}
 
 // 3. Helper Functions
 function getMediaFolderPath() {
@@ -112,21 +147,62 @@ function getPreferredLiveDisplay() {
   return externalDisplay || primaryDisplay;
 }
 
+function listSystemFonts() {
+  return [
+    'Arial',
+    'Arial Black',
+    'Calibri',
+    'Cambria',
+    'Candara',
+    'Comic Sans MS',
+    'Courier New',
+    'Georgia',
+    'Helvetica',
+    'Tahoma',
+    'Times New Roman',
+    'Trebuchet MS',
+    'Verdana',
+    'Segoe UI',
+    'CMG Sans'
+  ];
+}
+
 function syncLiveWindowToPreferredDisplay() {
   if (!liveWindow || liveWindow.isDestroyed()) return;
 
   const display = getPreferredLiveDisplay();
   if (!display) return;
 
+  const displays = screen.getAllDisplays();
+  const isMultiDisplay = displays.length > 1;
   const bounds = display.workAreaBounds || display.bounds;
   liveWindowTargetDisplayId = display.id;
-  liveWindow.setBounds(bounds, false);
-  liveWindow.setAlwaysOnTop(true, 'screen-saver');
-  try {
-    liveWindow.moveTop();
-  } catch (e) {
-    // moveTop is not supported on every platform; alwaysOnTop remains the fallback.
+
+  if (isMultiDisplay) {
+    // Multi-monitor: Fullscreen on the external display
+    liveWindow.setFullScreen(false);
+    liveWindow.setBounds(bounds, false);
+    liveWindow.setFullScreen(true);
+    liveWindow.setAlwaysOnTop(true, 'screen-saver');
+    try {
+      liveWindow.setSkipTaskbar(true);
+      liveWindow.moveTop();
+    } catch (e) {}
+  } else {
+    // Single monitor: 1/3 size floating window for testing
+    const w = Math.floor(bounds.width / 3);
+    const h = Math.floor(bounds.height / 3);
+    const x = bounds.x + bounds.width - w - 50;
+    const y = bounds.y + 50;
+    
+    liveWindow.setFullScreen(false);
+    liveWindow.setBounds({ x, y, width: w, height: h }, false);
+    liveWindow.setAlwaysOnTop(true, 'screen-saver');
+    try {
+      liveWindow.setSkipTaskbar(false);
+    } catch (e) {}
   }
+
   if (!liveWindow.isVisible()) {
     liveWindow.show();
   }
@@ -208,12 +284,18 @@ function initializeData() {
   if (!fs.existsSync(settingsFilePath)) {
     globalSettings = {
       theme: 'dark',
-      fontFamily: 'CMG Sans',
+      gpuAcceleration: true,
+      fontFamilySong: 'CMG Sans',
+      fontFamilyBible: 'Times New Roman',
       fontSize: '80px',
       color: '#ffffff',
       fontWeight: 'bold',
       textAlign: 'center',
       verticalAlign: 'middle',
+      textStrokeWidth: 5,
+      textStrokeColor: '#000000',
+      textMargin: { top: 0, right: 0, bottom: 0, left: 0 },
+      textPadding: { top: 0, right: 0, bottom: 0, left: 0 },
       mediaPath: defaultMediaFolderPath,
       shortcuts: {
         nextSlide: 'ArrowRight',
@@ -246,23 +328,35 @@ function createLiveWindow() {
     }
     return;
   }
+  
+  const displays = screen.getAllDisplays();
+  const isMultiDisplay = displays.length > 1;
   const display = getPreferredLiveDisplay();
   const targetBounds = display.workAreaBounds || display.bounds;
   liveWindowTargetDisplayId = display.id;
 
+  let x = targetBounds.x;
+  let y = targetBounds.y;
+  let width = targetBounds.width;
+  let height = targetBounds.height;
+
+  if (!isMultiDisplay) {
+    width = Math.floor(targetBounds.width / 3);
+    height = Math.floor(targetBounds.height / 3);
+    x = targetBounds.x + targetBounds.width - width - 50;
+    y = targetBounds.y + 50;
+  }
+
   liveWindow = new BrowserWindow({
-    x: targetBounds.x,
-    y: targetBounds.y,
-    width: targetBounds.width,
-    height: targetBounds.height,
+    x, y, width, height,
     frame: false,
-    fullscreen: false,
+    fullscreen: isMultiDisplay,
     kiosk: false,
     simpleFullscreen: false,
-    fullscreenable: false,
+    fullscreenable: true,
     alwaysOnTop: true,
     visibleOnAllWorkspaces: true,
-    skipTaskbar: true,
+    skipTaskbar: isMultiDisplay,
     autoHideMenuBar: true,
     hasShadow: false,
     show: false,
@@ -321,11 +415,15 @@ function setupMenu(win) {
         { label: 'New Schedule', click: () => win.webContents.send('menu-action', 'new-schedule') },
         { label: 'New Song', click: () => win.webContents.send('menu-action', 'new-song') },
         { label: 'Save Schedule', accelerator: 'CmdOrCtrl+S', click: () => win.webContents.send('menu-action', 'save-schedule') },
-        { label: 'Open Schedule', accelerator: 'CmdOrCtrl+O', click: () => win.webContents.send('menu-action', 'open-schedule') },
+        { label: 'Import File', accelerator: 'CmdOrCtrl+O', click: () => win.webContents.send('menu-action', 'import-file') },
+        { label: 'Open Schedule', click: () => win.webContents.send('menu-action', 'open-schedule') },
         { type: 'separator' },
         { label: 'Import Media', click: () => win.webContents.send('menu-action', 'import-media') },
+        { label: 'Add To Schedule', accelerator: 'CmdOrCtrl+Shift+A', click: () => win.webContents.send('menu-action', 'add-selected-to-schedule') },
+        { label: 'Screen Live', accelerator: 'CmdOrCtrl+L', click: () => win.webContents.send('menu-action', 'toggle-live-window') },
+        { label: 'Clear Live', accelerator: 'CmdOrCtrl+H', click: () => win.webContents.send('menu-action', 'clear-live') },
         { type: 'separator' },
-        { label: 'Settings', click: () => win.webContents.send('menu-action', 'open-settings') },
+        { label: 'Settings', accelerator: 'CmdOrCtrl+Shift+P', click: () => win.webContents.send('menu-action', 'open-settings') },
         { type: 'separator' },
         { role: 'quit' }
       ]
@@ -344,6 +442,7 @@ function setupMenu(win) {
 }
 
 // 4. App Lifecycle
+bootstrapGpuAccelerationPreference();
 app.whenReady().then(() => {
   initializeData();
   screen.on('display-added', syncLiveWindowToPreferredDisplay);
@@ -378,6 +477,10 @@ app.whenReady().then(() => {
       console.error('Failed to load settings:', e);
     }
     return null;
+  });
+
+  ipcMain.handle('load-system-fonts', () => {
+    return listSystemFonts();
   });
 
   ipcMain.handle('save-settings', (event, data) => {
@@ -779,6 +882,15 @@ app.whenReady().then(() => {
       syncLiveWindowToPreferredDisplay();
       liveWindow.webContents.send('live-clear');
     }
+  });
+
+  ipcMain.handle('quit-app', () => {
+    app.quit();
+    return true;
+  });
+
+  ipcMain.handle('get-cpu-usage', () => {
+    return getCpuUsage();
   });
 
   ipcMain.handle('show-open-dialog-multi', async (event, options) => {

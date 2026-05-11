@@ -580,7 +580,7 @@
                 style="width: 25%;">
                 <div class="px-3 py-1 bg-slate-800 dark:bg-black flex justify-between items-center text-white shrink-0">
                     <h3 class="text-[10px] font-bold uppercase tracking-wider opacity-80">Schedule</h3>
-                    <span class="material-symbols-outlined text-white/60 text-xs">reorder</span>
+                    <span class="text-white/60 text-xs font-bold">≡</span>
                 </div>
                 <div class="flex-1 overflow-y-auto custom-scrollbar p-1.5 space-y-1" id="schedule-container" style="min-height:80px;">
                     <!-- Data will be injected here -->
@@ -600,7 +600,6 @@
                         <button
                             class="bg-primary hover:bg-primary-hover text-white text-[9px] font-bold py-0.5 px-2 rounded flex items-center gap-1 transition-colors"
                             onclick="goLiveFromPreview()">
-                            <span class="material-symbols-outlined text-[10px]">play_arrow</span>
                             Go Live
                         </button>
                     </div>
@@ -649,7 +648,6 @@
                         <button
                             class="bg-white/20 hover:bg-white/30 text-white text-[9px] font-bold py-0.5 px-2 rounded flex items-center gap-1 transition-colors"
                             onclick="toggleLiveWindow()" id="btn-screen-live">
-                            <span class="material-symbols-outlined text-[10px]">cast</span>
                             Screen Live
                         </button>
                         <button
@@ -717,12 +715,13 @@
                                 class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">search</span>
                             <input id="library-search"
                                 class="pl-5 pr-2 py-0 bg-white border-none rounded text-[10px] text-slate-900 placeholder-slate-400 focus:ring-1 focus:ring-primary/30 w-44 h-6"
-                                placeholder="Search..." type="text" oninput="filterLibrary()" />
+                                placeholder="Search..." type="text" oninput="filterLibrary()"
+                                onkeydown="if((event.ctrlKey || event.metaKey) && event.key === 'a') { this.select(); event.preventDefault(); }" />
                         </div>
                     </div>
                     <button onclick="importSongsFromFile()" title="Import bài hát từ file"
                         class="size-6 flex items-center justify-center rounded bg-white/10 hover:bg-white/25 transition-colors">
-                        <span class="material-symbols-outlined text-white" style="font-size:14px">upload_file</span>
+                        <span class="text-white text-[10px] font-bold">IMP</span>
                     </button>
                 </div>
                 <!-- Version Selector (Bible Only) - Moved here -->
@@ -749,7 +748,6 @@
                 </div>
                 <div class="px-3 py-2 border-t border-slate-200 dark:border-slate-700 shrink-0 flex justify-center bg-slate-50 dark:bg-slate-800/30">
                     <button id="import-btn-main" onclick="handleMainImport()" class="w-full py-2 bg-primary hover:bg-primary/90 text-white text-[11px] font-bold rounded flex items-center justify-center gap-2 transition-colors shadow-sm">
-                        <span class="material-symbols-outlined text-sm">upload_file</span>
                         IMPORT SONG
                     </button>
                 </div>
@@ -783,7 +781,7 @@
             <span class="flex items-center gap-1"><span class="size-1 rounded-full bg-green-500"></span> System
                 Ready</span>
             <span>1920x1080</span>
-            <span>CPU: 14%</span>
+            <span id="cpu-usage-display">CPU: 0%</span>
         </div>
         <div class="text-[9px] font-medium text-slate-500 dark:text-slate-400">
             v7.4.1
@@ -1049,6 +1047,14 @@
                         <option value="light">Light Mode</option>
                     </select>
                 </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">GPU Acceleration</label>
+                    <select id="settings-gpu-acceleration" class="w-full text-[12px] border border-win-border px-2 py-1 focus:outline-none">
+                        <option value="on">Bật</option>
+                        <option value="off">Tắt</option>
+                    </select>
+                    <div class="text-[10px] text-slate-500 mt-1">Cần mở lại ứng dụng để áp dụng thay đổi.</div>
+                </div>
                 <!-- Media Path -->
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Thư mục Media</label>
@@ -1060,8 +1066,8 @@
                 <!-- Default Font -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Font mặc định</label>
-                        <select id="settings-font-family" class="w-full text-[12px] border border-win-border px-2 py-1 focus:outline-none">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Font Songs mặc định</label>
+                        <select id="settings-font-family-song" class="w-full text-[12px] border border-win-border px-2 py-1 focus:outline-none">
                             <option value="Times New Roman">Times New Roman</option>
                             <option value="Arial">Arial</option>
                             <option value="Tahoma">Tahoma</option>
@@ -1069,8 +1075,26 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Font Bible mặc định</label>
+                        <select id="settings-font-family-bible" class="w-full text-[12px] border border-win-border px-2 py-1 focus:outline-none">
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Tahoma">Tahoma</option>
+                            <option value="CMG Sans">CMG Sans</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
                         <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Size mặc định</label>
                         <input type="number" id="settings-font-size" class="w-full text-[12px] border border-win-border px-2 py-1 focus:outline-none" value="80">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Viền chữ mặc định</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="settings-text-stroke-width" class="w-20 text-[12px] border border-win-border px-2 py-1 focus:outline-none" min="0" value="5">
+                            <input type="color" id="settings-text-stroke-color" class="flex-1 h-8 border border-win-border p-0 focus:outline-none" value="#000000">
+                        </div>
                     </div>
                 </div>
                 <!-- Default Style -->
@@ -1088,28 +1112,68 @@
                         </select>
                     </div>
                 </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Margin chữ (T,R,B,L)</label>
+                        <div class="grid grid-cols-4 gap-1">
+                            <input type="number" id="settings-margin-top" class="w-full text-[11px] border border-win-border px-1 py-1 focus:outline-none" value="0">
+                            <input type="number" id="settings-margin-right" class="w-full text-[11px] border border-win-border px-1 py-1 focus:outline-none" value="0">
+                            <input type="number" id="settings-margin-bottom" class="w-full text-[11px] border border-win-border px-1 py-1 focus:outline-none" value="0">
+                            <input type="number" id="settings-margin-left" class="w-full text-[11px] border border-win-border px-1 py-1 focus:outline-none" value="0">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Padding chữ (T,R,B,L)</label>
+                        <div class="grid grid-cols-4 gap-1">
+                            <input type="number" id="settings-padding-top" class="w-full text-[11px] border border-win-border px-1 py-1 focus:outline-none" value="0">
+                            <input type="number" id="settings-padding-right" class="w-full text-[11px] border border-win-border px-1 py-1 focus:outline-none" value="0">
+                            <input type="number" id="settings-padding-bottom" class="w-full text-[11px] border border-win-border px-1 py-1 focus:outline-none" value="0">
+                            <input type="number" id="settings-padding-left" class="w-full text-[11px] border border-win-border px-1 py-1 focus:outline-none" value="0">
+                        </div>
+                    </div>
+                </div>
                 <!-- Shortcuts -->
                 <div class="border-t border-slate-100 pt-3">
                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Phím tắt (Keyboard Shortcuts)</label>
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-[11px]">Slide tiếp theo</span>
-                            <input id="settings-key-next" class="w-24 text-[11px] border border-win-border px-2 py-0.5 text-center bg-slate-50" readonly placeholder="Bấm phím...">
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-[11px]">Slide trước đó</span>
-                            <input id="settings-key-prev" class="w-24 text-[11px] border border-win-border px-2 py-0.5 text-center bg-slate-50" readonly placeholder="Bấm phím...">
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-[11px]">Xóa màn hình (Clear)</span>
-                            <input id="settings-key-clear" class="w-24 text-[11px] border border-win-border px-2 py-0.5 text-center bg-slate-50" readonly placeholder="Bấm phím...">
-                        </div>
+                    <div class="text-[11px] text-slate-500">Cấu hình toàn bộ phím tắt trong hộp thoại bên dưới.</div>
+                    <div class="mt-3">
+                        <button class="win-button text-[11px] text-slate-900" onclick="openShortcutsModal()">Phím tắt nâng cao...</button>
                     </div>
                 </div>
             </div>
             <footer class="bg-[#f0f0f0] border-t border-white h-12 shrink-0 flex items-center justify-end px-3 gap-2">
                 <button class="win-button text-[11px] text-slate-900" onclick="saveSettings()">Save</button>
                 <button class="win-button text-[11px] text-slate-900" onclick="closeSettings()">Cancel</button>
+            </footer>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="shortcuts-modal" style="display:none;">
+        <div class="win-modal-container" style="width: 760px; height: auto; max-height: 85vh;">
+            <div class="bg-white px-2 py-1 flex items-center justify-between border-b border-win-border shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">keyboard</span>
+                    <span class="text-[11px] font-semibold">Cấu hình phím tắt</span>
+                </div>
+                <button class="w-6 h-5 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"
+                    onclick="closeShortcutsModal()">
+                    <span class="material-symbols-outlined text-xs">close</span>
+                </button>
+            </div>
+            <div class="p-4 bg-white space-y-4 overflow-y-auto custom-scrollbar">
+                <div>
+                    <div class="text-[11px] font-semibold mb-2">Phím tắt mặc định (có thể chỉnh sửa)</div>
+                    <div id="shortcut-default-list" class="space-y-2"></div>
+                </div>
+                <div class="border-t border-slate-100 pt-3">
+                    <div class="text-[11px] font-semibold mb-2">Phím tắt tùy chỉnh (3 dòng)</div>
+                    <div class="text-[10px] text-slate-500 mb-2">Mỗi dòng: 3 ô phím (ô 2,3 tùy chọn) + chức năng</div>
+                    <div id="shortcut-custom-list" class="space-y-2"></div>
+                </div>
+            </div>
+            <footer class="bg-[#f0f0f0] border-t border-white h-12 shrink-0 flex items-center justify-end px-3 gap-2">
+                <button class="win-button text-[11px] text-slate-900" onclick="saveShortcutsModal()">Lưu phím tắt</button>
+                <button class="win-button text-[11px] text-slate-900" onclick="closeShortcutsModal()">Đóng</button>
             </footer>
         </div>
     </div>
@@ -1125,6 +1189,7 @@
         let schedule = [];
         let mediaLibrary = [];
         let currentLibraryTab = 'songs';
+        let systemFonts = [];
 
         let currentEditingSong = null;
         let currentScheduleIndex = -1;
@@ -1139,6 +1204,61 @@
         let currentLiveStyle = null;    // Style của bài hiện đang ở live
         let currentPreviewBackground = null; // Background đang hiển thị ở preview
         let currentLiveBackground = null; // Background đang phát ở live/screen live
+        let shortcutActionMap = {};
+
+        function isMacPlatform() {
+            const platform = (navigator.platform || navigator.userAgent || '').toLowerCase();
+            return platform.includes('mac');
+        }
+
+        const PRIMARY_SHORTCUT_KEY = isMacPlatform() ? 'Cmd' : 'Ctrl';
+
+        const SHORTCUT_ACTIONS = [
+            { id: 'open-settings', label: 'Mở Cài đặt (Settings)' },
+            { id: 'import-file', label: 'Nhập file (Import)' },
+            { id: 'save-schedule', label: 'Lưu Schedule' },
+            { id: 'open-schedule', label: 'Mở Schedule' },
+            { id: 'toggle-live-window', label: 'Trình chiếu Live (Bật/Tắt)' },
+            { id: 'clear-live', label: 'Xóa màn hình Live' },
+            { id: 'add-selected-to-schedule', label: 'Thêm vào Schedule' },
+            { id: 'remove-selected-from-schedule', label: 'Xóa khỏi Schedule' },
+            { id: 'focus-search', label: 'Tìm kiếm' },
+            { id: 'go-preview', label: 'Xem trước (Preview)' },
+            { id: 'go-live', label: 'Trình chiếu (Live)' },
+            { id: 'live-current', label: 'Live hiện tại' },
+            { id: 'background-1', label: 'Hình nền 1' },
+            { id: 'background-2', label: 'Hình nền 2' },
+            { id: 'tab-bible', label: 'Tab Kinh Thánh' },
+            { id: 'tab-song', label: 'Tab Bài hát' },
+            { id: 'new-schedule', label: 'Tạo Schedule mới' },
+            { id: 'new-song', label: 'Tạo Bài hát mới' },
+            { id: 'import-media', label: 'Nhập Media' },
+            { id: 'quit-app', label: 'Thoát ứng dụng' },
+            { id: 'close-live-window', label: 'Tắt màn hình Live' },
+            { id: 'next-slide', label: 'Slide tiếp theo' },
+            { id: 'prev-slide', label: 'Slide trước đó' }
+        ];
+
+        const DEFAULT_SHORTCUT_ROWS = [
+            { key1: PRIMARY_SHORTCUT_KEY, key2: '', key3: 'O', action: 'import-file' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: '', key3: 'S', action: 'save-schedule' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: '', key3: 'L', action: 'toggle-live-window' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: '', key3: 'Esc', action: 'close-live-window' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: '', key3: 'H', action: 'clear-live' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: 'Shift', key3: 'A', action: 'add-selected-to-schedule' },
+            { key1: '', key2: '', key3: 'Delete', action: 'remove-selected-from-schedule' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: '', key3: 'F', action: 'focus-search' },
+            { key1: '', key2: '', key3: 'ArrowRight', action: 'next-slide' },
+            { key1: '', key2: '', key3: 'ArrowLeft', action: 'prev-slide' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: '', key3: 'Enter', action: 'go-preview' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: 'Shift', key3: 'Enter', action: 'go-live' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: '', key3: '1', action: 'tab-bible' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: '', key3: '2', action: 'tab-song' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: 'Alt', key3: '1', action: 'background-1' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: 'Alt', key3: '2', action: 'background-2' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: 'Shift', key3: 'Q', action: 'quit-app' },
+            { key1: PRIMARY_SHORTCUT_KEY, key2: 'Shift', key3: 'P', action: 'open-settings' }
+        ];
 
         const bibleBookMap = {
             "Genesis": "Sáng Thế Ký", "Exodus": "Xuất Ê-díp-tô Ký", "Leviticus": "Lê-vi Ký", "Numbers": "Dân Số Ký", "Deuteronomy": "Phục Truyền Luật Lệ Ký",
@@ -1159,32 +1279,217 @@
         function createDefaultGlobalSettings() {
             return {
                 theme: 'dark',
-                fontFamily: 'CMG Sans',
+                gpuAcceleration: true,
+                fontFamilySong: 'CMG Sans',
+                fontFamilyBible: 'Times New Roman',
                 fontSize: '80px',
                 color: '#ffffff',
                 fontWeight: 'bold',
                 textAlign: 'center',
                 verticalAlign: 'middle',
+                textStrokeWidth: 5,
+                textStrokeColor: '#000000',
+                textMargin: { top: 0, right: 0, bottom: 0, left: 0 },
+                textPadding: { top: 0, right: 0, bottom: 0, left: 0 },
                 mediaPath: '',
                 shortcuts: {
                     nextSlide: 'ArrowRight',
                     prevSlide: 'ArrowLeft',
                     clearScreen: 'Escape'
-                }
+                },
+                defaultShortcutRows: DEFAULT_SHORTCUT_ROWS.map(row => ({ ...row })),
+                customShortcuts: [
+                    { key1: '', key2: '', key3: '', action: '' },
+                    { key1: '', key2: '', key3: '', action: '' },
+                    { key1: '', key2: '', key3: '', action: '' }
+                ]
             };
+        }
+
+        function escapeHtml(value = '') {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function ensureSelectHasOption(select, value) {
+            if (!select || !value) return;
+            const exists = Array.from(select.options).some(o => o.value === value);
+            if (!exists) {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                select.appendChild(option);
+            }
+        }
+
+        function populateFontSelectors(fonts = []) {
+            const fallbackFonts = ['Arial', 'Tahoma', 'Times New Roman', 'Verdana', 'Calibri', 'Georgia', 'CMG Sans'];
+            const merged = [...new Set([...(fonts || []), ...fallbackFonts])].sort((a, b) => a.localeCompare(b));
+            systemFonts = merged;
+
+            const selectors = [
+                document.getElementById('font-family'),
+                document.getElementById('settings-font-family-song'),
+                document.getElementById('settings-font-family-bible')
+            ].filter(Boolean);
+
+            const optionsHtml = merged
+                .map(font => `<option value="${escapeHtml(font)}">${escapeHtml(font)}</option>`)
+                .join('');
+
+            selectors.forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = optionsHtml;
+                ensureSelectHasOption(select, currentValue);
+                if (currentValue) select.value = currentValue;
+            });
+        }
+
+        async function loadSystemFonts() {
+            try {
+                const fonts = await window.electronAPI.loadSystemFonts();
+                populateFontSelectors(Array.isArray(fonts) ? fonts : []);
+            } catch (e) {
+                console.error('Failed to load system fonts:', e);
+                populateFontSelectors([]);
+            }
+        }
+
+        function normalizeShortcutCombo(input = '') {
+            const raw = String(input || '').trim();
+            if (!raw) return '';
+            const parts = raw.split('+').map(p => p.trim()).filter(Boolean);
+            const mods = [];
+            let key = '';
+            parts.forEach(part => {
+                const p = part.toLowerCase();
+                if (p === 'cmdorctrl' || p === 'ctrl' || p === 'control' || p === 'cmd' || p === 'meta') mods.push('cmdorctrl');
+                else if (p === 'shift') mods.push('shift');
+                else if (p === 'alt' || p === 'option') mods.push('alt');
+                else key = part;
+            });
+            const orderedMods = ['cmdorctrl', 'shift', 'alt'].filter(m => mods.includes(m));
+            return [...orderedMods, key.toLowerCase()].filter(Boolean).join('+');
+        }
+
+        function normalizeShortcutKey(input = '') {
+            const raw = String(input || '').trim();
+            if (!raw) return '';
+            const lower = raw.toLowerCase();
+            if (lower === 'cmdorctrl') return isMacPlatform() ? 'cmd' : 'ctrl';
+            if (lower === 'control') return 'ctrl';
+            if (lower === 'cmd' || lower === 'command' || lower === 'meta') return 'cmd';
+            if (lower === 'option') return 'alt';
+            if (lower === ' ') return 'space';
+            return lower;
+        }
+
+        function formatShortcutKey(input = '') {
+            const k = normalizeShortcutKey(input);
+            if (!k) return '';
+            if (k === 'ctrl') return 'Ctrl';
+            if (k === 'cmd') return 'Cmd';
+            if (k === 'shift') return 'Shift';
+            if (k === 'alt') return 'Alt';
+            if (k === 'space') return 'Space';
+            if (k === 'arrowright') return 'ArrowRight';
+            if (k === 'arrowleft') return 'ArrowLeft';
+            if (k === 'arrowup') return 'ArrowUp';
+            if (k === 'arrowdown') return 'ArrowDown';
+            if (k === 'escape') return 'Esc';
+            if (k === 'enter') return 'Enter';
+            if (k === 'tab') return 'Tab';
+            return k.length === 1 ? k.toUpperCase() : k.charAt(0).toUpperCase() + k.slice(1);
+        }
+
+        function comboFromCustomRow(row = {}) {
+            const keys = [row.key1, row.key2, row.key3].map(normalizeShortcutKey).filter(Boolean);
+            return keys.join('+');
+        }
+
+        function normalizeShortcutRow(row = {}) {
+            return {
+                key1: formatShortcutKey(row.key1 || ''),
+                key2: formatShortcutKey(row.key2 || ''),
+                key3: formatShortcutKey(row.key3 || ''),
+                action: row.action || ''
+            };
+        }
+
+        function eventToCombo(event) {
+            const tokens = [];
+            if (event.ctrlKey) tokens.push('ctrl');
+            if (event.metaKey) tokens.push('cmd');
+            if (event.shiftKey) tokens.push('shift');
+            if (event.altKey) tokens.push('alt');
+            const key = normalizeShortcutKey(event.key || '');
+            if (!['ctrl', 'cmd', 'shift', 'alt'].includes(key)) tokens.push(key);
+            return tokens.join('+');
+        }
+
+        function rebuildShortcutActionMap() {
+            const map = {};
+            const rows = [
+                ...(globalSettings.defaultShortcutRows || []),
+                ...(globalSettings.customShortcuts || [])
+            ];
+            rows.forEach(row => {
+                const normalized = comboFromCustomRow(row);
+                if (normalized && row.action) {
+                    map[normalized] = row.action;
+                }
+            });
+            shortcutActionMap = map;
         }
 
         function mergeGlobalSettings(saved = {}) {
             const defaults = createDefaultGlobalSettings();
             const merged = { ...defaults, ...(saved || {}) };
+            if (saved && saved.fontFamily && !saved.fontFamilySong) {
+                merged.fontFamilySong = saved.fontFamily;
+            }
+            if (saved && saved.fontFamily && !saved.fontFamilyBible) {
+                merged.fontFamilyBible = saved.fontFamily;
+            }
             merged.shortcuts = { ...defaults.shortcuts, ...((saved && saved.shortcuts) || {}) };
+            merged.textMargin = { ...defaults.textMargin, ...((saved && saved.textMargin) || {}) };
+            merged.textPadding = { ...defaults.textPadding, ...((saved && saved.textPadding) || {}) };
+            const defaultRows = Array.isArray(saved && saved.defaultShortcutRows) ? saved.defaultShortcutRows : [];
+            merged.defaultShortcutRows = DEFAULT_SHORTCUT_ROWS.map((row, index) => {
+                const savedRow = defaultRows[index] || {};
+                const legacyCombo = saved && saved.shortcutBindings ? Object.entries(saved.shortcutBindings).find(([action]) => action === row.action)?.[1] : '';
+                const comboSource = savedRow.key1 || savedRow.key2 || savedRow.key3 ? savedRow : (legacyCombo ? { combo: legacyCombo } : {});
+                return {
+                    key1: comboSource.key1 || ((comboSource.combo && String(comboSource.combo).split('+')[0]) || row.key1 || ''),
+                    key2: comboSource.key2 || ((comboSource.combo && String(comboSource.combo).split('+')[1]) || row.key2 || ''),
+                    key3: comboSource.key3 || ((comboSource.combo && String(comboSource.combo).split('+')[2]) || row.key3 || ''),
+                    action: savedRow.action || row.action
+                };
+            });
+            const custom = Array.isArray(saved && saved.customShortcuts) ? saved.customShortcuts : [];
+            merged.customShortcuts = [0, 1, 2].map(i => {
+                const item = custom[i] || {};
+                return {
+                    key1: item.key1 || ((item.combo && String(item.combo).split('+')[0]) || ''),
+                    key2: item.key2 || ((item.combo && String(item.combo).split('+')[1]) || ''),
+                    key3: item.key3 || ((item.combo && String(item.combo).split('+')[2]) || ''),
+                    action: item.action || ''
+                };
+            });
             if (!merged.mediaPath) merged.mediaPath = '';
             return merged;
         }
 
-        function createDefaultSlideStyle() {
+        function createDefaultSlideStyle(contentType = 'song') {
+            const defaultFontFamily = contentType === 'bible'
+                ? (globalSettings.fontFamilyBible || globalSettings.fontFamilySong || 'Times New Roman')
+                : (globalSettings.fontFamilySong || globalSettings.fontFamilyBible || 'CMG Sans');
             return {
-                fontFamily: globalSettings.fontFamily || 'CMG Sans',
+                fontFamily: defaultFontFamily,
                 fontSize: globalSettings.fontSize || '80px',
                 color: globalSettings.color || '#ffffff',
                 fontWeight: globalSettings.fontWeight || 'bold',
@@ -1192,12 +1497,26 @@
                 textDecoration: 'none',
                 textAlign: globalSettings.textAlign || 'center',
                 verticalAlign: globalSettings.verticalAlign || 'middle',
+                textStrokeWidth: Number.isFinite(Number(globalSettings.textStrokeWidth)) ? Number(globalSettings.textStrokeWidth) : 5,
+                textStrokeColor: globalSettings.textStrokeColor || '#000000',
+                textMargin: { ...(globalSettings.textMargin || { top: 0, right: 0, bottom: 0, left: 0 }) },
+                textPadding: { ...(globalSettings.textPadding || { top: 0, right: 0, bottom: 0, left: 0 }) },
                 textBox: { left: 48, width: 864, top: null }
             };
         }
 
-        function normalizeSlideStyle(style = {}, overrides = {}) {
-            const defaults = createDefaultSlideStyle();
+        function normalizeSpacingBox(source, fallback) {
+            const input = source && typeof source === 'object' ? source : {};
+            return {
+                top: Number.isFinite(Number(input.top)) ? Number(input.top) : fallback.top,
+                right: Number.isFinite(Number(input.right)) ? Number(input.right) : fallback.right,
+                bottom: Number.isFinite(Number(input.bottom)) ? Number(input.bottom) : fallback.bottom,
+                left: Number.isFinite(Number(input.left)) ? Number(input.left) : fallback.left
+            };
+        }
+
+        function normalizeSlideStyle(style = {}, overrides = {}, contentType = 'song') {
+            const defaults = createDefaultSlideStyle(contentType);
             const source = style && typeof style === 'object' ? style : {};
             const extra = overrides && typeof overrides === 'object' ? overrides : {};
             const normalized = { ...defaults, ...source, ...extra };
@@ -1212,6 +1531,14 @@
                 ...((source && source.textBox) || {}),
                 ...((extra && extra.textBox) || {})
             };
+            normalized.textMargin = normalizeSpacingBox(
+                { ...((source && source.textMargin) || {}), ...((extra && extra.textMargin) || {}) },
+                defaults.textMargin
+            );
+            normalized.textPadding = normalizeSpacingBox(
+                { ...((source && source.textPadding) || {}), ...((extra && extra.textPadding) || {}) },
+                defaults.textPadding
+            );
 
             if (!normalized.fontFamily) normalized.fontFamily = defaults.fontFamily;
             if (!normalized.fontSize) normalized.fontSize = defaults.fontSize;
@@ -1221,6 +1548,8 @@
             if (!normalized.textDecoration) normalized.textDecoration = defaults.textDecoration;
             if (!normalized.textAlign) normalized.textAlign = defaults.textAlign;
             if (!normalized.verticalAlign) normalized.verticalAlign = defaults.verticalAlign;
+            if (!Number.isFinite(Number(normalized.textStrokeWidth))) normalized.textStrokeWidth = defaults.textStrokeWidth;
+            if (!normalized.textStrokeColor) normalized.textStrokeColor = defaults.textStrokeColor;
 
             return normalized;
         }
@@ -1385,6 +1714,7 @@
             loadLibrary();
             loadBibleVersions();
             loadMedia();
+            setTimeout(loadSystemFonts, 0);
 
             // Schedule container: drop media to add as standalone item
             const scheduleContainer = document.getElementById('schedule-container');
@@ -1408,8 +1738,9 @@
             const saved = await window.electronAPI.loadSettings();
             if (saved) {
                 globalSettings = mergeGlobalSettings(saved);
-                applySettings();
             }
+            rebuildShortcutActionMap();
+            applySettings();
         }
 
         function applySettings() {
@@ -1435,26 +1766,26 @@
 
         function openSettings() {
             const modal = document.getElementById('settings-modal');
+            ensureSelectHasOption(document.getElementById('settings-font-family-song'), globalSettings.fontFamilySong);
+            ensureSelectHasOption(document.getElementById('settings-font-family-bible'), globalSettings.fontFamilyBible);
             document.getElementById('settings-theme').value = globalSettings.theme;
+            document.getElementById('settings-gpu-acceleration').value = globalSettings.gpuAcceleration === false ? 'off' : 'on';
             document.getElementById('settings-media-path').value = globalSettings.mediaPath || '';
-            document.getElementById('settings-font-family').value = globalSettings.fontFamily;
+            document.getElementById('settings-font-family-song').value = globalSettings.fontFamilySong;
+            document.getElementById('settings-font-family-bible').value = globalSettings.fontFamilyBible;
             document.getElementById('settings-font-size').value = parseInt(globalSettings.fontSize);
             document.getElementById('settings-font-color').value = globalSettings.color;
             document.getElementById('settings-text-align').value = globalSettings.textAlign;
-
-            document.getElementById('settings-key-next').value = globalSettings.shortcuts.nextSlide;
-            document.getElementById('settings-key-prev').value = globalSettings.shortcuts.prevSlide;
-            document.getElementById('settings-key-clear').value = globalSettings.shortcuts.clearScreen;
-
-            // Setup shortcut recording
-            const shortcutInputs = ['settings-key-next', 'settings-key-prev', 'settings-key-clear'];
-            shortcutInputs.forEach(id => {
-                const input = document.getElementById(id);
-                input.onkeydown = (e) => {
-                    e.preventDefault();
-                    input.value = e.key;
-                };
-            });
+            document.getElementById('settings-text-stroke-width').value = Number(globalSettings.textStrokeWidth || 0);
+            document.getElementById('settings-text-stroke-color').value = globalSettings.textStrokeColor || '#000000';
+            document.getElementById('settings-margin-top').value = Number(globalSettings.textMargin?.top || 0);
+            document.getElementById('settings-margin-right').value = Number(globalSettings.textMargin?.right || 0);
+            document.getElementById('settings-margin-bottom').value = Number(globalSettings.textMargin?.bottom || 0);
+            document.getElementById('settings-margin-left').value = Number(globalSettings.textMargin?.left || 0);
+            document.getElementById('settings-padding-top').value = Number(globalSettings.textPadding?.top || 0);
+            document.getElementById('settings-padding-right').value = Number(globalSettings.textPadding?.right || 0);
+            document.getElementById('settings-padding-bottom').value = Number(globalSettings.textPadding?.bottom || 0);
+            document.getElementById('settings-padding-left').value = Number(globalSettings.textPadding?.left || 0);
 
             modal.style.display = 'flex';
         }
@@ -1472,18 +1803,35 @@
 
         async function saveSettings() {
             const oldMediaPath = globalSettings.mediaPath;
+            const toNumber = (id) => {
+                const value = Number(document.getElementById(id).value);
+                return Number.isFinite(value) ? value : 0;
+            };
             globalSettings.theme = document.getElementById('settings-theme').value;
+            globalSettings.gpuAcceleration = document.getElementById('settings-gpu-acceleration').value === 'on';
             globalSettings.mediaPath = document.getElementById('settings-media-path').value;
-            globalSettings.fontFamily = document.getElementById('settings-font-family').value;
+            globalSettings.fontFamilySong = document.getElementById('settings-font-family-song').value;
+            globalSettings.fontFamilyBible = document.getElementById('settings-font-family-bible').value;
             globalSettings.fontSize = document.getElementById('settings-font-size').value + 'px';
             globalSettings.color = document.getElementById('settings-font-color').value;
             globalSettings.textAlign = document.getElementById('settings-text-align').value;
-
-            globalSettings.shortcuts.nextSlide = document.getElementById('settings-key-next').value;
-            globalSettings.shortcuts.prevSlide = document.getElementById('settings-key-prev').value;
-            globalSettings.shortcuts.clearScreen = document.getElementById('settings-key-clear').value;
+            globalSettings.textStrokeWidth = toNumber('settings-text-stroke-width');
+            globalSettings.textStrokeColor = document.getElementById('settings-text-stroke-color').value;
+            globalSettings.textMargin = {
+                top: toNumber('settings-margin-top'),
+                right: toNumber('settings-margin-right'),
+                bottom: toNumber('settings-margin-bottom'),
+                left: toNumber('settings-margin-left')
+            };
+            globalSettings.textPadding = {
+                top: toNumber('settings-padding-top'),
+                right: toNumber('settings-padding-right'),
+                bottom: toNumber('settings-padding-bottom'),
+                left: toNumber('settings-padding-left')
+            };
 
             await window.electronAPI.saveSettings(globalSettings);
+            rebuildShortcutActionMap();
             
             if (oldMediaPath !== globalSettings.mediaPath) {
                 loadMedia();
@@ -1507,7 +1855,7 @@
             const importBtn = document.getElementById('import-btn-main');
             const originalText = importBtn ? importBtn.innerHTML : '';
             if (importBtn && fileName) {
-                importBtn.innerHTML = `<span class="material-symbols-outlined animate-spin text-sm">sync</span> LOADING...`;
+                importBtn.innerHTML = `LOADING...`;
                 importBtn.disabled = true;
             }
 
@@ -1723,7 +2071,7 @@
 
             if (currentLibraryTab === 'songs') {
                 if (importBtn) {
-                    importBtn.innerHTML = `<span class="material-symbols-outlined text-sm">upload_file</span> IMPORT SONG`;
+                    importBtn.innerHTML = `IMPORT SONG`;
                 }
                 
                 const filtered = query
@@ -1759,7 +2107,7 @@
                 });
             } else {
                 if (importBtn) {
-                    importBtn.innerHTML = `<span class="material-symbols-outlined text-sm">auto_stories</span> IMPORT BIBLE`;
+                    importBtn.innerHTML = `IMPORT BIBLE`;
                 }
 
                 const filtered = query
@@ -2021,8 +2369,9 @@
             renderLyricsEditor(lyrics);
 
             if (song && song.style) {
-                editorStyle = normalizeSlideStyle(song.style);
+                editorStyle = normalizeSlideStyle(song.style, {}, song.type === 'bible' ? 'bible' : 'song');
                 // Đồng bộ UI
+                ensureSelectHasOption(document.getElementById('font-family'), editorStyle.fontFamily);
                 document.getElementById('font-family').value = editorStyle.fontFamily || 'Times New Roman';
                 document.getElementById('font-size-input').value = parseInt(editorStyle.fontSize) || 80;
                 document.getElementById('color-indicator').style.backgroundColor = editorStyle.color || '#ffffff';
@@ -2032,7 +2381,6 @@
                 const defaultFontSize = isBible ? '48px' : '80px';
 
                 editorStyle = normalizeSlideStyle({}, {
-                    fontFamily: 'Times New Roman',
                     fontSize: defaultFontSize,
                     color: '#ffffff',
                     fontWeight: 'bold',
@@ -2041,8 +2389,9 @@
                     textAlign: 'center',
                     verticalAlign: 'middle',
                     textBox: { left: 48, top: null, width: 864 }
-                });
-                document.getElementById('font-family').value = 'Times New Roman';
+                }, isBible ? 'bible' : 'song');
+                ensureSelectHasOption(document.getElementById('font-family'), editorStyle.fontFamily);
+                document.getElementById('font-family').value = editorStyle.fontFamily || 'Times New Roman';
                 document.getElementById('font-size-input').value = parseInt(defaultFontSize);
                 document.getElementById('color-indicator').style.backgroundColor = '#ffffff';
             }
@@ -2417,9 +2766,9 @@
                     <span class="text-[11px] font-semibold truncate block">${item.title}</span>
                 </div>
                 <div class="flex items-center gap-0.5">
-                    <span class="material-symbols-outlined text-xs opacity-0 group-hover:opacity-100 ${isActive ? 'text-red-200' : 'text-red-500'} hover:scale-110 transition-all" onclick="event.stopPropagation(); removeFromSchedule(${index})">delete</span>
-                    ${isLive ? '<span class="material-symbols-outlined text-xs text-red-400">cast</span>' : ''}
-                    ${isActive ? '<span class="material-symbols-outlined text-xs">play_circle</span>' : ''}
+                    <span class="text-xs font-bold opacity-0 group-hover:opacity-100 ${isActive ? 'text-red-200' : 'text-red-500'} hover:scale-110 transition-all cursor-pointer" onclick="event.stopPropagation(); removeFromSchedule(${index})">X</span>
+                    ${isLive ? '<span class="text-xs text-red-400 font-bold">LIVE</span>' : ''}
+                    ${isActive ? '<span class="text-xs font-bold">ON</span>' : ''}
                 </div>
             `;
                 div.onclick = () => { selectScheduleItem(index); };
@@ -2580,7 +2929,7 @@
             }
 
             // Cập nhật style cho preview từ bài hát (ưu tiên bài hát, fallback là global)
-            currentPreviewStyle = normalizeSlideStyle(song.style);
+            currentPreviewStyle = normalizeSlideStyle(song.style, {}, song.type === 'bible' ? 'bible' : 'song');
 
             // Đặc biệt cho Bible nếu không có size riêng
             if (song.type === 'bible' && (!song.style || !song.style.fontSize)) {
@@ -2788,12 +3137,15 @@
                 );
 
                 if (isMainCanvas) {
-                    el.style.webkitTextStroke = "5px black";
+                    el.style.webkitTextStroke = `${style.textStrokeWidth}px ${style.textStrokeColor}`;
                 } else {
-                    el.style.webkitTextStroke = "1px black";
+                    el.style.webkitTextStroke = `${Math.max(1, Math.round(style.textStrokeWidth / 2))}px ${style.textStrokeColor}`;
                 }
                 el.style.paintOrder = "stroke fill";
                 el.style.textShadow = "none";
+                el.style.margin = `${style.textMargin.top}px ${style.textMargin.right}px ${style.textMargin.bottom}px ${style.textMargin.left}px`;
+                el.style.padding = `${style.textPadding.top}px ${style.textPadding.right}px ${style.textPadding.bottom}px ${style.textPadding.left}px`;
+                el.style.boxSizing = 'border-box';
 
                 positionTextBox(textBox, style);
             }
@@ -2895,7 +3247,7 @@
             if (mediaLibrary.length === 0) {
                 container.innerHTML = `
                     <div class="col-span-10 flex flex-col items-center justify-center py-6 text-slate-400">
-                        <span class="material-symbols-outlined text-3xl mb-2">perm_media</span>
+                        <span class="text-2xl mb-2 font-bold">Media</span>
                         <p class="text-[10px] italic">No media files</p>
                         <p class="text-[9px] mt-1 opacity-60">File > Import Media to add</p>
                     </div>`;
@@ -2911,7 +3263,7 @@
                     <video class="w-full h-full object-cover" muted playsinline preload="metadata">
                         <source src="${url}" type="${mimeType}" />
                     </video>
-                    <span class="material-symbols-outlined absolute inset-0 flex items-center justify-center text-white text-xs bg-black/20">play_circle</span>
+                    <span class="absolute inset-0 flex items-center justify-center text-white text-[10px] font-bold bg-black/20">VIDEO</span>
                 `;
                 } else {
                     div.innerHTML = `
@@ -2990,10 +3342,10 @@
             menu.style.top = `${y}px`;
             menu.innerHTML = `
                 <div class="media-drop-option" data-action="add">
-                    <span class="material-symbols-outlined" style="color:#2563eb;">add_circle</span> Thêm vào schedule
+                    <span class="text-[10px] font-bold" style="color:#2563eb;">ADD</span> Thêm vào schedule
                 </div>
                 <div class="media-drop-option" data-action="bg">
-                    <span class="material-symbols-outlined" style="color:#0f766e;">wallpaper</span> Đặt làm background
+                    <span class="text-[10px] font-bold" style="color:#0f766e;">BG</span> Đặt làm background
                 </div>
             `;
 
@@ -3111,26 +3463,246 @@
             window.electronAPI.liveSendContent(payload);
         }
 
-        // --- Auto-update Handlers ---
-        // --- Native Menu Handlers ---
-        window.electronAPI.onMenuAction((event, action) => {
-            console.log('Action triggered from menu:', action);
+        function renderShortcutManager() {
+            const defaultWrap = document.getElementById('shortcut-default-list');
+            const customWrap = document.getElementById('shortcut-custom-list');
+            if (!defaultWrap || !customWrap) return;
+
+            defaultWrap.innerHTML = (globalSettings.defaultShortcutRows || []).map((row, i) => `
+                <div class="grid grid-cols-[120px_120px_120px_1fr] gap-2">
+                    <input data-shortcut-kind="default" data-shortcut-index="${i}" data-shortcut-field="key1" class="text-[11px] border border-win-border px-2 py-1 bg-slate-50 text-center" value="${escapeHtml(formatShortcutKey(row.key1 || ''))}" placeholder="Key 1" />
+                    <input data-shortcut-kind="default" data-shortcut-index="${i}" data-shortcut-field="key2" class="text-[11px] border border-win-border px-2 py-1 bg-slate-50 text-center" value="${escapeHtml(formatShortcutKey(row.key2 || ''))}" placeholder="Key 2 (opt)" />
+                    <input data-shortcut-kind="default" data-shortcut-index="${i}" data-shortcut-field="key3" class="text-[11px] border border-win-border px-2 py-1 bg-slate-50 text-center" value="${escapeHtml(formatShortcutKey(row.key3 || ''))}" placeholder="Key 3 (opt)" />
+                    <select data-shortcut-kind="default" data-shortcut-index="${i}" data-shortcut-field="action" class="text-[11px] border border-win-border px-2 py-1">
+                        <option value="">-- Chọn chức năng --</option>
+                        ${SHORTCUT_ACTIONS.map(action => `<option value="${action.id}" ${row.action === action.id ? 'selected' : ''}>${action.label}</option>`).join('')}
+                    </select>
+                </div>
+            `).join('');
+
+            customWrap.innerHTML = [0, 1, 2].map(i => {
+                const row = (globalSettings.customShortcuts && globalSettings.customShortcuts[i]) || { key1: '', key2: '', key3: '', action: '' };
+                return `
+                    <div class="grid grid-cols-[120px_120px_120px_1fr] gap-2">
+                        <input data-shortcut-kind="custom" data-shortcut-index="${i}" data-shortcut-field="key1" class="text-[11px] border border-win-border px-2 py-1 bg-slate-50 text-center" value="${escapeHtml(formatShortcutKey(row.key1 || ''))}" placeholder="Key 1" />
+                        <input data-shortcut-kind="custom" data-shortcut-index="${i}" data-shortcut-field="key2" class="text-[11px] border border-win-border px-2 py-1 bg-slate-50 text-center" value="${escapeHtml(formatShortcutKey(row.key2 || ''))}" placeholder="Key 2 (opt)" />
+                        <input data-shortcut-kind="custom" data-shortcut-index="${i}" data-shortcut-field="key3" class="text-[11px] border border-win-border px-2 py-1 bg-slate-50 text-center" value="${escapeHtml(formatShortcutKey(row.key3 || ''))}" placeholder="Key 3 (opt)" />
+                        <select data-shortcut-kind="custom" data-shortcut-index="${i}" data-shortcut-field="action" class="text-[11px] border border-win-border px-2 py-1">
+                            <option value="">-- Chọn chức năng --</option>
+                            ${SHORTCUT_ACTIONS.map(action => `<option value="${action.id}" ${row.action === action.id ? 'selected' : ''}>${action.label}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+            }).join('');
+
+            const shortcutInputs = document.querySelectorAll('[data-shortcut-kind][data-shortcut-field]');
+            shortcutInputs.forEach(input => {
+                input.addEventListener('keydown', handleShortcutFieldKeydown);
+                input.addEventListener('keyup', handleShortcutFieldKeyup);
+                input.addEventListener('blur', handleShortcutFieldBlur);
+            });
+
+            document.querySelectorAll('[data-shortcut-kind][data-shortcut-field="action"]').forEach(select => {
+                select.addEventListener('change', () => syncShortcutRowFromDom(select.dataset.shortcutKind, Number(select.dataset.shortcutIndex)));
+            });
+        }
+
+        function openShortcutsModal() {
+            renderShortcutManager();
+            document.getElementById('shortcuts-modal').style.display = 'flex';
+        }
+
+        function closeShortcutsModal() {
+            document.getElementById('shortcuts-modal').style.display = 'none';
+        }
+
+        function getShortcutDomField(kind, index, field) {
+            return document.querySelector(`[data-shortcut-kind="${kind}"][data-shortcut-index="${index}"][data-shortcut-field="${field}"]`);
+        }
+
+        function getShortcutRows(kind) {
+            return kind === 'default'
+                ? (globalSettings.defaultShortcutRows || [])
+                : (globalSettings.customShortcuts || []);
+        }
+
+        function setShortcutRows(kind, rows) {
+            if (kind === 'default') {
+                globalSettings.defaultShortcutRows = rows;
+            } else {
+                globalSettings.customShortcuts = rows;
+            }
+        }
+
+        function syncShortcutRowFromDom(kind, index) {
+            const rows = [...getShortcutRows(kind)];
+            const row = rows[index] || { key1: '', key2: '', key3: '', action: '' };
+            const key1 = getShortcutDomField(kind, index, 'key1')?.value || '';
+            const key2 = getShortcutDomField(kind, index, 'key2')?.value || '';
+            const key3 = getShortcutDomField(kind, index, 'key3')?.value || '';
+            const action = getShortcutDomField(kind, index, 'action')?.value || '';
+            rows[index] = { ...row, key1, key2, key3, action };
+            setShortcutRows(kind, rows);
+        }
+
+        function focusNextShortcutField(kind, index, field) {
+            const fieldOrder = ['key1', 'key2', 'key3'];
+            const currentPos = fieldOrder.indexOf(field);
+            if (currentPos === -1 || currentPos === fieldOrder.length - 1) return;
+            const nextField = fieldOrder[currentPos + 1];
+            const nextInput = getShortcutDomField(kind, index, nextField);
+            if (nextInput) {
+                nextInput.focus();
+                nextInput.select();
+            }
+        }
+
+        function handleShortcutFieldKeydown(event) {
+            const input = event.currentTarget;
+            const kind = input.dataset.shortcutKind;
+            const index = Number(input.dataset.shortcutIndex);
+            const field = input.dataset.shortcutField;
+            if (!kind || Number.isNaN(index) || !field) return;
+
+            if (event.key === 'Tab') {
+                event.preventDefault();
+                syncShortcutRowFromDom(kind, index);
+                if (field === 'key3') {
+                    input.blur();
+                } else {
+                    focusNextShortcutField(kind, index, field);
+                }
+                return;
+            }
+
+            if (event.key === 'Backspace') {
+                event.preventDefault();
+                input.value = '';
+                syncShortcutRowFromDom(kind, index);
+                return;
+            }
+            event.preventDefault();
+            input.value = formatShortcutKey(event.key);
+            syncShortcutRowFromDom(kind, index);
+            if (field === 'key3') {
+                input.blur();
+            } else {
+                focusNextShortcutField(kind, index, field);
+            }
+        }
+
+        function handleShortcutFieldKeyup(event) {
+            const input = event.currentTarget;
+            const kind = input.dataset.shortcutKind;
+            const index = Number(input.dataset.shortcutIndex);
+            const field = input.dataset.shortcutField;
+            if (!kind || Number.isNaN(index) || !field) return;
+            syncShortcutRowFromDom(kind, index);
+        }
+
+        function handleShortcutFieldBlur(event) {
+            const input = event.currentTarget;
+            const kind = input.dataset.shortcutKind;
+            const index = Number(input.dataset.shortcutIndex);
+            const field = input.dataset.shortcutField;
+            if (!kind || Number.isNaN(index) || !field) return;
+            syncShortcutRowFromDom(kind, index);
+        }
+
+        function saveShortcutsModal() {
+            const defaultRowsCount = (globalSettings.defaultShortcutRows || []).length;
+            const defaultRows = Array.from({ length: defaultRowsCount }, (_, i) => i).map(i => {
+                const key1 = (getShortcutDomField('default', i, 'key1')?.value || '').trim();
+                const key2 = (getShortcutDomField('default', i, 'key2')?.value || '').trim();
+                const key3 = (getShortcutDomField('default', i, 'key3')?.value || '').trim();
+                const action = (getShortcutDomField('default', i, 'action')?.value || '').trim();
+                return { key1, key2, key3, action };
+            }).filter(row => row.action || row.key1 || row.key2 || row.key3);
+            const custom = [0, 1, 2].map(i => {
+                const key1 = (getShortcutDomField('custom', i, 'key1')?.value || '').trim();
+                const key2 = (getShortcutDomField('custom', i, 'key2')?.value || '').trim();
+                const key3 = (getShortcutDomField('custom', i, 'key3')?.value || '').trim();
+                const action = (getShortcutDomField('custom', i, 'action')?.value || '').trim();
+                return { key1, key2, key3, action };
+            });
+            globalSettings.defaultShortcutRows = defaultRows;
+            globalSettings.customShortcuts = custom;
+            rebuildShortcutActionMap();
+            closeShortcutsModal();
+        }
+
+        async function executeAction(action) {
             switch (action) {
                 case 'new-schedule': schedule = []; renderSchedule(); break;
-                case 'new-song':
-                    currentEditingSong = null;
-                    openSongEditor('Create New Song');
-                    break;
+                case 'new-song': currentEditingSong = null; openSongEditor('Create New Song'); break;
                 case 'import-media': importMedia(); break;
+                case 'import-file': handleMainImport(); break;
                 case 'save-schedule': saveSchedule(); break;
                 case 'open-schedule': openSchedule(); break;
                 case 'close-schedule': schedule = []; renderSchedule(); break;
                 case 'open-settings': openSettings(); break;
+                case 'toggle-live-window': await toggleLiveWindow(); break;
+                case 'close-live-window':
+                    if (isLiveWindowOpen) {
+                        await window.electronAPI.closeLiveWindow();
+                        isLiveWindowOpen = false;
+                    }
+                    break;
+                case 'clear-live': clearLive(); break;
+                case 'add-selected-to-schedule':
+                    if (currentEditingSong) addToSchedule({ ...currentEditingSong, id: Date.now() });
+                    else alert('Please select a song or bible item in library first!');
+                    break;
+                case 'remove-selected-from-schedule':
+                    if (currentScheduleIndex >= 0) removeFromSchedule(currentScheduleIndex);
+                    break;
+                case 'focus-search':
+                    const searchInput = document.getElementById('library-search');
+                    if (searchInput) {
+                        searchInput.focus();
+                        searchInput.select();
+                    }
+                    break;
+                case 'go-preview':
+                    if (currentScheduleIndex >= 0) loadToPreview(schedule[currentScheduleIndex]);
+                    break;
+                case 'go-live':
+                    goLiveFromPreview();
+                    break;
+                case 'live-current':
+                    liveCurrent();
+                    break;
+                case 'background-1':
+                    if (mediaLibrary[0]) previewBackground(mediaLibrary[0]);
+                    break;
+                case 'background-2':
+                    if (mediaLibrary[1]) previewBackground(mediaLibrary[1]);
+                    break;
+                case 'tab-bible':
+                    switchLibraryTab('bible');
+                    break;
+                case 'tab-song':
+                    switchLibraryTab('songs');
+                    break;
+                case 'quit-app': await window.electronAPI.quitApp(); break;
+                case 'next-slide':
+                    if (currentPreviewIndex < currentSlides.length - 1) selectSlide(currentPreviewIndex + 1);
+                    break;
+                case 'prev-slide':
+                    if (currentPreviewIndex > 0) selectSlide(currentPreviewIndex - 1);
+                    break;
                 case 'edit-song':
                     if (currentEditingSong) openSongEditor('Edit Song', currentEditingSong);
                     else alert('Please select a song in library first!');
                     break;
             }
+        }
+
+        // --- Auto-update Handlers ---
+        // --- Native Menu Handlers ---
+        window.electronAPI.onMenuAction((event, action) => {
+            console.log('Action triggered from menu:', action);
+            executeAction(action);
         });
 
         async function saveSchedule() {
@@ -3188,14 +3760,15 @@
         // --- Keyboard Support ---
         window.addEventListener('keydown', (e) => {
             if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) return;
-            
-            const keys = globalSettings.shortcuts || {
-                nextSlide: 'ArrowRight',
-                prevSlide: 'ArrowLeft',
-                clearScreen: 'Escape'
-            };
+            const combo = eventToCombo(e);
+            const action = shortcutActionMap[combo];
+            if (action) {
+                e.preventDefault();
+                executeAction(action);
+                return;
+            }
 
-            // Arrow keys control live panel when it has slides
+            const keys = globalSettings.shortcuts || {};
             if (liveSlides.length > 0) {
                 if (e.key === keys.nextSlide || (keys.nextSlide === 'ArrowRight' && (e.key === 'ArrowDown' || e.key === ' '))) {
                     if (currentLiveIndex < liveSlides.length - 1) goLiveSlide(currentLiveIndex + 1);
@@ -3209,6 +3782,22 @@
                 }
             }
         });
+
+        async function updateCpuUsage() {
+            try {
+                const usage = await window.electronAPI.getCpuUsage();
+                const cpuDisplay = document.getElementById('cpu-usage-display');
+                if (cpuDisplay) {
+                    cpuDisplay.innerText = `CPU: ${usage}%`;
+                }
+            } catch (e) {
+                console.error('Failed to update CPU usage:', e);
+            }
+        }
+
+        // Initialize CPU update loop
+        updateCpuUsage();
+        setInterval(updateCpuUsage, 3000);
 
         function scaleAllCanvases() {
             scaleVirtualCanvas('preview-virtual-canvas', 'preview-output-box');

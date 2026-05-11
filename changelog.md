@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [Unreleased] - 2026-05-11
+
+### Đã thêm (Added)
+- **Hệ thống (System):** Hiển thị **Phần trăm CPU thực tế** (cập nhật mỗi 3 giây) trên thanh trạng thái thay vì con số tĩnh 14%.
+- **Phím tắt (Shortcuts):**
+    - Bổ sung phím tắt mặc định mới: `Ctrl+F` (Tìm kiếm), `Ctrl+Enter` (Go Preview), `Ctrl+Shift+Enter` (Go Live), `Ctrl+1/2` (Chuyển Tab), `Ctrl+Alt+1/2` (Chọn Background), `Ctrl+Shift+Q` (Thoát).
+    - Phím tắt `Ctrl+Esc` để tắt nhanh màn hình Screen Live.
+    - Thêm action **Xóa khỏi Schedule** vào danh sách phím tắt (mặc định phím `Delete`).
+- **Tìm kiếm (Search):** Hỗ trợ `Ctrl+A` để chọn tất cả text ngay trong ô tìm kiếm.
+
+### Thay đổi (Changed)
+- **Màn hình trình chiếu (Live Window):**
+    - Cơ chế hiển thị thông minh: Tự động chiếu **Full Screen** trên màn hình thứ 2 nếu có kết nối.
+    - Tự động hiển thị dạng **Mini Window** (kích thước 1/3) ở góc màn hình chính khi không có màn hình phụ, phục vụ việc test.
+- **Phím tắt (Shortcuts):**
+    - Việt hóa toàn bộ nhãn chức năng trong hộp thoại cấu hình phím tắt để thân thiện hơn.
+    - Cải tiến phím tắt `Ctrl+F`: tự động focus và bôi đen toàn bộ nội dung ô tìm kiếm để gõ đè nhanh.
+    - Refactor logic lưu phím tắt để hỗ trợ danh sách phím mặc định có độ dài linh hoạt.
+- **Giao diện (UI):** Đồng bộ cấu trúc 3 ô phím cho cả phím tắt mặc định và tùy chỉnh.
+
 ## [1.0.3] - 2026-05-11
 
 ### Đã thêm (Added)
@@ -14,6 +34,8 @@ Tất cả các thay đổi và cập nhật quan trọng của dự án đượ
 - Sửa luồng load video media (MIME type, `playsinline`, autoplay policy) để preview/live ổn định hơn.
 - Sửa các trường hợp video hiển thị nền đen dù file đã import.
 - Tăng độ ổn định cửa sổ Screen Live với ưu tiên hiển thị và đồng bộ trạng thái foreground.
+- Thay icon text fallback bằng nhãn chữ ở các nút chính để không còn hiện slug như `play_arrow`, `upload_file`, `cast`, `play_circle`.
+- Rút gọn danh sách font khởi tạo xuống bộ font cơ bản 10-15 font và không chặn startup bằng bước load font hệ thống.
 
 ### Thay đổi (Changed)
 - Nâng cấp trải nghiệm Bible: truy cập trực tiếp theo chương, chọn bản dịch ngay trong tab Bible, cải tiến tìm kiếm.

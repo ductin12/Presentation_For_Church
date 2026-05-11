@@ -37,14 +37,24 @@ Item được lưu trong library thường có dạng:
 Settings hiện lưu trong `settings.json`. Các field quan trọng gồm:
 
 - `theme`
-- `fontFamily`
+- `gpuAcceleration`
+- `fontFamilySong`
+- `fontFamilyBible`
 - `fontSize`
 - `color`
 - `fontWeight`
 - `textAlign`
 - `verticalAlign`
+- `textStrokeWidth`
+- `textStrokeColor`
+- `textMargin` (`top`, `right`, `bottom`, `left`)
+- `textPadding` (`top`, `right`, `bottom`, `left`)
 - `mediaPath`
 - `shortcuts`
+- `defaultShortcutRows`:
+  - mỗi row gồm `key1`, `key2`, `key3`, `action`
+- `customShortcuts`:
+  - tối đa 3 row, cùng cấu trúc `key1`, `key2`, `key3`, `action`
 
 ## Media
 

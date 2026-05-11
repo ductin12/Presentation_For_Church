@@ -7,6 +7,10 @@ const SongSchema = {
       color: '#ffffff',
       textAlign: 'center',
       verticalAlign: 'middle',
+      textStrokeWidth: 5,
+      textStrokeColor: '#000000',
+      textMargin: { top: 0, right: 0, bottom: 0, left: 0 },
+      textPadding: { top: 0, right: 0, bottom: 0, left: 0 },
       textBox: { left: 48, width: 864, top: null }
     },
     background: null // null means use default background
@@ -56,6 +60,24 @@ function migrateItem(data) {
       migrated.style.textBox = {
         ...SongSchema.defaults.style.textBox,
         ...migrated.style.textBox
+      };
+    }
+
+    if (!migrated.style.textMargin || typeof migrated.style.textMargin !== 'object') {
+      migrated.style.textMargin = { ...SongSchema.defaults.style.textMargin };
+    } else {
+      migrated.style.textMargin = {
+        ...SongSchema.defaults.style.textMargin,
+        ...migrated.style.textMargin
+      };
+    }
+
+    if (!migrated.style.textPadding || typeof migrated.style.textPadding !== 'object') {
+      migrated.style.textPadding = { ...SongSchema.defaults.style.textPadding };
+    } else {
+      migrated.style.textPadding = {
+        ...SongSchema.defaults.style.textPadding,
+        ...migrated.style.textPadding
       };
     }
   }

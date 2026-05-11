@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   loadSongs: () => ipcRenderer.invoke('load-songs'),
   loadSettings: () => ipcRenderer.invoke('load-settings'),
+  loadSystemFonts: () => ipcRenderer.invoke('load-system-fonts'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   loadBible: () => ipcRenderer.invoke('load-bible'),
   loadBibleVersions: () => ipcRenderer.invoke('load-bible-versions'),
@@ -23,6 +24,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   liveSendContent: (data) => ipcRenderer.invoke('live-send-content', data),
   liveSendBackground: (data) => ipcRenderer.invoke('live-send-background', data),
   liveSendClear: () => ipcRenderer.invoke('live-send-clear'),
+  quitApp: () => ipcRenderer.invoke('quit-app'),
+  getCpuUsage: () => ipcRenderer.invoke('get-cpu-usage'),
   onLiveWindowClosed: (callback) => {
     ipcRenderer.removeAllListeners('live-window-closed');
     ipcRenderer.on('live-window-closed', callback);

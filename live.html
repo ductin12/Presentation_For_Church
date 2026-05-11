@@ -141,6 +141,10 @@
             textDecoration: 'none',
             textAlign: 'center',
             verticalAlign: 'middle',
+            textStrokeWidth: 5,
+            textStrokeColor: '#000000',
+            textMargin: { top: 0, right: 0, bottom: 0, left: 0 },
+            textPadding: { top: 0, right: 0, bottom: 0, left: 0 },
             textBox: { left: 48, width: 864, top: null }
         };
         const VIRTUAL_WIDTH = 960;
@@ -148,6 +152,16 @@
 
         let activeBuffer = 'a'; // which buffer is currently visible
         let currentBackgroundUrl = null; // track current background to avoid flicker
+
+        function normalizeSpacingBox(source, fallback) {
+            const input = source && typeof source === 'object' ? source : {};
+            return {
+                top: Number.isFinite(Number(input.top)) ? Number(input.top) : fallback.top,
+                right: Number.isFinite(Number(input.right)) ? Number(input.right) : fallback.right,
+                bottom: Number.isFinite(Number(input.bottom)) ? Number(input.bottom) : fallback.bottom,
+                left: Number.isFinite(Number(input.left)) ? Number(input.left) : fallback.left
+            };
+        }
 
         function normalizeStyle(style = {}) {
             const normalized = {
@@ -164,12 +178,16 @@
                 ...DEFAULT_STYLE.textBox,
                 ...((style && style.textBox) || {})
             };
+            normalized.textMargin = normalizeSpacingBox(style && style.textMargin, DEFAULT_STYLE.textMargin);
+            normalized.textPadding = normalizeSpacingBox(style && style.textPadding, DEFAULT_STYLE.textPadding);
 
             if (!normalized.color) normalized.color = DEFAULT_STYLE.color;
             if (!normalized.fontFamily) normalized.fontFamily = DEFAULT_STYLE.fontFamily;
             if (!normalized.fontSize) normalized.fontSize = DEFAULT_STYLE.fontSize;
             if (!normalized.textAlign) normalized.textAlign = DEFAULT_STYLE.textAlign;
             if (!normalized.verticalAlign) normalized.verticalAlign = DEFAULT_STYLE.verticalAlign;
+            if (!Number.isFinite(Number(normalized.textStrokeWidth))) normalized.textStrokeWidth = DEFAULT_STYLE.textStrokeWidth;
+            if (!normalized.textStrokeColor) normalized.textStrokeColor = DEFAULT_STYLE.textStrokeColor;
 
             return normalized;
         }
@@ -289,10 +307,13 @@
             el.style.textAlign = normalizedStyle.textAlign;
 
             el.style.textShadow = "none";
-            el.style.webkitTextStroke = "12px black";
+            el.style.webkitTextStroke = `${normalizedStyle.textStrokeWidth}px ${normalizedStyle.textStrokeColor}`;
             el.style.paintOrder = "stroke fill";
             el.style.width = "100%";
             el.style.lineHeight = "1.4";
+            el.style.margin = `${normalizedStyle.textMargin.top}px ${normalizedStyle.textMargin.right}px ${normalizedStyle.textMargin.bottom}px ${normalizedStyle.textMargin.left}px`;
+            el.style.padding = `${normalizedStyle.textPadding.top}px ${normalizedStyle.textPadding.right}px ${normalizedStyle.textPadding.bottom}px ${normalizedStyle.textPadding.left}px`;
+            el.style.boxSizing = 'border-box';
 
             if (textBox) {
                 const tb = normalizedStyle.textBox;
