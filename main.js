@@ -285,36 +285,76 @@ app.whenReady().then(() => {
     "Revelation": "Khải Huyền"
   };
 
-  ipcMain.handle('load-bible-parsed', () => {
-    const cachePath = path.join(userDataPath, 'bible-cache.json');
+  ipcMain.handle('load-bible-versions', () => {
+    try {
+      const dataDir = path.join(__dirname, 'data');
+      return fs.readdirSync(dataDir)
+        .filter(f => f.toLowerCase().endsWith('.xml'))
+        .map(f => ({ name: f.replace(/\.xml$/i, '').replace(/_/g, ' '), fileName: f }));
+    } catch (e) { return []; }
+  });
+
+  ipcMain.handle('import-bible-version', async () => {
+    const r = await dialog.showOpenDialog({ 
+      properties: ['openFile'], 
+      filters: [{ name: 'Bible XML', extensions: ['xml'] }] 
+    });
+    if (!r.canceled && r.filePaths.length > 0) {
+      const src = r.filePaths[0];
+      const name = path.basename(src);
+      const dest = path.join(__dirname, 'data', name);
+      fs.copyFileSync(src, dest);
+      return { success: true, name: name.replace(/\.xml$/i, '').replace(/_/g, ' '), fileName: name };
+    }
+    return null;
+  });
+
+  ipcMain.handle('load-bible-parsed', (event, fileName) => {
+    const xmlName = fileName || 'Bible_Vietnamese_Version_1925.xml';
+    const cacheName = `bible-cache-${xmlName}.json`;
+    const cachePath = path.join(userDataPath, cacheName);
+
+    console.log(`Loading Bible: ${xmlName}`);
 
     // Try loading from cache first
     try {
       if (fs.existsSync(cachePath)) {
-        return JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+        const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+        if (Array.isArray(cached) && cached.length > 0) {
+          console.log(`Loaded ${cached.length} chapters from cache for ${xmlName}`);
+          return cached;
+        } else {
+          console.warn(`Cache for ${xmlName} is invalid or empty, deleting...`);
+          fs.unlinkSync(cachePath);
+        }
       }
     } catch (e) {
       console.error('Bible cache corrupted, rebuilding...', e);
+      if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
     }
 
     // Parse XML and build cache
     try {
-      const xmlPath = path.join(__dirname, 'data', 'Bible_Vietnamese.xml');
-      if (!fs.existsSync(xmlPath)) return [];
+      const xmlPath = path.join(__dirname, 'data', xmlName);
+      if (!fs.existsSync(xmlPath)) {
+        console.error(`Bible XML not found at ${xmlPath}`);
+        return [];
+      }
 
       let xmlData = fs.readFileSync(xmlPath, 'utf8');
       // Fix legacy encoding: Ð (U+00D0) → Đ (U+0110)
       xmlData = xmlData.replace(/\u00D0/g, '\u0110');
 
       const bibleLibrary = [];
-      const bookRegex = /<BIBLEBOOK[^>]*bname="([^"]*)"[^>]*>([\s\S]*?)<\/BIBLEBOOK>/g;
-      const chapterRegex = /<CHAPTER[^>]*cnumber="([^"]*)"[^>]*>([\s\S]*?)<\/CHAPTER>/g;
-      const verseRegex = /<VERS[^>]*vnumber="([^"]*)"[^>]*>([\s\S]*?)<\/VERS>/g;
+      // Robust regex: case-insensitive, handles single/double quotes, and optional attributes
+      const bookRegex = /<BIBLEBOOK[^>]*bname=['"]([^'"]*)['"][^>]*>([\s\S]*?)<\/BIBLEBOOK>/gi;
+      const chapterRegex = /<CHAPTER[^>]*cnumber=['"]([^'"]*)['"][^>]*>([\s\S]*?)<\/CHAPTER>/gi;
+      const verseRegex = /<VERS[^>]*vnumber=['"]([^'"]*)['"][^>]*>([\s\S]*?)<\/VERS>/gi;
 
       let bookMatch;
       while ((bookMatch = bookRegex.exec(xmlData)) !== null) {
         const bname = bookMatch[1];
-        const vnName = bibleBookMap[bname] || bname;
+        const vnName = (bibleBookMap[bname] || bname).trim();
         const bookContent = bookMatch[2];
 
         chapterRegex.lastIndex = 0;
@@ -340,9 +380,12 @@ app.whenReady().then(() => {
         }
       }
 
-      // Save cache
-      safeWriteSync(cachePath, bibleLibrary);
-      console.log(`Bible parsed and cached: ${bibleLibrary.length} chapters`);
+      if (bibleLibrary.length > 0) {
+        safeWriteSync(cachePath, bibleLibrary);
+        console.log(`Bible parsed and cached: ${bibleLibrary.length} chapters for ${xmlName}`);
+      } else {
+        console.warn(`No chapters parsed from ${xmlName}. Check XML structure.`);
+      }
       return bibleLibrary;
     } catch (e) {
       console.error('Failed to parse Bible XML:', e);

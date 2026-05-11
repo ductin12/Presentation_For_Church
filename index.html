@@ -547,7 +547,14 @@
                                 onclick="switchLibraryTab('songs')">Songs</button>
                             <button id="tab-bible"
                                 class="px-2 py-1 text-xs font-bold uppercase tracking-wider text-white/40 hover:text-white/70"
-                                onclick="openBibleSelector()">Bible</button>
+                                onclick="switchLibraryTab('bible')">Bible</button>
+                        </div>
+                        <!-- Version Selector (Bible Only) -->
+                        <div id="bible-version-selector-container" class="hidden">
+                            <select id="bible-version-select" onchange="changeBibleVersion(this.value)"
+                                class="bg-slate-700 text-white text-[10px] border-none rounded px-1.5 h-6 focus:ring-1 focus:ring-primary/30 max-w-[120px]">
+                                <!-- Options will be populated here -->
+                            </select>
                         </div>
                         <div class="relative">
                             <span
@@ -577,7 +584,7 @@
                     </table>
                 </div>
                 <div class="px-3 py-2 border-t border-slate-200 dark:border-slate-700 shrink-0 flex justify-center bg-slate-50 dark:bg-slate-800/30">
-                    <button onclick="importSongsFromFile()" class="w-full py-2 bg-primary hover:bg-primary/90 text-white text-[11px] font-bold rounded flex items-center justify-center gap-2 transition-colors shadow-sm">
+                    <button id="import-btn-main" onclick="handleMainImport()" class="w-full py-2 bg-primary hover:bg-primary/90 text-white text-[11px] font-bold rounded flex items-center justify-center gap-2 transition-colors shadow-sm">
                         <span class="material-symbols-outlined text-sm">upload_file</span>
                         IMPORT SONG
                     </button>
@@ -820,6 +827,42 @@
     </div>
 
     <!-- Bible Selector Modal -->
+    <!-- Bible Selector Modal -->
+    <div class="modal-overlay" id="bible-selector-modal" style="display:none; align-items:center; justify-content:center; z-index:9999;">
+        <div class="bg-white rounded-lg shadow-2xl border border-slate-300" style="width: 400px; position:relative;">
+            <div class="bg-white px-3 py-2 flex items-center justify-between border-b border-slate-200 rounded-t-lg">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm text-blue-600">menu_book</span>
+                    <span class="text-[12px] font-semibold">Chọn Kinh Thánh</span>
+                </div>
+                <button class="w-6 h-5 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors rounded"
+                    onclick="closeBibleSelector()">
+                    <span class="material-symbols-outlined text-xs">close</span>
+                </button>
+            </div>
+            <div class="p-4 space-y-3">
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-semibold text-slate-600 mb-1 uppercase tracking-wider">Sách</label>
+                        <select id="bible-book-select" class="w-full text-[11px] border border-slate-300 rounded px-2 py-1.5 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400" onchange="onBibleBookSelect()">
+                            <option value="">-- Chọn sách --</option>
+                        </select>
+                    </div>
+                    <div style="width: 100px;">
+                        <label class="block text-[10px] font-semibold text-slate-600 mb-1 uppercase tracking-wider">Chương</label>
+                        <select id="bible-chapter-select" class="w-full text-[11px] border border-slate-300 rounded px-2 py-1.5 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                            <option value="">--</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2 rounded-b-lg">
+                <button class="px-4 py-1.5 text-[11px] bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium" onclick="onBibleOK()">OK</button>
+                <button class="px-4 py-1.5 text-[11px] bg-white text-slate-700 border border-slate-300 rounded hover:bg-slate-100 transition-colors" onclick="closeBibleSelector()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Settings Modal -->
     <div class="modal-overlay" id="settings-modal">
         <div class="win-modal-container" style="width: 500px; height: auto; max-height: 80vh;">
@@ -912,7 +955,8 @@
 
 
         let songLibrary = [];
-        let bibleLibrary = [];    // Static Bible from XML
+        let bibleVersions = [];
+        let bibleLibrary = [];    // Current active Bible version chapters
         let savedBibleList = [];  // Dynamic Bible edits from bible.json
         let schedule = [];
         let mediaLibrary = [];
@@ -962,11 +1006,56 @@
             }
         };
 
+        async function loadBibleVersions() {
+            try {
+                bibleVersions = await window.electronAPI.loadBibleVersions();
+                console.log(`Loaded ${bibleVersions.length} bible versions`);
+                
+                const select = document.getElementById('bible-version-select');
+                if (select) {
+                    select.innerHTML = '';
+                    bibleVersions.forEach(v => {
+                        const opt = document.createElement('option');
+                        opt.value = v.fileName;
+                        opt.textContent = v.name;
+                        select.appendChild(opt);
+                    });
+                }
+                
+                // Load first version by default if bibleLibrary is empty
+                if (bibleVersions.length > 0 && bibleLibrary.length === 0) {
+                    await changeBibleVersion(bibleVersions[0].fileName);
+                }
+
+                renderLibrary();
+            } catch (e) { console.error(e); }
+        }
+
+        async function changeBibleVersion(fileName) {
+            console.log('Changing Bible version to:', fileName);
+            try {
+                const data = await window.electronAPI.loadBibleParsed(fileName);
+                if (data && data.length > 0) {
+                    bibleLibrary = data;
+                    renderLibrary();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function importBibleVersion() {
+            console.log('importBibleVersion triggered');
+            const result = await window.electronAPI.importBibleVersion();
+            if (result && result.success) {
+                alert(`Đã import thành công bản dịch: ${result.name}`);
+                await loadBibleVersions();
+            }
+        }
+
         // --- Initialization ---
         window.addEventListener('DOMContentLoaded', async () => {
             await loadSettings();
             loadLibrary();
-            loadBible();
+            loadBibleVersions();
             loadMedia();
 
             // Menu actions
@@ -1082,28 +1171,53 @@
             closeSettings();
         }
 
-        async function loadBible() {
-            try {
-                bibleLibrary = await window.electronAPI.loadBibleParsed();
-                console.log(`Loaded ${bibleLibrary.length} bible chapters from cache`);
-            } catch (error) {
-                console.error('Error loading Bible:', error);
-                bibleLibrary = [];
-            }
-        }
-
-        // --- Bible Selector Popup ---
-        function openBibleSelector() {
+        async function openBibleSelector(fileName = null) {
             const modal = document.getElementById('bible-selector-modal');
             const bookSelect = document.getElementById('bible-book-select');
             const chapterSelect = document.getElementById('bible-chapter-select');
 
-            // Populate book dropdown with unique book names
+            if (!modal) {
+                console.error('Bible selector modal not found in DOM!');
+                return;
+            }
+
+            // Feedback: Show that we are loading
+            const importBtn = document.getElementById('import-btn-main');
+            const originalText = importBtn ? importBtn.innerHTML : '';
+            if (importBtn && fileName) {
+                importBtn.innerHTML = `<span class="material-symbols-outlined animate-spin text-sm">sync</span> LOADING...`;
+                importBtn.disabled = true;
+            }
+
+            // Clear current library to ensure fresh load
+            bibleLibrary = [];
+
+            // If a fileName is provided, load that version
+            try {
+                const data = await window.electronAPI.loadBibleParsed(fileName || 'Bible_Vietnamese_Version_1925.xml');
+                if (data && data.length > 0) {
+                    bibleLibrary = data;
+                }
+            } catch (e) { 
+                console.error('Error loading bible:', e);
+            }
+
+            if (importBtn) {
+                importBtn.innerHTML = originalText;
+                importBtn.disabled = false;
+            }
+
+            if (!bibleLibrary || bibleLibrary.length === 0) {
+                alert('Không thể tải nội dung Kinh Thánh. Có thể file XML bị lỗi hoặc đang được xử lý.');
+                return;
+            }
+
+            // Populate book dropdown
             const books = [];
             const seen = new Set();
             bibleLibrary.forEach(item => {
-                const bookName = item.title.replace(/\s+\d+$/, '');
-                if (!seen.has(bookName)) {
+                const bookName = item.title.replace(/\s+\d+$/, '').trim();
+                if (bookName && !seen.has(bookName)) {
                     seen.add(bookName);
                     books.push(bookName);
                 }
@@ -1118,9 +1232,10 @@
             });
 
             chapterSelect.innerHTML = '<option value="">--</option>';
+            
+            // Explicitly show modal
             modal.style.display = 'flex';
-            modal.style.alignItems = 'center';
-            modal.style.justifyContent = 'center';
+            console.log('Bible selector modal should be visible now.');
         }
 
         function closeBibleSelector() {
@@ -1172,17 +1287,21 @@
             currentLibraryTab = tab;
             const songsBtn = document.getElementById('tab-songs');
             const bibleBtn = document.getElementById('tab-bible');
+            const versionSelector = document.getElementById('bible-version-selector-container');
 
             if (tab === 'songs') {
                 songsBtn.classList.add('text-white', 'border-b-2', 'border-primary');
                 songsBtn.classList.remove('text-white/40');
                 bibleBtn.classList.add('text-white/40');
                 bibleBtn.classList.remove('text-white', 'border-b-2', 'border-primary');
+                if (versionSelector) versionSelector.classList.add('hidden');
             } else {
                 bibleBtn.classList.add('text-white', 'border-b-2', 'border-primary');
                 bibleBtn.classList.remove('text-white/40');
                 songsBtn.classList.add('text-white/40');
                 songsBtn.classList.remove('text-white', 'border-b-2', 'border-primary');
+                if (versionSelector) versionSelector.classList.remove('hidden');
+                loadBibleVersions(); // Refresh versions
             }
             filterLibrary();
         }
@@ -1261,63 +1380,96 @@
             }
         }
 
+        function handleMainImport() {
+            if (currentLibraryTab === 'songs') {
+                importSongsFromFile();
+            } else {
+                importBibleVersion();
+            }
+        }
+
         function renderLibrary() {
             const tbody = document.querySelector('tbody');
+            const thead = document.querySelector('thead tr th');
+            const importBtn = document.getElementById('import-btn-main');
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            let source = [];
-            if (currentLibraryTab === 'songs') {
-                source = songLibrary;
-            } else {
-                // Bible tab: hiển thị cả bible từ XML và bible đã lưu
-                // Ưu tiên hiển thị bible đã lưu (savedBibleList)
-                source = [...savedBibleList, ...bibleLibrary];
-                // Lọc bỏ trùng lặp nếu cần (dựa trên title)
-                const seen = new Set();
-                source = source.filter(item => {
-                    const duplicate = seen.has(item.title);
-                    seen.add(item.title);
-                    return !duplicate;
-                });
-            }
-            
             const query = normalizeForSearch(document.getElementById('library-search').value);
-            const filtered = query
-                ? source.filter(s => {
-                    const titleMatch = normalizeForSearch(s.title).includes(query);
-                    const lyricsMatch = s.lyrics && normalizeForSearch(s.lyrics).includes(query);
-                    return titleMatch || lyricsMatch;
-                })
-                : source;
 
-            const sorted = currentLibraryTab === 'songs'
-                ? [...filtered].sort((a, b) => a.title.localeCompare(b.title, 'vi'))
-                : filtered;
+            if (currentLibraryTab === 'songs') {
+                thead.innerText = 'TITLE';
+                if (importBtn) {
+                    importBtn.innerHTML = `<span class="material-symbols-outlined text-sm">upload_file</span> IMPORT SONG`;
+                }
+                
+                const filtered = query
+                    ? songLibrary.filter(s => {
+                        const titleMatch = normalizeForSearch(s.title).includes(query);
+                        const lyricsMatch = s.lyrics && normalizeForSearch(s.lyrics).includes(query);
+                        return titleMatch || lyricsMatch;
+                    })
+                    : songLibrary;
 
-            if (sorted.length === 0) {
-                tbody.innerHTML = '<tr><td class="px-4 py-2 text-[10px] text-slate-400">Library is empty.</td></tr>';
-                return;
-            }
-            sorted.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = 'cursor-pointer select-none';
+                const sorted = [...filtered].sort((a, b) => a.title.localeCompare(b.title, 'vi'));
 
-                let snippet = '';
-                if (query && item.lyrics) {
-                    const matchLine = item.lyrics.split('\n').find(l => l.trim() && normalizeForSearch(l).includes(query));
-                    if (matchLine) snippet = matchLine.trim().substring(0, 80);
+                if (sorted.length === 0) {
+                    tbody.innerHTML = '<tr><td class="px-4 py-2 text-[10px] text-slate-400">Library is empty.</td></tr>';
+                    return;
+                }
+                sorted.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'cursor-pointer select-none';
+                    let snippet = '';
+                    if (query && item.lyrics) {
+                        const matchLine = item.lyrics.split('\n').find(l => l.trim() && normalizeForSearch(l).includes(query));
+                        if (matchLine) snippet = matchLine.trim().substring(0, 80);
+                    }
+                    tr.innerHTML = `<td class="px-3 py-1.5">
+                        <div class="text-[11px] font-medium text-slate-900 dark:text-slate-100">${item.title}</div>
+                        ${snippet ? `<div class="text-[9px] text-indigo-400 mt-0.5 truncate">${snippet}</div>` : ''}
+                    </td>`;
+                    tr.onclick = () => { selectItemInLibrary(item); };
+                    tr.ondblclick = (e) => { e.stopPropagation(); addToSchedule(item); };
+                    tr.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e, item); };
+                    tbody.appendChild(tr);
+                });
+            } else {
+                thead.innerText = 'BIBLE CHAPTER';
+                if (importBtn) {
+                    importBtn.innerHTML = `<span class="material-symbols-outlined text-sm">auto_stories</span> IMPORT BIBLE`;
                 }
 
-                tr.innerHTML = `<td class="px-3 py-1.5">
-                    <div class="text-[11px] font-medium text-slate-900 dark:text-slate-100">${item.title}</div>
-                    ${snippet ? `<div class="text-[9px] text-indigo-400 mt-0.5 truncate">${snippet}</div>` : ''}
-                </td>`;
-                tr.onclick = () => { selectItemInLibrary(item); };
-                tr.ondblclick = (e) => { e.stopPropagation(); addToSchedule(item); };
-                tr.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e, item); };
-                tbody.appendChild(tr);
-            });
+                const filtered = query
+                    ? bibleLibrary.filter(s => {
+                        const titleMatch = normalizeForSearch(s.title).includes(query);
+                        const lyricsMatch = s.lyrics && normalizeForSearch(s.lyrics).includes(query);
+                        return titleMatch || lyricsMatch;
+                    })
+                    : bibleLibrary;
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = '<tr><td class="px-4 py-2 text-[10px] text-slate-400">No chapters found.</td></tr>';
+                    return;
+                }
+                filtered.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'cursor-pointer select-none';
+                    let snippet = '';
+                    if (query && item.lyrics) {
+                        const matchLine = item.lyrics.split('\n').find(l => l.trim() && normalizeForSearch(l).includes(query));
+                        if (matchLine) snippet = matchLine.trim().substring(0, 80);
+                    }
+                    tr.innerHTML = `<td class="px-3 py-1.5">
+                        <div class="text-[11px] font-medium text-slate-900 dark:text-slate-100">${item.title}</div>
+                        ${snippet ? `<div class="text-[9px] text-indigo-400 mt-0.5 truncate">${snippet}</div>` : ''}
+                    </td>`;
+                    tr.onclick = () => { selectItemInLibrary(item); };
+                    tr.ondblclick = (e) => { e.stopPropagation(); addToSchedule(item); };
+                    tr.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e, item); };
+                    tbody.appendChild(tr);
+                });
+            }
         }
 
         async function importSongsFromFile() {
