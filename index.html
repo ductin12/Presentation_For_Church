@@ -652,7 +652,7 @@
                         </button>
                         <button
                             class="bg-white/20 hover:bg-white/30 text-white text-[9px] font-bold py-0.5 px-2 rounded transition-colors"
-                            onclick="clearLive()">Clear</button>
+                            onclick="clearLive()" title="Xóa văn bản (Giữ nền)">Clear</button>
                         <button
                             class="bg-red-600 hover:bg-red-500 text-white text-[9px] font-bold py-0.5 px-2 rounded transition-colors"
                             onclick="liveCurrent()">Live</button>
@@ -1616,7 +1616,7 @@
         function prepareLivePayload(data = {}) {
             const payload = { ...data };
             payload.style = normalizeSlideStyle(payload.style || currentLiveStyle || {});
-            if ('background' in payload) {
+            if (data.hasOwnProperty('background')) {
                 payload.background = normalizeSlideBackground(payload.background);
             }
             return payload;
@@ -2883,9 +2883,9 @@
 
         function clearLive() {
             updateLiveOutput("");
-            currentLiveBackground = null;
-            // Send clear text only to Screen Live (keep background)
-            sendToLiveWindow({ text: '', background: null });
+            // Send empty text to Screen Live, but do NOT send background: null 
+            // so the current background remains active on screen.
+            sendToLiveWindow({ text: '' });
         }
 
         function liveCurrent() {
@@ -3737,7 +3737,23 @@
                 await window.electronAPI.closeLiveWindow();
                 isLiveWindowOpen = false;
             } else {
-                await window.electronAPI.openLiveWindow();
+                // Calculate position for mini-window based on live-slides-container element
+                const container = document.getElementById('live-slides-container');
+                let bounds = null;
+                if (container) {
+                    const rect = container.getBoundingClientRect();
+                    // Convert DOM coordinates to Screen coordinates
+                    // Screen X = Window Screen X + DOM X
+                    // Screen Y = Window Screen Y + DOM Y (including title bar approx)
+                    bounds = {
+                        x: Math.round(window.screenX + rect.left),
+                        y: Math.round(window.screenY + rect.top + (window.outerHeight - window.innerHeight)),
+                        width: Math.round(rect.width),
+                        height: Math.round(rect.height)
+                    };
+                }
+
+                await window.electronAPI.openLiveWindow(bounds);
                 isLiveWindowOpen = true;
                 // Send current live content immediately after opening
                 setTimeout(() => {

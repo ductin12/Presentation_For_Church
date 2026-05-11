@@ -19,7 +19,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectFolder: () => ipcRenderer.invoke('select-folder'),
   showOpenDialogMulti: (opts) => ipcRenderer.invoke('show-open-dialog-multi', opts),
   importSongsFromFile: (filePaths) => ipcRenderer.invoke('import-songs-from-file', filePaths),
-  openLiveWindow: () => ipcRenderer.invoke('open-live-window'),
+  openLiveWindow: (bounds) => ipcRenderer.invoke('open-live-window', bounds),
   closeLiveWindow: () => ipcRenderer.invoke('close-live-window'),
   liveSendContent: (data) => ipcRenderer.invoke('live-send-content', data),
   liveSendBackground: (data) => ipcRenderer.invoke('live-send-background', data),

@@ -167,45 +167,65 @@ function listSystemFonts() {
   ];
 }
 
-function syncLiveWindowToPreferredDisplay() {
+let lastKnownMonitorCount = 0;
+let lastKnownDisplayId = null;
+let requestedLiveBounds = null;
+
+function syncLiveWindowToPreferredDisplay(force = false) {
   if (!liveWindow || liveWindow.isDestroyed()) return;
 
+  const displays = screen.getAllDisplays();
+  const currentMonitorCount = displays.length;
   const display = getPreferredLiveDisplay();
   if (!display) return;
 
-  const displays = screen.getAllDisplays();
-  const isMultiDisplay = displays.length > 1;
-  const bounds = display.workAreaBounds || display.bounds;
-  liveWindowTargetDisplayId = display.id;
+  const isMultiDisplay = currentMonitorCount > 1;
+  const targetId = display.id;
 
-  if (isMultiDisplay) {
-    // Multi-monitor: Fullscreen on the external display
-    liveWindow.setFullScreen(false);
-    liveWindow.setBounds(bounds, false);
-    liveWindow.setFullScreen(true);
-    liveWindow.setAlwaysOnTop(true, 'screen-saver');
-    try {
-      liveWindow.setSkipTaskbar(true);
-      liveWindow.moveTop();
-    } catch (e) {}
-  } else {
-    // Single monitor: 1/3 size floating window for testing
-    const w = Math.floor(bounds.width / 3);
-    const h = Math.floor(bounds.height / 3);
-    const x = bounds.x + bounds.width - w - 50;
-    const y = bounds.y + 50;
-    
-    liveWindow.setFullScreen(false);
-    liveWindow.setBounds({ x, y, width: w, height: h }, false);
-    liveWindow.setAlwaysOnTop(true, 'screen-saver');
-    try {
-      liveWindow.setSkipTaskbar(false);
-    } catch (e) {}
+  const needsBoundsUpdate = force || 
+                             currentMonitorCount !== lastKnownMonitorCount || 
+                             targetId !== lastKnownDisplayId;
+
+  if (needsBoundsUpdate) {
+    const bounds = display.workAreaBounds || display.bounds;
+    liveWindowTargetDisplayId = targetId;
+    lastKnownMonitorCount = currentMonitorCount;
+    lastKnownDisplayId = targetId;
+
+    if (isMultiDisplay) {
+      // Multi-monitor: Fullscreen on the external display
+      liveWindow.setFullScreen(false);
+      liveWindow.setBounds(bounds, false);
+      liveWindow.setFullScreen(true);
+      liveWindow.setAlwaysOnTop(true, 'screen-saver');
+      try {
+        liveWindow.setSkipTaskbar(true);
+        liveWindow.moveTop();
+      } catch (e) {}
+    } else {
+      // Single monitor: Use requested bounds (if provided) or default to 1/3 size
+      if (requestedLiveBounds) {
+        liveWindow.setFullScreen(false);
+        liveWindow.setBounds(requestedLiveBounds, false);
+      } else {
+        const w = Math.floor(bounds.width / 3);
+        const h = Math.floor(bounds.height / 3);
+        const x = bounds.x + bounds.width - w - 50;
+        const y = bounds.y + 50;
+        liveWindow.setFullScreen(false);
+        liveWindow.setBounds({ x, y, width: w, height: h }, false);
+      }
+      liveWindow.setAlwaysOnTop(true, 'screen-saver');
+      try {
+        liveWindow.setSkipTaskbar(false);
+      } catch (e) {}
+    }
   }
 
   if (!liveWindow.isVisible()) {
     liveWindow.show();
   }
+  liveWindow.setAlwaysOnTop(true, 'screen-saver');
 }
 
 function migrateBundledBibleVersionsToUserData() {
@@ -316,19 +336,25 @@ function initializeData() {
   }
 }
 
-function createLiveWindow() {
+function createLiveWindow(initialBounds = null) {
   const enforceLiveWindowPriority = () => {
     syncLiveWindowToPreferredDisplay();
   };
 
   if (liveWindow) {
-    syncLiveWindowToPreferredDisplay();
+    if (initialBounds) {
+      requestedLiveBounds = initialBounds;
+      syncLiveWindowToPreferredDisplay(true);
+    } else {
+      syncLiveWindowToPreferredDisplay();
+    }
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('live-window-opened');
     }
     return;
   }
   
+  requestedLiveBounds = initialBounds;
   const displays = screen.getAllDisplays();
   const isMultiDisplay = displays.length > 1;
   const display = getPreferredLiveDisplay();
@@ -341,10 +367,17 @@ function createLiveWindow() {
   let height = targetBounds.height;
 
   if (!isMultiDisplay) {
-    width = Math.floor(targetBounds.width / 3);
-    height = Math.floor(targetBounds.height / 3);
-    x = targetBounds.x + targetBounds.width - width - 50;
-    y = targetBounds.y + 50;
+    if (requestedLiveBounds) {
+      x = requestedLiveBounds.x;
+      y = requestedLiveBounds.y;
+      width = requestedLiveBounds.width;
+      height = requestedLiveBounds.height;
+    } else {
+      width = Math.floor(targetBounds.width / 3);
+      height = Math.floor(targetBounds.height / 3);
+      x = targetBounds.x + targetBounds.width - width - 50;
+      y = targetBounds.y + 50;
+    }
   }
 
   liveWindow = new BrowserWindow({
@@ -384,6 +417,9 @@ function createLiveWindow() {
   liveWindow.on('closed', () => {
     liveWindow = null;
     liveWindowTargetDisplayId = null;
+    lastKnownMonitorCount = 0;
+    lastKnownDisplayId = null;
+    requestedLiveBounds = null;
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('live-window-closed');
     }
@@ -445,9 +481,9 @@ function setupMenu(win) {
 bootstrapGpuAccelerationPreference();
 app.whenReady().then(() => {
   initializeData();
-  screen.on('display-added', syncLiveWindowToPreferredDisplay);
-  screen.on('display-removed', syncLiveWindowToPreferredDisplay);
-  screen.on('display-metrics-changed', syncLiveWindowToPreferredDisplay);
+  screen.on('display-added', () => syncLiveWindowToPreferredDisplay(true));
+  screen.on('display-removed', () => syncLiveWindowToPreferredDisplay(true));
+  screen.on('display-metrics-changed', () => syncLiveWindowToPreferredDisplay(true));
 
   // Register app-media:// protocol to serve local media files
   protocol.handle('app-media', (request) => {
@@ -858,7 +894,7 @@ app.whenReady().then(() => {
     } catch (e) { return []; }
   });
 
-  ipcMain.handle('open-live-window', () => { createLiveWindow(); return true; });
+  ipcMain.handle('open-live-window', (e, bounds) => { createLiveWindow(bounds); return true; });
   ipcMain.handle('close-live-window', () => {
     if (liveWindow && !liveWindow.isDestroyed()) {
       liveWindow.destroy();

@@ -2,7 +2,7 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
-## [Unreleased] - 2026-05-11
+## [1.0.4] - 2026-05-11
 
 ### Đã thêm (Added)
 - **Hệ thống (System):** Hiển thị **Phần trăm CPU thực tế** (cập nhật mỗi 3 giây) trên thanh trạng thái thay vì con số tĩnh 14%.
@@ -15,7 +15,9 @@ Tất cả các thay đổi và cập nhật quan trọng của dự án đượ
 ### Thay đổi (Changed)
 - **Màn hình trình chiếu (Live Window):**
     - Cơ chế hiển thị thông minh: Tự động chiếu **Full Screen** trên màn hình thứ 2 nếu có kết nối.
-    - Tự động hiển thị dạng **Mini Window** (kích thước 1/3) ở góc màn hình chính khi không có màn hình phụ, phục vụ việc test.
+    - Tự động hiển thị đè lên khung danh sách Slide (Live Panel) ở màn hình chính khi không có màn hình phụ, giúp dễ dàng kiểm tra nội dung tại chỗ.
+    - Hỗ trợ kéo thả để di chuyển cửa sổ Live và tự động ghi nhớ vị trí trong suốt phiên làm việc.
+    - Cải tiến nút **Clear**: Chỉ xóa phần văn bản (lyrics), vẫn giữ nguyên hình nền đang phát trên Screen Live.
 - **Phím tắt (Shortcuts):**
     - Việt hóa toàn bộ nhãn chức năng trong hộp thoại cấu hình phím tắt để thân thiện hơn.
     - Cải tiến phím tắt `Ctrl+F`: tự động focus và bôi đen toàn bộ nội dung ô tìm kiếm để gõ đè nhanh.
