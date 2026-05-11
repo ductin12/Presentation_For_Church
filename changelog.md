@@ -2,6 +2,16 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [1.1.4] - 2026-05-11
+
+### Đã sửa (Fixed)
+- Sửa luồng load video media để thumbnail, preview, live output và Screen Live dùng MIME type đúng và `playsinline`.
+- Giới hạn các định dạng video được nạp vào nhóm phát ổn định hơn để giảm trường hợp file hiện nhưng chỉ ra nền đen.
+- Loại bỏ lỗi menu action bị nuốt khiến `Import Media` không phản hồi.
+
+### Thay đổi (Changed)
+- Đồng bộ lại cách nhận diện video giữa `load-media`, `import-media` và renderer.
+
 ## [1.1.3] - 2026-05-11
 
 ### Đã sửa (Fixed)
