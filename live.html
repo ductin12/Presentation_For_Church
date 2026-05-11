@@ -176,9 +176,20 @@
 
         function normalizeBackground(bg) {
             if (!bg || !bg.mediaName) return null;
+            const inferMediaType = (value) => {
+                const source = (value || '').toString().toLowerCase().split(/[?#]/)[0];
+                return /\.(mp4|mov|m4v|webm|wmv)$/.test(source) ? 'video' : 'image';
+            };
+
+            const mediaType = bg.mediaType === 'video' || bg.type === 'video'
+                ? 'video'
+                : bg.mediaType === 'image' || bg.type === 'image'
+                    ? 'image'
+                    : inferMediaType(bg.url || bg.mediaName);
+
             return {
                 mediaName: bg.mediaName,
-                mediaType: bg.mediaType === 'video' ? 'video' : 'image',
+                mediaType: mediaType,
                 url: bg.url || `app-media://${encodeURIComponent(bg.mediaName)}`
             };
         }
@@ -207,6 +218,7 @@
             if (background.mediaType === 'video') {
                 nextVid.classList.remove('hidden');
                 nextVid.src = background.url;
+                nextVid.load();
                 nextVid.play().catch((error) => {
                     console.warn('[Live] Failed to play background video:', error);
                 });

@@ -210,6 +210,45 @@
             position: absolute;
         }
 
+        .media-drop-menu {
+            position: fixed;
+            z-index: 9999;
+            min-width: 200px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background-color: #ffffff;
+            color: #111827;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+        }
+
+        .media-drop-menu .media-drop-option {
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.25;
+            color: #111827 !important;
+            background-color: #ffffff !important;
+            user-select: none;
+        }
+
+        .media-drop-menu .media-drop-option + .media-drop-option {
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .media-drop-menu .media-drop-option:hover {
+            background-color: #eff6ff !important;
+        }
+
+        .media-drop-menu .material-symbols-outlined {
+            color: inherit !important;
+            font-size: 16px;
+        }
+
         #song-editor-modal .win-modal-container,
         #bible-selector-modal > div,
         #settings-modal .win-modal-container {
@@ -561,7 +600,7 @@
                             class="w-32 aspect-video bg-black rounded-md border border-slate-200 dark:border-slate-700 shrink-0 overflow-hidden relative" id="preview-output-box">
                             <img class="absolute inset-0 w-full h-full object-cover hidden" id="preview-bg-img" />
                             <video class="absolute inset-0 w-full h-full object-cover hidden"
-                                id="preview-bg-video" autoplay loop muted></video>
+                                id="preview-bg-video" autoplay loop muted preload="auto"></video>
                             <div class="absolute inset-0 overflow-hidden" id="preview-canvas-wrap">
                                 <div id="preview-virtual-canvas" style="width:960px;height:540px;transform-origin:center;position:absolute;top:50%;left:50%;">
                                     <div id="preview-text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:454px;overflow:hidden;">
@@ -619,7 +658,7 @@
                             class="w-32 aspect-video bg-black rounded-md border border-slate-200 dark:border-slate-700 overflow-hidden relative shrink-0 shadow-md" id="live-output-box">
                             <img class="absolute inset-0 w-full h-full object-cover hidden" id="live-bg-img" />
                             <video class="absolute inset-0 w-full h-full object-cover hidden"
-                                id="live-bg-video" autoplay loop muted></video>
+                                id="live-bg-video" autoplay loop muted preload="auto"></video>
                             <div class="absolute inset-0 overflow-hidden" id="live-canvas-wrap">
                                 <div id="live-virtual-canvas" style="width:960px;height:540px;transform-origin:center;position:absolute;top:50%;left:50%;">
                                     <div id="live-text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:454px;overflow:hidden;">
@@ -1084,6 +1123,7 @@
         let currentPreviewStyle = null; // Style của bài hiện đang ở preview
         let currentLiveStyle = null;    // Style của bài hiện đang ở live
         let currentPreviewBackground = null; // Background đang hiển thị ở preview
+        let currentLiveBackground = null; // Background đang phát ở live/screen live
 
         const bibleBookMap = {
             "Genesis": "Sáng Thế Ký", "Exodus": "Xuất Ê-díp-tô Ký", "Leviticus": "Lê-vi Ký", "Numbers": "Dân Số Ký", "Deuteronomy": "Phục Truyền Luật Lệ Ký",
@@ -1172,19 +1212,35 @@
 
         function normalizeSlideBackground(background) {
             if (!background) return null;
+            const inferMediaType = (value) => {
+                const source = (value || '').toString().toLowerCase().split(/[?#]/)[0];
+                return /\.(mp4|mov|m4v|webm|wmv)$/.test(source) ? 'video' : 'image';
+            };
+
             if (!background.mediaName) {
                 const name = background.name || background.fileName;
                 if (!name) return null;
+                const mediaType = background.mediaType === 'video' || background.type === 'video'
+                    ? 'video'
+                    : background.mediaType === 'image' || background.type === 'image'
+                        ? 'image'
+                        : inferMediaType(background.url || name);
                 return {
                     mediaName: name,
-                    mediaType: background.type === 'video' ? 'video' : 'image',
+                    mediaType: mediaType,
                     url: background.url || `app-media://${encodeURIComponent(name)}`
                 };
             }
 
+            const mediaType = background.mediaType === 'video' || background.type === 'video'
+                ? 'video'
+                : background.mediaType === 'image' || background.type === 'image'
+                    ? 'image'
+                    : inferMediaType(background.url || background.mediaName);
+
             return {
                 mediaName: background.mediaName,
-                mediaType: background.mediaType === 'video' ? 'video' : 'image',
+                mediaType: mediaType,
                 url: background.url || `app-media://${encodeURIComponent(background.mediaName)}`
             };
         }
@@ -2467,6 +2523,7 @@
 
         function clearLive() {
             updateLiveOutput("");
+            currentLiveBackground = null;
             // Send clear text only to Screen Live (keep background)
             sendToLiveWindow({ text: '', background: null });
         }
@@ -2625,12 +2682,15 @@
             updateLiveOutput(slide.content);
             renderLiveSlides();
 
-            // Get background from live schedule item
+            // Keep the last active background unless the current schedule item has one
             const scheduleItem = schedule[currentLiveScheduleIndex];
-            const background = scheduleItem ? scheduleItem.background : null;
+            const background = (scheduleItem && scheduleItem.background)
+                ? scheduleItem.background
+                : (currentLiveBackground || currentPreviewBackground || null);
 
             // Update in-app live background
             updateInAppLiveBackground(background);
+            currentLiveBackground = normalizeSlideBackground(background);
 
             // Send to Screen Live window
             sendToLiveWindow({
@@ -2651,8 +2711,9 @@
             renderLiveSlides();
 
             const scheduleItem = schedule[currentLiveScheduleIndex];
-            const background = currentPreviewBackground || (scheduleItem ? scheduleItem.background : null);
+            const background = currentPreviewBackground || (scheduleItem && scheduleItem.background) || currentLiveBackground || null;
             updateInAppLiveBackground(background);
+            currentLiveBackground = normalizeSlideBackground(background);
 
             sendToLiveWindow({
                 text: slide.content,
@@ -2831,7 +2892,7 @@
             }
             mediaLibrary.forEach(item => {
                 const div = document.createElement('div');
-                const url = `app-media://${encodeURIComponent(item.name)}`;
+                const url = item.url || `app-media://${encodeURIComponent(item.name)}`;
                 div.className = 'aspect-video rounded-md overflow-hidden relative border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-primary transition-all';
                 if (item.type === 'video') {
                     div.innerHTML = `
@@ -2849,6 +2910,11 @@
                     e.dataTransfer.effectAllowed = 'copy';
                 });
                 div.onclick = () => { previewBackground(item); };
+                div.ondblclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setLiveBackgroundFromMedia(item);
+                };
                 container.appendChild(div);
             });
         }
@@ -2868,10 +2934,34 @@
             if (background.mediaType === 'video') {
                 previewVid.classList.remove('hidden');
                 previewVid.src = background.url;
+                previewVid.load();
+                previewVid.play().catch((error) => {
+                    console.warn('[Preview] Failed to play background video:', error);
+                });
             } else {
                 previewImg.classList.remove('hidden');
                 previewImg.src = background.url;
             }
+        }
+
+        function setLiveBackgroundFromMedia(mediaItem) {
+            const background = normalizeSlideBackground(mediaItem);
+            if (!background) return;
+
+            currentPreviewBackground = background;
+            currentLiveBackground = background;
+
+            updateInAppLiveBackground(background);
+
+            if (currentLiveScheduleIndex >= 0 && schedule[currentLiveScheduleIndex]) {
+                schedule[currentLiveScheduleIndex].background = background;
+                renderSchedule();
+            }
+
+            sendToLiveWindow({
+                text: null,
+                background: background
+            });
         }
 
         function showMediaDropMenu(x, y, scheduleIndex, mediaItem) {
@@ -2881,18 +2971,20 @@
 
             const menu = document.createElement('div');
             menu.id = 'media-drop-menu';
-            menu.style.cssText = `position:fixed;left:${x}px;top:${y}px;z-index:9999;background:#fff;border:1px solid #ccc;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);overflow:hidden;min-width:180px;`;
+            menu.className = 'media-drop-menu';
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
             menu.innerHTML = `
-                <div class="media-drop-option" style="padding:8px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;" data-action="add">
-                    <span class="material-symbols-outlined" style="font-size:16px;">add_circle</span> Thêm vào schedule
+                <div class="media-drop-option" data-action="add">
+                    <span class="material-symbols-outlined" style="color:#2563eb;">add_circle</span> Thêm vào schedule
                 </div>
-                <div class="media-drop-option" style="padding:8px 14px;cursor:pointer;font-size:13px;border-top:1px solid #eee;display:flex;align-items:center;gap:6px;" data-action="bg">
-                    <span class="material-symbols-outlined" style="font-size:16px;">wallpaper</span> Đặt làm background
+                <div class="media-drop-option" data-action="bg">
+                    <span class="material-symbols-outlined" style="color:#0f766e;">wallpaper</span> Đặt làm background
                 </div>
             `;
 
             menu.querySelectorAll('.media-drop-option').forEach(opt => {
-                opt.addEventListener('mouseenter', () => opt.style.backgroundColor = '#f0f0f0');
+                opt.addEventListener('mouseenter', () => opt.style.backgroundColor = '#eff6ff');
                 opt.addEventListener('mouseleave', () => opt.style.backgroundColor = '');
                 opt.addEventListener('click', () => {
                     if (opt.dataset.action === 'add') {
@@ -2989,10 +3081,15 @@
             if (normalizedBackground.mediaType === 'video') {
                 liveVid.classList.remove('hidden');
                 liveVid.src = normalizedBackground.url;
+                liveVid.load();
+                liveVid.play().catch((error) => {
+                    console.warn('[Live] Failed to play live background video:', error);
+                });
             } else {
                 liveImg.classList.remove('hidden');
                 liveImg.src = normalizedBackground.url;
             }
+            currentLiveBackground = normalizedBackground;
         }
 
         function sendToLiveWindow(data) {
@@ -3060,7 +3157,10 @@
                     if (liveSlides.length > 0 && currentLiveIndex >= 0) {
                         const slide = liveSlides[currentLiveIndex];
                         const scheduleItem = schedule[currentLiveScheduleIndex];
-                        const background = scheduleItem ? scheduleItem.background : null;
+                        const background = currentLiveBackground
+                            || currentPreviewBackground
+                            || (scheduleItem && scheduleItem.background)
+                            || null;
                         sendToLiveWindow({
                             text: slide.content,
                             background: background

@@ -2,6 +2,17 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [1.1.2] - 2026-05-11
+
+### Đã sửa (Fixed)
+- Media loading giờ dùng URL tuyệt đối từ main process, giúp preview, schedule và live output không còn phụ thuộc hoàn toàn vào `app-media://`.
+- Background cũ được normalize theo đuôi file để nhận đúng ảnh/video thay vì mặc định về ảnh.
+- Screen Live được tăng ưu tiên hiển thị bằng `always-on-top`, `moveTop()`, và kiosk mode khi có màn hình phụ.
+- Mỗi lần gửi content/background/clear đều re-assert lại trạng thái luôn nổi của Screen Live.
+
+### Thay đổi (Changed)
+- Thêm changelog cho đợt sửa ổn định media và cửa sổ live này.
+
 ## [1.1.1] - 2026-05-11
 
 ### Đã thêm (Added)
@@ -49,7 +60,6 @@ Tất cả các thay đổi và cập nhật quan trọng của dự án đượ
 - **Độ tin cậy Bible:** Nâng cấp bộ phân tích XML (Regex) mạnh mẽ hơn, hỗ trợ nhiều định dạng và tự động sửa lỗi cache.
 - **Cải tiến tìm kiếm:** Gộp 2 khung tìm kiếm thành 1 khung duy nhất, hỗ trợ tìm kiếm linh hoạt hơn (chứa từ khóa thay vì chỉ bắt đầu bằng).
 - **Khôi phục giao diện:** Sửa lỗi vô tình xóa mất hộp thoại chọn Kinh Thánh trong các phiên bản cập nhật trước.
-
 
 ### Thay đổi (Changed)
 - **Cơ chế ưu tiên Style:** Cập nhật logic hiển thị để ưu tiên Style riêng của từng bài hát, nếu không có sẽ tự động lấy thông số mặc định từ Settings hệ thống.

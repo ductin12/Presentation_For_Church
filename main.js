@@ -42,7 +42,7 @@ function getMediaFolderPath() {
 
 function isVideo(fileName) {
   const ext = fileName.toLowerCase();
-  return ext.endsWith('.mp4') || ext.endsWith('.mov');
+  return ext.endsWith('.mp4') || ext.endsWith('.mov') || ext.endsWith('.m4v') || ext.endsWith('.webm') || ext.endsWith('.wmv');
 }
 
 function isSupportedMedia(fileName) {
@@ -101,12 +101,24 @@ function initializeData() {
 }
 
 function createLiveWindow() {
+  const enforceLiveWindowPriority = () => {
+    if (!liveWindow || liveWindow.isDestroyed()) return;
+    liveWindow.setAlwaysOnTop(true, 'screen-saver');
+    try {
+      liveWindow.moveTop();
+    } catch (e) {
+      // moveTop is not supported on every platform; alwaysOnTop remains the fallback.
+    }
+  };
+
   if (liveWindow) {
-    liveWindow.focus();
+    liveWindow.show();
+    enforceLiveWindowPriority();
     return;
   }
   const displays = screen.getAllDisplays();
   const externalDisplay = displays.find(d => d.bounds.x !== 0 || d.bounds.y !== 0);
+  const useKiosk = !!externalDisplay;
 
   liveWindow = new BrowserWindow({
     width: 1280,
@@ -114,12 +126,25 @@ function createLiveWindow() {
     x: externalDisplay ? externalDisplay.bounds.x : undefined,
     y: externalDisplay ? externalDisplay.bounds.y : undefined,
     fullscreen: !!externalDisplay,
+    kiosk: useKiosk,
+    alwaysOnTop: true,
+    visibleOnAllWorkspaces: true,
+    skipTaskbar: true,
     autoHideMenuBar: true,
     backgroundColor: '#000000',
     webPreferences: { preload: path.join(__dirname, 'preload.js') }
   });
 
+  liveWindow.setAlwaysOnTop(true, 'screen-saver');
+  liveWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  liveWindow.on('show', enforceLiveWindowPriority);
+  liveWindow.on('focus', enforceLiveWindowPriority);
+  liveWindow.on('blur', () => setTimeout(enforceLiveWindowPriority, 0));
+  liveWindow.on('enter-full-screen', enforceLiveWindowPriority);
+  liveWindow.on('leave-full-screen', enforceLiveWindowPriority);
+  liveWindow.on('restore', enforceLiveWindowPriority);
   liveWindow.loadFile('live.html');
+  liveWindow.once('ready-to-show', enforceLiveWindowPriority);
   liveWindow.on('closed', () => { liveWindow = null; });
 }
 
@@ -545,7 +570,7 @@ app.whenReady().then(() => {
         const name = path.basename(p);
         const dest = path.join(mediaPath, name);
         fs.copyFileSync(p, dest);
-        return { name, path: dest, type: isVideo(name) ? 'video' : 'image' };
+        return { name, path: dest, url: pathToFileURL(dest).toString(), type: isVideo(name) ? 'video' : 'image' };
       });
     }
     return null;
@@ -557,15 +582,36 @@ app.whenReady().then(() => {
       if (!fs.existsSync(mediaPath)) return [];
       return fs.readdirSync(mediaPath)
         .filter(f => fs.statSync(path.join(mediaPath, f)).isFile() && isSupportedMedia(f))
-        .map(f => ({ name: f, path: path.join(mediaPath, f), type: isVideo(f) ? 'video' : 'image' }));
+        .map(f => {
+          const fullPath = path.join(mediaPath, f);
+          return { name: f, path: fullPath, url: pathToFileURL(fullPath).toString(), type: isVideo(f) ? 'video' : 'image' };
+        });
     } catch (e) { return []; }
   });
 
   ipcMain.handle('open-live-window', () => { createLiveWindow(); return true; });
   ipcMain.handle('close-live-window', () => { if (liveWindow) liveWindow.close(); return true; });
-  ipcMain.handle('live-send-content', (e, d) => { if (liveWindow && !liveWindow.isDestroyed()) liveWindow.webContents.send('live-update-content', d); });
-  ipcMain.handle('live-send-background', (e, d) => { if (liveWindow && !liveWindow.isDestroyed()) liveWindow.webContents.send('live-update-background', d); });
-  ipcMain.handle('live-send-clear', () => { if (liveWindow && !liveWindow.isDestroyed()) liveWindow.webContents.send('live-clear'); });
+  ipcMain.handle('live-send-content', (e, d) => {
+    if (liveWindow && !liveWindow.isDestroyed()) {
+      liveWindow.setAlwaysOnTop(true, 'screen-saver');
+      try { liveWindow.moveTop(); } catch (err) {}
+      liveWindow.webContents.send('live-update-content', d);
+    }
+  });
+  ipcMain.handle('live-send-background', (e, d) => {
+    if (liveWindow && !liveWindow.isDestroyed()) {
+      liveWindow.setAlwaysOnTop(true, 'screen-saver');
+      try { liveWindow.moveTop(); } catch (err) {}
+      liveWindow.webContents.send('live-update-background', d);
+    }
+  });
+  ipcMain.handle('live-send-clear', () => {
+    if (liveWindow && !liveWindow.isDestroyed()) {
+      liveWindow.setAlwaysOnTop(true, 'screen-saver');
+      try { liveWindow.moveTop(); } catch (err) {}
+      liveWindow.webContents.send('live-clear');
+    }
+  });
 
   ipcMain.handle('show-open-dialog-multi', async (event, options) => {
     const result = await dialog.showOpenDialog({ ...options, properties: ['openFile', 'multiSelections'] });
