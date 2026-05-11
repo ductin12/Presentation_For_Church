@@ -2,60 +2,52 @@ const { app, BrowserWindow, Menu, ipcMain, dialog, protocol, net, screen } = req
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
-const { validateItem, migrateItem } = require('./src/schema.js');
+const { validateItem, migrateItem } = require('./src/schema');
 
-// 1. Register custom protocol
-protocol.registerSchemesAsPrivileged([
-  { scheme: 'app-media', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, bypassCSP: true, corsEnabled: true } }
-]);
-
-// 2. Global State
-let userDataPath, songsFilePath, bibleFilePath, settingsFilePath, mediaFolderPath;
-let liveWindow = null;
-let mainWindow = null;
-
-// 3. Helper Functions
-function isVideo(fileName) {
-  const ext = fileName.toLowerCase();
-  return ext.endsWith('.mp4') || ext.endsWith('.mov');
-}
-
-function isSupportedMedia(fileName) {
-  const ext = fileName.toLowerCase();
-  return ext.endsWith('.mp4') || ext.endsWith('.mov') || ext.endsWith('.jpg') || ext.endsWith('.jpeg') || ext.endsWith('.png') || ext.endsWith('.webp');
-}
-
+// 1. Storage Helpers
 function safeWriteSync(filePath, data) {
-  const tmp = filePath + '.tmp';
+  const tmpPath = filePath + '.tmp';
   try {
-    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
-    fs.renameSync(tmp, filePath);
-  } catch (err) {
-    console.error(`Failed to safeWriteSync ${filePath}:`, err);
-    throw err;
-  }
-}
-
-function backupBeforeWriteSync(filePath) {
-  if (!fs.existsSync(filePath)) return;
-  try {
-    const ext = path.extname(filePath);
-    const base = filePath.slice(0, -ext.length);
-    const backup3 = `${base}.backup.3${ext}`;
-    const backup2 = `${base}.backup.2${ext}`;
-    const backup1 = `${base}.backup.1${ext}`;
-    
-    if (fs.existsSync(backup2)) fs.renameSync(backup2, backup3);
-    if (fs.existsSync(backup1)) fs.renameSync(backup1, backup2);
-    fs.copyFileSync(filePath, backup1);
-  } catch (err) {
-    console.error(`Failed to backup ${filePath}:`, err);
+    fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf8');
+    fs.renameSync(tmpPath, filePath);
+    return true;
+  } catch (e) {
+    if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+    return false;
   }
 }
 
 function saveAndBackupSync(filePath, data) {
-  backupBeforeWriteSync(filePath);
-  safeWriteSync(filePath, data);
+  if (fs.existsSync(filePath)) {
+    for (let i = 2; i >= 1; i--) {
+      const old = `${filePath.replace('.json', '')}.backup.${i}.json`;
+      const next = `${filePath.replace('.json', '')}.backup.${i + 1}.json`;
+      if (fs.existsSync(old)) fs.renameSync(old, next);
+    }
+    fs.copyFileSync(filePath, `${filePath.replace('.json', '')}.backup.1.json`);
+  }
+  return safeWriteSync(filePath, data);
+}
+
+// 2. Global State
+let userDataPath, songsFilePath, bibleFilePath, settingsFilePath, defaultMediaFolderPath;
+let liveWindow = null;
+let mainWindow = null;
+let globalSettings = {};
+
+// 3. Helper Functions
+function getMediaFolderPath() {
+  return (globalSettings && globalSettings.mediaPath) ? globalSettings.mediaPath : defaultMediaFolderPath;
+}
+
+function isVideo(fileName) {
+  const ext = fileName.toLowerCase();
+  return ext.endsWith('.mp4') || ext.endsWith('.mov') || ext.endsWith('.m4v') || ext.endsWith('.webm') || ext.endsWith('.wmv');
+}
+
+function isSupportedMedia(fileName) {
+  const ext = fileName.toLowerCase();
+  return ['.jpg', '.jpeg', '.png', '.mp4', '.mov', '.wmv'].some(e => ext.endsWith(e));
 }
 
 function initializeData() {
@@ -63,9 +55,10 @@ function initializeData() {
   songsFilePath = path.join(userDataPath, 'songs.json');
   bibleFilePath = path.join(userDataPath, 'bible.json');
   settingsFilePath = path.join(userDataPath, 'settings.json');
-  mediaFolderPath = path.join(userDataPath, 'media');
+  defaultMediaFolderPath = path.join(userDataPath, 'media');
 
-  if (!fs.existsSync(mediaFolderPath)) fs.mkdirSync(mediaFolderPath, { recursive: true });
+  if (!fs.existsSync(defaultMediaFolderPath)) fs.mkdirSync(defaultMediaFolderPath, { recursive: true });
+  
   if (!fs.existsSync(songsFilePath)) {
     const bundledSongs = path.join(__dirname, 'data', 'songs.json');
     if (fs.existsSync(bundledSongs)) {
@@ -74,57 +67,101 @@ function initializeData() {
       safeWriteSync(songsFilePath, []);
     }
   }
+  
   if (!fs.existsSync(bibleFilePath)) safeWriteSync(bibleFilePath, []);
+  
+  // Default Settings
+  if (!fs.existsSync(settingsFilePath)) {
+    globalSettings = {
+      theme: 'dark',
+      fontFamily: 'CMG Sans',
+      fontSize: '80px',
+      color: '#ffffff',
+      fontWeight: 'bold',
+      textAlign: 'center',
+      verticalAlign: 'middle',
+      mediaPath: defaultMediaFolderPath,
+      shortcuts: {
+        nextSlide: 'ArrowRight',
+        prevSlide: 'ArrowLeft',
+        clearScreen: 'Escape'
+      }
+    };
+    safeWriteSync(settingsFilePath, globalSettings);
+  } else {
+    try {
+      globalSettings = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
+      if (!globalSettings.mediaPath) {
+        globalSettings.mediaPath = defaultMediaFolderPath;
+      }
+    } catch (e) {
+      console.error('Failed to load settings:', e);
+    }
+  }
 }
 
 function createLiveWindow() {
+  const enforceLiveWindowPriority = () => {
+    if (!liveWindow || liveWindow.isDestroyed()) return;
+    liveWindow.setAlwaysOnTop(true, 'screen-saver');
+    try {
+      liveWindow.moveTop();
+    } catch (e) {
+      // moveTop is not supported on every platform; alwaysOnTop remains the fallback.
+    }
+  };
+
   if (liveWindow) {
-    liveWindow.focus();
+    liveWindow.show();
+    enforceLiveWindowPriority();
     return;
   }
   const displays = screen.getAllDisplays();
-  const primary = screen.getPrimaryDisplay();
-  const external = displays.find(d => d.id !== primary.id);
-  const targetDisplay = external || primary;
+  const externalDisplay = displays.find(d => d.bounds.x !== 0 || d.bounds.y !== 0);
+  const useKiosk = !!externalDisplay;
 
   liveWindow = new BrowserWindow({
-    x: targetDisplay.bounds.x,
-    y: targetDisplay.bounds.y,
-    fullscreen: !!external,
-    width: external ? undefined : 800,
-    height: external ? undefined : 450,
-    frame: !external,
+    width: 1280,
+    height: 720,
+    x: externalDisplay ? externalDisplay.bounds.x : undefined,
+    y: externalDisplay ? externalDisplay.bounds.y : undefined,
+    fullscreen: !!externalDisplay,
+    kiosk: useKiosk,
     alwaysOnTop: true,
-    title: 'Screen Live',
-    webPreferences: { 
-      nodeIntegration: false, 
-      contextIsolation: true, 
-      webSecurity: false,
-      preload: path.join(__dirname, 'preload.js')
-    }
+    visibleOnAllWorkspaces: true,
+    skipTaskbar: true,
+    autoHideMenuBar: true,
+    backgroundColor: '#000000',
+    webPreferences: { preload: path.join(__dirname, 'preload.js') }
   });
 
+  liveWindow.setAlwaysOnTop(true, 'screen-saver');
+  liveWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  liveWindow.on('show', enforceLiveWindowPriority);
+  liveWindow.on('focus', enforceLiveWindowPriority);
+  liveWindow.on('blur', () => setTimeout(enforceLiveWindowPriority, 0));
+  liveWindow.on('enter-full-screen', enforceLiveWindowPriority);
+  liveWindow.on('leave-full-screen', enforceLiveWindowPriority);
+  liveWindow.on('restore', enforceLiveWindowPriority);
   liveWindow.loadFile('live.html');
-  liveWindow.on('closed', () => {
-    liveWindow = null;
-    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('live-window-closed');
-  });
+  liveWindow.once('ready-to-show', enforceLiveWindowPriority);
+  liveWindow.on('closed', () => { liveWindow = null; });
 }
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
-    webPreferences: { 
-      nodeIntegration: false, 
-      contextIsolation: true, 
-      webSecurity: false,
-      preload: path.join(__dirname, 'preload.js')
-    },
-    title: "BlessingChurch"
+  const win = new BrowserWindow({
+    width: 1400,
+    height: 900,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
   });
-  mainWindow.loadFile('index.html');
-  setupMenu(mainWindow);
+
+  mainWindow = win;
+  win.loadFile('index.html');
+  setupMenu(win);
 }
 
 function setupMenu(win) {
@@ -139,6 +176,8 @@ function setupMenu(win) {
         { type: 'separator' },
         { label: 'Import Media', click: () => win.webContents.send('menu-action', 'import-media') },
         { type: 'separator' },
+        { label: 'Settings', click: () => win.webContents.send('menu-action', 'open-settings') },
+        { type: 'separator' },
         { role: 'quit' }
       ]
     },
@@ -148,33 +187,58 @@ function setupMenu(win) {
     },
     {
       label: 'View',
-      submenu: [
-        { label: 'Screen Live', accelerator: 'F5', click: () => { createLiveWindow(); win.webContents.send('live-window-opened'); } },
-        { role: 'reload' },
-        { role: 'toggleDevTools' }
-      ]
+      submenu: [{ role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' }, { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }]
     }
   ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
 }
 
-// 4. App Initialization
+// 4. App Lifecycle
 app.whenReady().then(() => {
   initializeData();
 
-  // Protocol Implementation
+  // Register app-media:// protocol to serve local media files
   protocol.handle('app-media', (request) => {
     try {
       const match = request.url.match(/^app-media:\/\/+(.+)$/);
       if (!match) return new Response('Invalid URL', { status: 400 });
       const fileName = decodeURIComponent(match[1]).split(/[?#]/)[0].replace(/\/+$/, '');
-      const fullPath = path.join(mediaFolderPath, fileName);
+      const fullPath = path.join(getMediaFolderPath(), fileName);
       if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) return new Response('Not Found', { status: 404 });
       return net.fetch(pathToFileURL(fullPath).toString());
     } catch (e) { return new Response('Error', { status: 500 }); }
   });
 
   // --- IPC Handlers ---
+  ipcMain.handle('select-folder', async () => {
+    const r = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+    if (!r.canceled && r.filePaths.length > 0) return r.filePaths[0];
+    return null;
+  });
+
+  ipcMain.handle('load-settings', () => {
+    try {
+      if (fs.existsSync(settingsFilePath)) {
+        return JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
+      }
+    } catch (e) {
+      console.error('Failed to load settings:', e);
+    }
+    return null;
+  });
+
+  ipcMain.handle('save-settings', (event, data) => {
+    try {
+      globalSettings = data; // Update local copy
+      safeWriteSync(settingsFilePath, data);
+      return { success: true };
+    } catch (e) {
+      console.error('Failed to save settings:', e);
+      return { success: false, error: e.message };
+    }
+  });
+
   ipcMain.handle('load-songs', () => {
     try {
       const items = JSON.parse(fs.readFileSync(songsFilePath, 'utf8') || '[]');
@@ -219,67 +283,239 @@ app.whenReady().then(() => {
     "Revelation": "Khải Huyền"
   };
 
-  ipcMain.handle('load-bible-parsed', () => {
-    const cachePath = path.join(userDataPath, 'bible-cache.json');
+  const bibleBookMapReverse = Object.fromEntries(
+    Object.entries(bibleBookMap).map(([en, vi]) => [vi, en])
+  );
+
+  // Standard Bible books in order (1-66) for mapping numbers to names if needed
+  const bibleBooksOrdered = [
+    "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
+    "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs",
+    "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos",
+    "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew",
+    "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians",
+    "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James",
+    "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"
+  ];
+
+  const bibleBooksOrderedVi = bibleBooksOrdered.map(name => bibleBookMap[name] || name);
+
+  function detectBibleLanguage(xmlData = '', xmlName = '') {
+    const sample = `${xmlName}\n${xmlData.slice(0, 2000)}`.toLowerCase();
+
+    if (/translation\s*=\s*["'][^"']*english|english niv|niv|esv|kjv/.test(sample)) return 'en';
+    if (/translation\s*=\s*["'][^"']*vietnamese|bpt|nvb|viet|thánh kinh|kinh thánh|ban đầu thượng đế|thượng đế/.test(sample)) return 'vi';
+    if (/bible_vietnamese|ban[_ -]?pho[_ -]?thong|ban[_ -]?dich[_ -]?moi|englishnivbible/i.test(xmlName)) {
+      return /englishnivbible/i.test(xmlName) ? 'en' : 'vi';
+    }
+
+    const hasVietnameseDiacritics = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(sample);
+    if (hasVietnameseDiacritics || /thượng đế|đức chúa trời|ban đầu|buổi chiều|buổi sáng|phúc âm/i.test(sample)) {
+      return 'vi';
+    }
+
+    const firstBookMatch = xmlData.match(/<(?:BIBLEBOOK|book)\s+[^>]*(?:bname|number)=['"]([^'"]+)['"]/i);
+    if (firstBookMatch) {
+      const bookRef = firstBookMatch[1];
+      if (bibleBookMap[bookRef]) return 'en';
+      if (bibleBookMapReverse[bookRef]) return 'vi';
+      if (/^\d+$/.test(bookRef)) return 'unknown';
+    }
+
+    return 'unknown';
+  }
+
+  function getBibleLanguageLabel(language) {
+    if (language === 'en') return 'English';
+    if (language === 'vi') return 'Tiếng Việt';
+    return 'Không rõ ngôn ngữ';
+  }
+
+  function getBibleVersionDisplayName(fileName, language = 'unknown') {
+    const baseName = path.basename(fileName, '.xml').replace(/_/g, ' ').trim();
+    return `${baseName} - ${getBibleLanguageLabel(language)}`;
+  }
+
+  function resolveBibleBookName(bookRef, language = 'unknown') {
+    if (/^\d+$/.test(String(bookRef))) {
+      const idx = parseInt(bookRef, 10) - 1;
+      if (language === 'en') return bibleBooksOrdered[idx] || `Book ${bookRef}`;
+      if (language === 'vi') return bibleBooksOrderedVi[idx] || `Sách ${bookRef}`;
+      return bibleBooksOrderedVi[idx] || bibleBooksOrdered[idx] || `Book ${bookRef}`;
+    }
+
+    if (language === 'en') {
+      return bookRef;
+    }
+
+    if (language === 'vi') {
+      return bibleBookMap[bookRef] || bookRef;
+    }
+
+    return bibleBookMap[bookRef] || bookRef;
+  }
+
+  ipcMain.handle('load-bible-versions', () => {
+    try {
+      const dataDir = path.join(__dirname, 'data');
+      return fs.readdirSync(dataDir)
+        .filter(f => f.toLowerCase().endsWith('.xml'))
+        .map((f) => {
+          let language = detectBibleLanguage('', f);
+          try {
+            const fullPath = path.join(dataDir, f);
+            const header = fs.readFileSync(fullPath, 'utf8').slice(0, 2000);
+            const detected = detectBibleLanguage(header, f);
+            if (detected !== 'unknown') language = detected;
+          } catch (e) {
+            // Keep best-effort fallback.
+          }
+
+          return {
+            name: f.replace(/\.xml$/i, '').replace(/_/g, ' '),
+            displayName: getBibleVersionDisplayName(f, language),
+            language,
+            fileName: f
+          };
+        });
+    } catch (e) { return []; }
+  });
+
+  ipcMain.handle('import-bible-version', async () => {
+    const r = await dialog.showOpenDialog({ 
+      properties: ['openFile'], 
+      filters: [{ name: 'Bible XML', extensions: ['xml'] }] 
+    });
+    if (!r.canceled && r.filePaths.length > 0) {
+      const src = r.filePaths[0];
+      const name = path.basename(src);
+      const dest = path.join(__dirname, 'data', name);
+      fs.copyFileSync(src, dest);
+      let language = 'unknown';
+      try {
+        const sample = fs.readFileSync(dest, 'utf8').slice(0, 2000);
+        language = detectBibleLanguage(sample, name);
+      } catch (e) {
+        // ignore
+      }
+      return {
+        success: true,
+        name: name.replace(/\.xml$/i, '').replace(/_/g, ' '),
+        displayName: getBibleVersionDisplayName(name, language),
+        language,
+        fileName: name
+      };
+    }
+    return null;
+  });
+
+  ipcMain.handle('load-bible-parsed', (event, fileName) => {
+    let xmlName = fileName || 'Bible_Vietnamese_Version_1925.xml';
+
+    // Normalize filename (NFC/NFD issue with Vietnamese)
+    xmlName = xmlName.normalize('NFC');
+    const cacheName = `bible-cache-${xmlName.replace(/[^a-zA-Z0-9.-]/g, '_')}.json`;
+    const cachePath = path.join(userDataPath, cacheName);
+
+    console.log(`[Bible] Loading Version: ${xmlName}`);
 
     // Try loading from cache first
     try {
       if (fs.existsSync(cachePath)) {
-        return JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+        const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+        if (Array.isArray(cached) && cached.length > 0) {
+          console.log(`[Bible] ${cached.length} chapters loaded from cache.`);
+          return cached;
+        }
+        fs.unlinkSync(cachePath);
       }
     } catch (e) {
-      console.error('Bible cache corrupted, rebuilding...', e);
+      if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
     }
 
     // Parse XML and build cache
     try {
-      const xmlPath = path.join(__dirname, 'data', 'Bible_Vietnamese.xml');
-      if (!fs.existsSync(xmlPath)) return [];
+      let xmlPath = path.join(__dirname, 'data', xmlName);
+
+      // Fallback check for file if NFD normalization is needed
+      if (!fs.existsSync(xmlPath)) {
+        const nfdPath = path.join(__dirname, 'data', xmlName.normalize('NFD'));
+        if (fs.existsSync(nfdPath)) xmlPath = nfdPath;
+      }
+
+      if (!fs.existsSync(xmlPath)) {
+        console.error(`[Bible] File not found: ${xmlPath}`);
+        return [];
+      }
 
       let xmlData = fs.readFileSync(xmlPath, 'utf8');
-      // Fix legacy encoding: Ð (U+00D0) → Đ (U+0110)
+      console.log(`[Bible] Reading file, size: ${xmlData.length} bytes`);
+
+      // Fix legacy encoding for Vietnamese
       xmlData = xmlData.replace(/\u00D0/g, '\u0110');
+      const bibleLanguage = detectBibleLanguage(xmlData, xmlName);
+      console.log(`[Bible] Detected language: ${bibleLanguage}`);
 
       const bibleLibrary = [];
-      const bookRegex = /<BIBLEBOOK[^>]*bname="([^"]*)"[^>]*>([\s\S]*?)<\/BIBLEBOOK>/g;
-      const chapterRegex = /<CHAPTER[^>]*cnumber="([^"]*)"[^>]*>([\s\S]*?)<\/CHAPTER>/g;
-      const verseRegex = /<VERS[^>]*vnumber="([^"]*)"[^>]*>([\s\S]*?)<\/VERS>/g;
+
+      // Improved robust regex
+      const bookRegex = /<(BIBLEBOOK|book)\s+([^>]*?)>([\s\S]*?)<\/\1>/gi;
+      const chapterRegex = /<(CHAPTER|chapter)\s+([^>]*?)>([\s\S]*?)<\/\1>/gi;
+      const verseRegex = /<(VERS|verse)\s+([^>]*?)>([\s\S]*?)<\/\1>/gi;
 
       let bookMatch;
       while ((bookMatch = bookRegex.exec(xmlData)) !== null) {
-        const bname = bookMatch[1];
-        const vnName = bibleBookMap[bname] || bname;
-        const bookContent = bookMatch[2];
+        const bookAttrs = bookMatch[2];
+        const bookContent = bookMatch[3];
+
+        // Extract bname or number from attributes
+        const nameMatch = bookAttrs.match(/(bname|number)=['"]([^'"]*)['"]/i);
+        if (!nameMatch) continue;
+
+        const attrValue = nameMatch[2];
+        const bookTitle = resolveBibleBookName(attrValue, bibleLanguage).trim();
 
         chapterRegex.lastIndex = 0;
         let chapterMatch;
         while ((chapterMatch = chapterRegex.exec(bookContent)) !== null) {
-          const cnumber = chapterMatch[1];
-          const chapterContent = chapterMatch[2];
-          let versesText = '';
+          const chapterAttrs = chapterMatch[2];
+          const chapterContent = chapterMatch[3];
 
+          const cNumMatch = chapterAttrs.match(/(cnumber|number)=['"]([^'"]*)['"]/i);
+          if (!cNumMatch) continue;
+          const cnumber = cNumMatch[2];
+
+          let versesText = '';
           verseRegex.lastIndex = 0;
           let verseMatch;
           while ((verseMatch = verseRegex.exec(chapterContent)) !== null) {
-            const vnumber = verseMatch[1];
-            const text = verseMatch[2].replace(/<[^>]*>/g, '').trim();
+            const vAttrs = verseMatch[2];
+            const vContent = verseMatch[3];
+
+            const vNumMatch = vAttrs.match(/(vnumber|number)=['"]([^'"]*)['"]/i);
+            const vnumber = vNumMatch ? vNumMatch[2] : '';
+
+            const text = vContent.replace(/<[^>]*>/g, '').trim();
             versesText += `${vnumber} ${text}\n\n`;
           }
 
           bibleLibrary.push({
-            title: `${vnName} ${cnumber}`,
+            title: `${bookTitle} ${cnumber}`,
             lyrics: versesText.trim(),
             type: 'bible'
           });
         }
       }
 
-      // Save cache
-      safeWriteSync(cachePath, bibleLibrary);
-      console.log(`Bible parsed and cached: ${bibleLibrary.length} chapters`);
+      if (bibleLibrary.length > 0) {
+        safeWriteSync(cachePath, bibleLibrary);
+        console.log(`[Bible] Successfully parsed ${bibleLibrary.length} chapters.`);
+      } else {
+        console.warn(`[Bible] Warning: 0 chapters parsed from ${xmlName}.`);
+      }
       return bibleLibrary;
     } catch (e) {
-      console.error('Failed to parse Bible XML:', e);
+      console.error('[Bible] Critical error parsing XML:', e);
       return [];
     }
   });
@@ -328,12 +564,13 @@ app.whenReady().then(() => {
 
   ipcMain.handle('import-media', async () => {
     const r = await dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'], filters: [{ name: 'Media Files', extensions: ['jpg', 'png', 'mp4', 'mov', 'wmv'] }] });
+    const mediaPath = getMediaFolderPath();
     if (!r.canceled && r.filePaths.length > 0) {
       return r.filePaths.map(p => {
         const name = path.basename(p);
-        const dest = path.join(mediaFolderPath, name);
+        const dest = path.join(mediaPath, name);
         fs.copyFileSync(p, dest);
-        return { name, path: dest, type: isVideo(name) ? 'video' : 'image' };
+        return { name, path: dest, url: pathToFileURL(dest).toString(), type: isVideo(name) ? 'video' : 'image' };
       });
     }
     return null;
@@ -341,17 +578,40 @@ app.whenReady().then(() => {
 
   ipcMain.handle('load-media', () => {
     try {
-      return fs.readdirSync(mediaFolderPath)
-        .filter(f => fs.statSync(path.join(mediaFolderPath, f)).isFile() && isSupportedMedia(f))
-        .map(f => ({ name: f, path: path.join(mediaFolderPath, f), type: isVideo(f) ? 'video' : 'image' }));
+      const mediaPath = getMediaFolderPath();
+      if (!fs.existsSync(mediaPath)) return [];
+      return fs.readdirSync(mediaPath)
+        .filter(f => fs.statSync(path.join(mediaPath, f)).isFile() && isSupportedMedia(f))
+        .map(f => {
+          const fullPath = path.join(mediaPath, f);
+          return { name: f, path: fullPath, url: pathToFileURL(fullPath).toString(), type: isVideo(f) ? 'video' : 'image' };
+        });
     } catch (e) { return []; }
   });
 
   ipcMain.handle('open-live-window', () => { createLiveWindow(); return true; });
   ipcMain.handle('close-live-window', () => { if (liveWindow) liveWindow.close(); return true; });
-  ipcMain.handle('live-send-content', (e, d) => { if (liveWindow && !liveWindow.isDestroyed()) liveWindow.webContents.send('live-update-content', d); });
-  ipcMain.handle('live-send-background', (e, d) => { if (liveWindow && !liveWindow.isDestroyed()) liveWindow.webContents.send('live-update-background', d); });
-  ipcMain.handle('live-send-clear', () => { if (liveWindow && !liveWindow.isDestroyed()) liveWindow.webContents.send('live-clear'); });
+  ipcMain.handle('live-send-content', (e, d) => {
+    if (liveWindow && !liveWindow.isDestroyed()) {
+      liveWindow.setAlwaysOnTop(true, 'screen-saver');
+      try { liveWindow.moveTop(); } catch (err) {}
+      liveWindow.webContents.send('live-update-content', d);
+    }
+  });
+  ipcMain.handle('live-send-background', (e, d) => {
+    if (liveWindow && !liveWindow.isDestroyed()) {
+      liveWindow.setAlwaysOnTop(true, 'screen-saver');
+      try { liveWindow.moveTop(); } catch (err) {}
+      liveWindow.webContents.send('live-update-background', d);
+    }
+  });
+  ipcMain.handle('live-send-clear', () => {
+    if (liveWindow && !liveWindow.isDestroyed()) {
+      liveWindow.setAlwaysOnTop(true, 'screen-saver');
+      try { liveWindow.moveTop(); } catch (err) {}
+      liveWindow.webContents.send('live-clear');
+    }
+  });
 
   ipcMain.handle('show-open-dialog-multi', async (event, options) => {
     const result = await dialog.showOpenDialog({ ...options, properties: ['openFile', 'multiSelections'] });
@@ -368,11 +628,41 @@ app.whenReady().then(() => {
       let lyrics = '';
       if (ext === '.txt') {
         lyrics = fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n').trim();
+        results.push({ title, lyrics, ext });
       } else if (ext === '.docx' && mammoth) {
         const r = await mammoth.extractRawText({ path: filePath });
         lyrics = r.value.trim();
+        results.push({ title, lyrics, ext });
+      } else if (ext === '.json') {
+        try {
+          const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          if (Array.isArray(content)) {
+            // Persistent Save: Merge imported songs into local songs.json
+            const currentItems = JSON.parse(fs.readFileSync(songsFilePath, 'utf8') || '[]');
+            const currentIds = new Set(currentItems.map(s => s.id));
+            let addedCount = 0;
+
+            for (let song of content) {
+              song = migrateItem(song);
+              if (!song.id) song.id = Date.now() + Math.random();
+              if (!currentIds.has(song.id)) {
+                currentItems.push(song);
+                currentIds.add(song.id);
+                addedCount++;
+              }
+            }
+            if (addedCount > 0) {
+              saveAndBackupSync(songsFilePath, currentItems);
+              console.log(`Imported and saved ${addedCount} songs from JSON array.`);
+            }
+            results.push({ type: 'json-array', data: content, imported: true });
+          } else {
+            results.push({ type: 'json-object', data: content });
+          }
+        } catch (e) {
+          console.error('Failed to parse JSON file:', filePath, e);
+        }
       }
-      results.push({ title, lyrics, ext });
     }
     return results;
   });

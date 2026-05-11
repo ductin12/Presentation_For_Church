@@ -30,6 +30,30 @@
             font-size: 12px;
             color: #000;
         }
+        .edit-song-modal {
+            color: #111827;
+        }
+        .edit-song-modal .material-symbols-outlined {
+            color: #1f2937;
+        }
+        .edit-song-modal .win-button,
+        .edit-song-modal .toolbar-btn,
+        .edit-song-modal select,
+        .edit-song-modal input,
+        .edit-song-modal label,
+        .edit-song-modal span {
+            color: #111827;
+        }
+        .edit-song-modal .text-win-dark-gray {
+            color: #374151;
+        }
+        .edit-song-modal .text-win-blue {
+            color: #005a9e;
+        }
+        .edit-song-modal .win-button,
+        .edit-song-modal .toolbar-btn {
+            color: #111827;
+        }
         .win-button {
             border: 1px solid #707070;
             background: linear-gradient(to bottom, #f0f0f0, #e1e1e1);
@@ -86,15 +110,15 @@
 <!-- Dimmed Overlay -->
 <div class="fixed inset-0 bg-black/50 z-0"></div>
 <!-- Modal Container -->
-<div class="relative z-10 w-full max-w-6xl h-[85vh] bg-win-gray flex flex-col overflow-hidden shadow-2xl border border-win-dark-gray ring-1 ring-white/20">
+<div class="edit-song-modal relative z-10 w-full max-w-6xl h-[85vh] bg-win-gray flex flex-col overflow-hidden shadow-2xl border border-win-dark-gray ring-1 ring-white/20">
 <!-- Modal Title Bar (Simulating OS Window) -->
-<div class="bg-white px-2 py-1 flex items-center justify-between border-b border-win-border shrink-0">
+<div class="bg-slate-100 px-2 py-1 flex items-center justify-between border-b border-win-border shrink-0">
 <div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-sm">music_note</span>
 <span class="text-[11px] font-semibold">Edit Song - Amazing Grace</span>
 </div>
 <div class="flex items-center gap-1">
-<button class="w-6 h-5 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors" onclick="window.close()">
+<button class="w-6 h-5 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors text-slate-700" onclick="window.close()">
 <span class="material-symbols-outlined text-xs">close</span>
 </button>
 </div>
@@ -107,8 +131,8 @@
 <input class="flex-1 h-6 border border-win-border px-2 text-[12px] focus:outline-none focus:border-win-blue" id="song-title" placeholder="Enter song name..." type="text"/>
 </div>
 <!-- Formatting Toolbar Row -->
-<div class="p-1 flex items-center gap-1">
-<select class="h-6 border border-win-border bg-white text-[11px] px-1 w-44">
+                <div class="p-1 flex items-center gap-1">
+                    <select class="h-6 border border-win-border bg-white text-[11px] px-1 w-44">
 <option>Tahoma</option>
 <option>Arial</option>
 <option>Verdana</option>
@@ -194,7 +218,7 @@
 <div class="flex-1 flex items-center justify-center relative">
 <!-- Slide Preview -->
 <div class="aspect-video w-full max-w-2xl bg-black border border-black shadow-lg flex items-center justify-center">
-<h1 class="text-white text-3xl font-bold tracking-wide">Double click to edit song</h1>
+<h1 class="text-slate-100 text-3xl font-bold tracking-wide">Double click to edit song</h1>
 </div>
 </div>
 <!-- Preview bottom control bar -->

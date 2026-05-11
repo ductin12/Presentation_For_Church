@@ -2,21 +2,37 @@ const SongSchema = {
   required: ['id', 'title', 'lyrics'],
   defaults: {
     type: 'song', // default type
-    style: { fontSize: '80px', fontColor: '#ffffff', textAlign: 'center' },
+    style: {
+      fontSize: '80px',
+      color: '#ffffff',
+      textAlign: 'center',
+      verticalAlign: 'middle',
+      textBox: { left: 48, width: 864, top: null }
+    },
     background: null // null means use default background
   }
 };
 
 function validateItem(data) {
   const errors = [];
+  if (!data || typeof data !== 'object') {
+    errors.push('Invalid item');
+    return { valid: false, errors };
+  }
   if (data.id === undefined || data.id === null) errors.push('Missing id');
   if (!data.title || typeof data.title !== 'string' || !data.title.trim()) errors.push('Missing title');
   if (typeof data.lyrics !== 'string') errors.push('Missing lyrics');
+  if (data.type != null && data.type !== 'song' && data.type !== 'bible') errors.push('Invalid type');
   return { valid: errors.length === 0, errors };
 }
 
 function migrateItem(data) {
-  const migrated = { ...SongSchema.defaults, ...data };
+  const source = (data && typeof data === 'object') ? data : {};
+  const migrated = { ...SongSchema.defaults, ...source };
+
+  if (migrated.type !== 'song' && migrated.type !== 'bible') {
+    migrated.type = SongSchema.defaults.type;
+  }
 
   if (migrated.style) {
     migrated.style = { ...SongSchema.defaults.style, ...migrated.style };
@@ -33,6 +49,19 @@ function migrateItem(data) {
     } else if (typeof migrated.style.fontSize === 'string' && migrated.style.fontSize.endsWith('pt')) {
       migrated.style.fontSize = Math.round(parseFloat(migrated.style.fontSize) * 2 / 3) + 'px';
     }
+
+    if (!migrated.style.textBox || typeof migrated.style.textBox !== 'object') {
+      migrated.style.textBox = { ...SongSchema.defaults.style.textBox };
+    } else {
+      migrated.style.textBox = {
+        ...SongSchema.defaults.style.textBox,
+        ...migrated.style.textBox
+      };
+    }
+  }
+
+  if (!migrated.background || typeof migrated.background !== 'object') {
+    migrated.background = null;
   }
 
   return migrated;

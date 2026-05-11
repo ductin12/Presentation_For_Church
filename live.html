@@ -132,18 +132,112 @@
     </div>
 
     <script>
-
+        const DEFAULT_STYLE = {
+            fontFamily: 'Times New Roman',
+            fontSize: '80px',
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontStyle: 'normal',
+            textDecoration: 'none',
+            textAlign: 'center',
+            verticalAlign: 'middle',
+            textBox: { left: 48, width: 864, top: null }
+        };
+        const VIRTUAL_WIDTH = 960;
+        const VIRTUAL_HEIGHT = 540;
 
         let activeBuffer = 'a'; // which buffer is currently visible
         let currentBackgroundUrl = null; // track current background to avoid flicker
+
+        function normalizeStyle(style = {}) {
+            const normalized = {
+                ...DEFAULT_STYLE,
+                ...(style || {})
+            };
+
+            if (normalized.fontColor && !normalized.color) {
+                normalized.color = normalized.fontColor;
+            }
+            delete normalized.fontColor;
+
+            normalized.textBox = {
+                ...DEFAULT_STYLE.textBox,
+                ...((style && style.textBox) || {})
+            };
+
+            if (!normalized.color) normalized.color = DEFAULT_STYLE.color;
+            if (!normalized.fontFamily) normalized.fontFamily = DEFAULT_STYLE.fontFamily;
+            if (!normalized.fontSize) normalized.fontSize = DEFAULT_STYLE.fontSize;
+            if (!normalized.textAlign) normalized.textAlign = DEFAULT_STYLE.textAlign;
+            if (!normalized.verticalAlign) normalized.verticalAlign = DEFAULT_STYLE.verticalAlign;
+
+            return normalized;
+        }
+
+        function normalizeBackground(bg) {
+            if (!bg || !bg.mediaName) return null;
+            const inferMediaType = (value) => {
+                const source = (value || '').toString().toLowerCase().split(/[?#]/)[0];
+                return /\.(mp4|mov|m4v|webm|wmv)$/.test(source) ? 'video' : 'image';
+            };
+
+            const mediaType = bg.mediaType === 'video' || bg.type === 'video'
+                ? 'video'
+                : bg.mediaType === 'image' || bg.type === 'image'
+                    ? 'image'
+                    : inferMediaType(bg.url || bg.mediaName);
+
+            return {
+                mediaName: bg.mediaName,
+                mediaType: mediaType,
+                url: bg.url || `app-media://${encodeURIComponent(bg.mediaName)}`
+            };
+        }
+
+        function hideBackgroundBuffers() {
+            document.querySelectorAll('.bg-img, .bg-video').forEach(el => {
+                el.classList.add('hidden');
+                if (el.tagName === 'VIDEO') {
+                    el.pause();
+                    el.removeAttribute('src');
+                    el.load();
+                }
+            });
+        }
+
+        function showBackground(background) {
+            const next = activeBuffer === 'a' ? 'b' : 'a';
+            const nextImg = document.getElementById(`bg-img-${next}`);
+            const nextVid = document.getElementById(`bg-video-${next}`);
+            const nextLayer = document.getElementById(`buffer-${next}`);
+            const currentLayer = document.getElementById(`buffer-${activeBuffer}`);
+
+            nextImg.classList.add('hidden');
+            nextVid.classList.add('hidden');
+
+            if (background.mediaType === 'video') {
+                nextVid.classList.remove('hidden');
+                nextVid.src = background.url;
+                nextVid.load();
+                nextVid.play().catch((error) => {
+                    console.warn('[Live] Failed to play background video:', error);
+                });
+            } else {
+                nextImg.classList.remove('hidden');
+                nextImg.src = background.url;
+            }
+
+            nextLayer.style.opacity = '1';
+            currentLayer.style.opacity = '0';
+            activeBuffer = next;
+        }
 
         function scaleCanvas() {
             const canvas = document.getElementById('virtual-canvas');
             if (!canvas) return;
             const w = window.innerWidth;
             const h = window.innerHeight;
-            // Scale để vừa khít 1920x1080 vào cửa sổ hiện tại (giữ nguyên tỉ lệ)
-            const scale = Math.min(w / 960, h / 540);
+            const scale = Math.min(w / VIRTUAL_WIDTH, h / VIRTUAL_HEIGHT);
             canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
             console.log(`[Live] Scaled to: ${scale} (Window: ${w}x${h})`);
         }
@@ -152,41 +246,16 @@
         scaleCanvas();
 
         function setBackground(bg) {
-            if (!bg) return;
+            const background = normalizeBackground(bg);
+            if (!background) return;
 
-            // Determine next buffer
-            const next = activeBuffer === 'a' ? 'b' : 'a';
-            const nextImg = document.getElementById(`bg-img-${next}`);
-            const nextVid = document.getElementById(`bg-video-${next}`);
-            const nextLayer = document.getElementById(`buffer-${next}`);
-            const currentLayer = document.getElementById(`buffer-${activeBuffer}`);
-
-            // Hide both in next buffer
-            nextImg.classList.add('hidden');
-            nextVid.classList.add('hidden');
-
-            const url = bg.url || `app-media://${encodeURIComponent(bg.mediaName)}`;
-            
-            // Nếu URL giống hệt cái cũ, không làm gì cả để tránh nháy hình
-            if (url === currentBackgroundUrl) {
+            if (background.url === currentBackgroundUrl) {
                 console.log('[Live] Same background URL, skipping transition');
                 return;
             }
-            currentBackgroundUrl = url;
 
-            if (bg.mediaType === 'video') {
-                nextVid.classList.remove('hidden');
-                nextVid.src = url;
-                nextVid.play().catch(() => {});
-            } else {
-                nextImg.classList.remove('hidden');
-                nextImg.src = url;
-            }
-
-            // Crossfade
-            nextLayer.style.opacity = '1';
-            currentLayer.style.opacity = '0';
-            activeBuffer = next;
+            currentBackgroundUrl = background.url;
+            showBackground(background);
         }
 
         function setText(text) {
@@ -199,28 +268,25 @@
             currentBackgroundUrl = null;
             const bufferA = document.getElementById('buffer-a');
             const bufferB = document.getElementById('buffer-b');
-            bufferA.style.opacity = '0';
+            bufferA.style.opacity = '1';
             bufferB.style.opacity = '0';
-
-            document.querySelectorAll('.bg-img, .bg-video').forEach(el => {
-                el.classList.add('hidden');
-                if (el.tagName === 'VIDEO') { el.pause(); el.src = ''; }
-            });
+            activeBuffer = 'a';
+            hideBackgroundBuffers();
         }
 
         // --- IPC Listeners ---
         function applyStyle(style) {
-            if (!style) return;
+            const normalizedStyle = normalizeStyle(style);
             const el = document.getElementById('lyrics-text');
             const textBox = document.getElementById('text-box');
 
-            if (style.fontFamily) el.style.fontFamily = style.fontFamily;
-            if (style.fontSize) el.style.fontSize = style.fontSize;
-            if (style.color) el.style.color = style.color;
-            if (style.fontWeight) el.style.fontWeight = style.fontWeight;
-            if (style.fontStyle) el.style.fontStyle = style.fontStyle;
-            if (style.textDecoration) el.style.textDecoration = style.textDecoration;
-            if (style.textAlign) el.style.textAlign = style.textAlign;
+            el.style.fontFamily = normalizedStyle.fontFamily;
+            el.style.fontSize = normalizedStyle.fontSize;
+            el.style.color = normalizedStyle.color;
+            el.style.fontWeight = normalizedStyle.fontWeight;
+            el.style.fontStyle = normalizedStyle.fontStyle;
+            el.style.textDecoration = normalizedStyle.textDecoration;
+            el.style.textAlign = normalizedStyle.textAlign;
 
             el.style.textShadow = "none";
             el.style.webkitTextStroke = "12px black";
@@ -229,11 +295,9 @@
             el.style.lineHeight = "1.4";
 
             if (textBox) {
-                const tb = style.textBox;
-                const left = (tb && tb.left != null) ? tb.left : 48;
-                const width = (tb && tb.width != null) ? tb.width : 864;
-                textBox.style.left = left + 'px';
-                textBox.style.width = width + 'px';
+                const tb = normalizedStyle.textBox;
+                textBox.style.left = `${tb.left}px`;
+                textBox.style.width = `${tb.width}px`;
                 textBox.style.maxHeight = '454px';
                 textBox.style.overflow = 'hidden';
 
@@ -242,7 +306,7 @@
                     textBox.style.bottom = '';
                     textBox.style.transform = '';
                 } else {
-                    const align = style.verticalAlign || 'middle';
+                    const align = normalizedStyle.verticalAlign || 'middle';
                     if (align === 'top') {
                         textBox.style.top = '43px';
                         textBox.style.bottom = '';
@@ -262,14 +326,19 @@
 
         window.electronAPI.onLiveUpdateContent((event, data) => {
             console.log('[Live] Received content:', data);
-            if (data.style) {
+            if (data && data.style) {
                 applyStyle(data.style);
             }
-            if (data.text !== null && data.text !== undefined) {
+            if (data && data.text !== null && data.text !== undefined) {
                 setText(data.text);
             }
-            if (data.background) {
-                setBackground(data.background);
+            if (data && 'background' in data) {
+                if (data.background) {
+                    setBackground(data.background);
+                } else {
+                    currentBackgroundUrl = null;
+                    hideBackgroundBuffers();
+                }
             }
         });
 
