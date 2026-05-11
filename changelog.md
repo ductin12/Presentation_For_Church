@@ -22,7 +22,13 @@ Tất cả các thay đổi và cập nhật quan trọng của dự án đượ
     - Việt hóa toàn bộ nhãn chức năng trong hộp thoại cấu hình phím tắt để thân thiện hơn.
     - Cải tiến phím tắt `Ctrl+F`: tự động focus và bôi đen toàn bộ nội dung ô tìm kiếm để gõ đè nhanh.
     - Refactor logic lưu phím tắt để hỗ trợ danh sách phím mặc định có độ dài linh hoạt.
-- **Giao diện (UI):** Đồng bộ cấu trúc 3 ô phím cho cả phím tắt mặc định và tùy chỉnh.
+- **Giao diện (UI):**
+    - Đồng bộ cấu trúc 3 ô phím cho cả phím tắt mặc định và tùy chỉnh.
+    - Sửa lỗi không xóa trạng thái chọn bài hát khi chuyển đổi giữa tab Bài hát và Kinh Thánh.
+- **Tính ổn định (Stability):**
+    - Sửa lỗi rò rỉ biến toàn cục trong logic tính toán CPU.
+    - Thêm cơ chế bảo vệ (try/catch) cho hệ thống backup dữ liệu tự động.
+    - Cải thiện độ chính xác của việc ghi nhớ vị trí cửa sổ Screen Live khi thay đổi cấu hình màn hình.
 
 ## [1.0.3] - 2026-05-11
 

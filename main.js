@@ -12,7 +12,7 @@ function getCpuUsage() {
   let idle = 0;
   let total = 0;
   cpus.forEach(core => {
-    for (type in core.times) {
+    for (const type in core.times) {
       total += core.times[type];
     }
     idle += core.times.idle;
@@ -40,13 +40,17 @@ function safeWriteSync(filePath, data) {
 }
 
 function saveAndBackupSync(filePath, data) {
-  if (fs.existsSync(filePath)) {
-    for (let i = 2; i >= 1; i--) {
-      const old = `${filePath.replace('.json', '')}.backup.${i}.json`;
-      const next = `${filePath.replace('.json', '')}.backup.${i + 1}.json`;
-      if (fs.existsSync(old)) fs.renameSync(old, next);
+  try {
+    if (fs.existsSync(filePath)) {
+      for (let i = 2; i >= 1; i--) {
+        const old = `${filePath.replace('.json', '')}.backup.${i}.json`;
+        const next = `${filePath.replace('.json', '')}.backup.${i + 1}.json`;
+        if (fs.existsSync(old)) fs.renameSync(old, next);
+      }
+      fs.copyFileSync(filePath, `${filePath.replace('.json', '')}.backup.1.json`);
     }
-    fs.copyFileSync(filePath, `${filePath.replace('.json', '')}.backup.1.json`);
+  } catch (e) {
+    console.error('Backup failed:', e);
   }
   return safeWriteSync(filePath, data);
 }
@@ -407,6 +411,18 @@ function createLiveWindow(initialBounds = null) {
   liveWindow.on('focus', enforceLiveWindowPriority);
   liveWindow.on('blur', () => setTimeout(enforceLiveWindowPriority, 0));
   liveWindow.loadFile('live.html');
+
+  const updateRequestedBounds = () => {
+    if (!liveWindow || liveWindow.isDestroyed()) return;
+    const displays = screen.getAllDisplays();
+    if (displays.length === 1) {
+      requestedLiveBounds = liveWindow.getBounds();
+    }
+  };
+
+  liveWindow.on('move', updateRequestedBounds);
+  liveWindow.on('resize', updateRequestedBounds);
+
   liveWindow.once('ready-to-show', () => {
     if (!liveWindow || liveWindow.isDestroyed()) return;
     syncLiveWindowToPreferredDisplay();

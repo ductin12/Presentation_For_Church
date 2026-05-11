@@ -1958,6 +1958,7 @@
 
         function switchLibraryTab(tab) {
             currentLibraryTab = tab;
+            currentEditingSong = null; // Clear selection when switching tabs
             const songsBtn = document.getElementById('tab-songs');
             const bibleBtn = document.getElementById('tab-bible');
             const versionSelector = document.getElementById('bible-version-selector-container');
