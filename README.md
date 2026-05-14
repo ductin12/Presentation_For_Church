@@ -26,7 +26,7 @@ Các tài liệu vận hành và quy ước phát triển nằm trong `docs/`:
 
 ## Git Clone Project
 ```bash
-git clone https://github.com/PhuocTDT/Presentation_For_Church.git
+git clone https://github.com/ductin12/Presentation_For_Church.git
 ```
 
 ## Cài đặt và chạy
