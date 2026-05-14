@@ -3,6 +3,7 @@ const SongSchema = {
   defaults: {
     type: 'song', // default type
     style: {
+      fontFamily: 'CMG Sans',
       fontSize: '80px',
       color: '#ffffff',
       textAlign: 'center',
@@ -11,6 +12,15 @@ const SongSchema = {
       textStrokeColor: '#000000',
       textMargin: { top: 0, right: 0, bottom: 0, left: 0 },
       textPadding: { top: 0, right: 0, bottom: 0, left: 0 },
+      boxStyle: {
+        enabled: false,
+        backgroundColor: '#000000',
+        backgroundOpacity: 0.35,
+        borderColor: '#ffffff',
+        borderWidth: 0,
+        borderStyle: 'solid',
+        borderRadius: 0
+      },
       textBox: { left: 48, width: 864, top: null }
     },
     background: null // null means use default background
@@ -78,6 +88,15 @@ function migrateItem(data) {
       migrated.style.textPadding = {
         ...SongSchema.defaults.style.textPadding,
         ...migrated.style.textPadding
+      };
+    }
+
+    if (!migrated.style.boxStyle || typeof migrated.style.boxStyle !== 'object') {
+      migrated.style.boxStyle = { ...SongSchema.defaults.style.boxStyle };
+    } else {
+      migrated.style.boxStyle = {
+        ...SongSchema.defaults.style.boxStyle,
+        ...migrated.style.boxStyle
       };
     }
   }
