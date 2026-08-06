@@ -4584,6 +4584,24 @@
             return matchLine ? renderHighlightedSnippet(matchLine, query) : null;
         }
 
+        function findMatchingVerseInfo(lyrics, query) {
+            if (!lyrics || !query) return null;
+            const verses = String(lyrics).split(/\n\n/).map(v => v.trim()).filter(Boolean);
+            for (let i = 0; i < verses.length; i++) {
+                const verseText = verses[i];
+                const lines = verseText.split('\n').map(l => l.trim()).filter(Boolean);
+                const hasMatch = lines.some(line => matchesSearchText(line, query, { allowCompact: false }));
+                if (hasMatch) {
+                    const numMatch = verseText.match(/^(\d+)\s/);
+                    return {
+                        verseNumber: numMatch ? numMatch[1] : null,
+                        verseIndex: i
+                    };
+                }
+            }
+            return null;
+        }
+
         let _lastSongLibraryRef = null;
         let _cachedSongNumberMap = new Map();
         function getSongNumberMap(items) {
@@ -4800,25 +4818,38 @@
                     tr.className = 'cursor-pointer select-none';
                     tr.dataset.libraryKey = getLibraryItemKey(item);
                     const snippet = findSearchSnippet(item.lyrics, query);
+                    let displayTitle = item.title;
+                    let startVerseIndex = 0;
+                    if (query && item.lyrics) {
+                        const matchInfo = findMatchingVerseInfo(item.lyrics, query);
+                        if (matchInfo && matchInfo.verseNumber) {
+                            displayTitle = `${item.title}:${matchInfo.verseNumber}`;
+                            startVerseIndex = matchInfo.verseIndex;
+                        }
+                    }
+                    const itemToSelect = (startVerseIndex > 0 || displayTitle !== item.title)
+                        ? { ...item, title: displayTitle, startVerseIndex }
+                        : item;
+
                     tr.innerHTML = `<td class="px-3 py-1.5">
                         <div class="group flex items-start gap-2">
                             <div class="min-w-0 flex-1">
-                                <div class="text-[11px] font-medium text-slate-900 dark:text-slate-100 transition-colors group-hover:text-sky-600 dark:group-hover:text-sky-400">${escapeHtml(item.title)}</div>
+                                <div class="text-[11px] font-medium text-slate-900 dark:text-slate-100 transition-colors group-hover:text-sky-600 dark:group-hover:text-sky-400">${escapeHtml(displayTitle)}</div>
                                 ${snippet ? `<div class="text-[9px] text-indigo-400 mt-0.5 truncate">${snippet.highlightedHtml}</div>` : ''}
                             </div>
                             <button type="button" class="library-add-hint shrink-0 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto" title="Thêm vào schedule">+</button>
                         </div>
                     </td>`;
-                    tr.onclick = () => { selectItemInLibrary(item); };
-                    tr.ondblclick = (e) => { e.stopPropagation(); addToSchedule(item); };
-                    tr.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e, item); };
+                    tr.onclick = () => { selectItemInLibrary(itemToSelect); };
+                    tr.ondblclick = (e) => { e.stopPropagation(); addToSchedule(itemToSelect); };
+                    tr.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e, itemToSelect); };
                     const addHintButton = tr.querySelector('.library-add-hint');
                     if (addHintButton) {
                         addHintButton.onclick = (e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            selectItemInLibrary(item);
-                            addToSchedule(item);
+                            selectItemInLibrary(itemToSelect);
+                            addToSchedule(itemToSelect);
                         };
                     }
                     fragment.appendChild(tr);
@@ -5914,10 +5945,15 @@
                 });
             }
 
-            currentPreviewIndex = 0;
+            if (song.startVerseIndex && typeof song.startVerseIndex === 'number' && song.startVerseIndex >= 0 && song.startVerseIndex < currentSlides.length) {
+                currentPreviewIndex = song.startVerseIndex;
+            } else {
+                currentPreviewIndex = 0;
+            }
+            _previewShouldScroll = true;
             renderPreview();
-            if (currentSlides.length > 0) {
-                updatePreviewOutput(currentSlides[0].content);
+            if (currentSlides.length > 0 && currentSlides[currentPreviewIndex]) {
+                updatePreviewOutput(currentSlides[currentPreviewIndex].content);
             }
         }
 
@@ -5955,8 +5991,10 @@
                 div.ondblclick = (e) => { e.stopPropagation(); goLiveFromSlide(index); };
                 container.appendChild(div);
                 if (isActive && _previewShouldScroll) {
-                    div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     _previewShouldScroll = false;
+                    setTimeout(() => {
+                        div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 50);
                 }
             });
         }
@@ -5985,6 +6023,7 @@
             currentLiveIndex = index;
             currentLiveSlideIndex = index;
 
+            _liveShouldScroll = true;
             renderLiveSlides();
             goLiveSlide(index);
 
@@ -6003,6 +6042,7 @@
 
             // Update in-app live output
             updateLiveOutput(slide.content);
+            _liveShouldScroll = true;
             renderLiveSlides();
 
             // Keep the currently active live background when changing slides of the live song
@@ -6030,6 +6070,7 @@
             currentLiveIndex = currentPreviewIndex;
 
             updateLiveOutput(slide.content);
+            _liveShouldScroll = true;
             renderLiveSlides();
 
             const scheduleItem = schedule[currentLiveScheduleIndex];
@@ -6068,8 +6109,10 @@
                 div.onclick = () => { goLiveSlide(index); };
                 container.appendChild(div);
                 if (isActive && _liveShouldScroll) {
-                    div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     _liveShouldScroll = false;
+                    setTimeout(() => {
+                        div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 50);
                 }
             });
         }

@@ -18,7 +18,7 @@ Các tài liệu vận hành và quy ước phát triển nằm trong `docs/`:
 ## Tính năng Nổi bật (v2.0.1)
 
 - **Quản lý Thư viện Bài hát**: Thêm, sửa, xóa, tìm kiếm thông minh có hỗ trợ từ khóa/alias và xuất thư viện ra JSON.
-- **Tra cứu & Trình chiếu Kinh Thánh Tiếng Việt**: Tích hợp các bản dịch phổ biến (Bản Dịch Mới, Bản Phổ Thông, 1925, English NIV...), chọn nhanh Sách/Chương/Câu, bôi đen từ khóa và gửi nhanh vào lịch trình.
+- **Tra cứu & Trình chiếu Kinh Thánh Tiếng Việt Thông minh**: Tích hợp nhiều bản dịch phổ biến (Bản Dịch Mới, Bản Phổ Thông, 1925, English NIV...). Khi tìm kiếm từ khóa, hệ thống tự động nhận diện và hiển thị rõ số câu (vd: `Thi Thiên 92:12`), đồng thời tự động cuộn (auto-scroll) và chọn đúng câu Kinh Thánh đó trên cả màn hình điều khiển Preview lẫn Live khi đưa vào danh sách trình chiếu.
 - **Hệ thống Style Templates (Mới)**:
   - Tích hợp sẵn **7 mẫu Style trình chiếu chuẩn đẹp** (`Yellow`, `White`, `Red`, `Blue`, `Navi`, `Orange`, `Black`).
   - Hỗ trợ tải lên và sử dụng các font chữ tùy chỉnh (`.ttf`, `.otf`), tùy biến khung nền (boxStyle), độ dày viền chữ (textStroke) và căn lề linh hoạt.

@@ -5,6 +5,10 @@ Tất cả các thay đổi và cập nhật quan trọng của dự án đượ
 ## [2.0.1] - 2026-08-06
 
 ### Đã thêm (Added)
+- **Cải tiến Tìm kiếm & Trình chiếu Kinh Thánh Thông minh (Smart Bible Search & Auto-Scroll):**
+  - **Hiển thị số câu trong kết quả tìm kiếm:** Khi tra cứu từ khóa trong Kinh Thánh, hệ thống tự động nhận dạng câu chứa từ khóa và hiển thị theo định dạng `Sách Chương:Câu` (Ví dụ: `Thi Thiên 92:12` thay vì chỉ hiển thị chung chung `Thi Thiên 92`).
+  - **Ghi nhớ tọa độ câu Kinh Thánh:** Vị trí câu Kinh Thánh được chọn (`startVerseIndex`) sẽ được ghi nhớ trực tiếp vào danh sách trình chiếu (Schedule) khi người dùng thao tác bấm đúp hoặc bấm thêm vào lịch trình.
+  - **Tự động cuộn (Auto-scroll) trên cả Preview & Live:** Khi đưa câu Kinh Thánh được chọn lên vùng Xem trước (Preview) hoặc Trình chiếu chính thức (Go Live), ứng dụng không chỉ tự động nhảy đúng sang slide của câu đó mà ngay cả danh sách điều khiển slide bên cột Preview lẫn cột Live (`#live-slides-container`) đều tự động cuộn (scroll) mượt mà đến đúng vị trí slide đang phát, giúp thao tác vận hành thờ phượng cực kỳ thuận tiện và nhanh gọn.
 - **Đóng gói Windows x64 (Electron Builder & NSIS):**
   - Hỗ trợ xuất ra hai định dạng chuẩn cho máy tính Windows (x64): Bản cài đặt trọn gói `Presentation.For.Church.Setup.2.0.1.exe` (tạo Shortcut trên Desktop & Start Menu) và bản chạy ngay không cần cài đặt `Presentation.For.Church.Portable.2.0.1.exe`.
   - **Trình gỡ cài đặt thông minh (Uninstaller - `build/installer.nsh`):** Khi người dùng thực hiện gỡ phần mềm khỏi máy tính, một hộp thoại thông báo bằng tiếng Việt sẽ xuất hiện hỏi người dùng có muốn xóa hay bảo lưu toàn bộ dữ liệu ứng dụng (`%APPDATA%`, gồm danh sách bài hát, cấu hình cá nhân và kho media). Mặc định hệ thống chọn sẵn nút **"No"** (Giữ lại toàn bộ dữ liệu), an toàn tuyệt đối cho các lần nâng cấp hoặc sửa đổi.
