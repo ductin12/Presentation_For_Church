@@ -28,18 +28,26 @@ export function getAppData(): AppData {
     const changelogContent = fs.readFileSync(changelogPath, 'utf8');
     
     // Tìm section của version mới nhất. Format thường là: ## [x.x.x] - YYYY-MM-DD
-    const versionRegex = new RegExp(`## \\\\[${version}\\\\](.*?)## \\\\[`, 's');
+    const versionHeader = `## [${version}]`;
+    const startIndex = changelogContent.indexOf(versionHeader);
+    
     let latestChanges = '';
-    const match = changelogContent.match(versionRegex);
-    if (match) {
-      latestChanges = match[1];
+    if (startIndex !== -1) {
+      // Bỏ qua dòng header ## [x.x.x]
+      const contentAfterHeader = changelogContent.substring(startIndex + versionHeader.length);
+      // Tìm header của phiên bản tiếp theo
+      const endIndex = contentAfterHeader.indexOf('## [');
+      if (endIndex !== -1) {
+        latestChanges = contentAfterHeader.substring(0, endIndex);
+      } else {
+        latestChanges = contentAfterHeader;
+      }
     } else {
-      // Nếu không parse được theo cấu trúc trên, lấy toàn bộ hoặc lấy một khúc
       latestChanges = changelogContent; 
     }
     changelogHTML = latestChanges.trim(); // Chúng ta sẽ parse markdown bằng marked ở component
   } catch (error) {
-    console.warn('Could not read changelog.md');
+    console.warn('Could not read changelog.md', error);
   }
 
   return {
