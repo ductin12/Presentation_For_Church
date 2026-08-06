@@ -3,35 +3,40 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Layout, BookOpen, Layers, MonitorPlay, Sparkles } from "lucide-react";
+import { Layout, BookOpen, Layers, MonitorPlay, Sparkles, Gift } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const features = [
   {
     icon: <Layout className="w-6 h-6 text-blue-400" />,
-    title: "Quản lý Bài hát Thông minh",
-    description: "Thêm, sửa, xóa, tìm kiếm từ khóa/alias siêu tốc. Hỗ trợ nhập/xuất dữ liệu (import/export) JSON dễ dàng."
+    title: "Quản lý Bài Hát Dễ Dàng",
+    description: "Thêm, sửa và tìm kiếm bài hát cực kỳ nhanh chóng. Dễ dàng lưu trữ và chia sẻ kho lời nhạc của Hội Thánh chỉ với vài thao tác."
   },
   {
     icon: <BookOpen className="w-6 h-6 text-purple-400" />,
-    title: "Kinh Thánh Đa Bản Dịch & Auto-Scroll",
-    description: "Tự động bắt số câu, cuộn mượt mà đồng bộ giữa thẻ Xem trước (Preview) và Trình chiếu (Live) cực kỳ mượt mà."
+    title: "Kinh Thánh Thông Minh",
+    description: "Tra cứu siêu tốc nhiều bản dịch Kinh Thánh. Màn hình tự động cuộn nhịp nhàng theo câu chữ, giúp hội chúng dễ dàng theo dõi lời Chúa."
   },
   {
     icon: <Layers className="w-6 h-6 text-emerald-400" />,
-    title: "Thư viện Giao diện (Style Templates)",
-    description: "7 mẫu thiết kế chuẩn tích hợp sẵn. Tùy chỉnh font chữ, viền chữ, nền theo sở thích của Hội Thánh."
+    title: "Giao Diện Đẹp Mắt, Sẵn Sàng",
+    description: "Cung cấp nhiều mẫu trình chiếu tuyệt đẹp. Bạn có thể thoải mái tùy chỉnh phông chữ, màu sắc và hình nền cho phù hợp với phong cách của Hội Thánh."
   },
   {
     icon: <Sparkles className="w-6 h-6 text-amber-400" />,
-    title: "Quản lý Media Nhẹ Nhàng",
-    description: "Import ngầm (Async) qua thanh báo tiến độ (Toast). Không bao giờ làm đơ (lag) giao diện."
+    title: "Trình Chiếu Hình Ảnh & Video Mượt Mà",
+    description: "Thêm hình ảnh, video vào danh sách trình chiếu một cách trơn tru. Hệ thống xử lý thông minh đảm bảo không bao giờ gây giật lag khi đang nhóm lại."
   },
   {
     icon: <MonitorPlay className="w-6 h-6 text-rose-400" />,
-    title: "Hoạt động Đa Nền Tảng",
-    description: "Hỗ trợ Windows (Bản cài đặt & Portable) và macOS (Intel & Apple Silicon M-Series)."
+    title: "Hỗ Trợ Mọi Loại Máy Tính",
+    description: "Dù Hội Thánh đang sử dụng máy tính Windows đời cũ hay MacBook mới nhất, ứng dụng đều hoạt động cực kỳ mượt mà và ổn định."
+  },
+  {
+    icon: <Gift className="w-6 h-6 text-pink-400" />,
+    title: "Hoàn Toàn Miễn Phí",
+    description: "Sứ mệnh của chúng tôi là phục vụ cộng đồng. Trải nghiệm trọn vẹn mọi tính năng chuyên nghiệp nhất mà không yêu cầu bất kỳ khoản phí nào."
   }
 ];
 
