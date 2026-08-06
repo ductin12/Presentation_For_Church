@@ -8,23 +8,24 @@ interface HeroProps {
   version: string;
 }
 
-const banners = [
-  "/hero-1.png",
-  "/hero-2.png",
-  "/hero-3.png"
+const mediaItems = [
+  { type: "video", src: "/Presentation-for-church-app.mp4" },
+  { type: "image", src: "/hero-1.png" },
+  { type: "image", src: "/hero-2.png" },
+  { type: "image", src: "/hero-3.png" },
 ];
 
 export default function Hero({ version }: HeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const bgElementsRef = useRef<HTMLDivElement>(null);
-  const [currentBanner, setCurrentBanner] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     // Banner slider interval
     const interval = setInterval(() => {
-      setCurrentBanner((prev) => (prev + 1) % banners.length);
-    }, 5000);
+      setCurrentIndex((prev) => (prev + 1) % mediaItems.length);
+    }, 6000); // 6 seconds for each slide
     return () => clearInterval(interval);
   }, []);
 
@@ -65,7 +66,7 @@ export default function Hero({ version }: HeroProps) {
   }, []);
 
   return (
-    <section ref={containerRef} className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-28 pb-20">
+    <section ref={containerRef} className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-28 pb-20 w-full">
       {/* Background Floating Orbs */}
       <div ref={bgElementsRef} className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
         <div className="glass-orb glass absolute w-64 h-64 rounded-full -top-10 -left-10 bg-blue-500/10 blur-3xl"></div>
@@ -73,26 +74,44 @@ export default function Hero({ version }: HeroProps) {
         <div className="glass-orb glass absolute w-48 h-48 rounded-full top-1/2 left-1/4 bg-emerald-500/10 blur-2xl"></div>
       </div>
 
-      <div ref={textRef} className="relative z-10 container mx-auto px-6 text-center flex flex-col items-center">
+      <div ref={textRef} className="relative z-10 w-full px-4 sm:px-6 text-center flex flex-col items-center">
         <div className="hero-element inline-block px-4 py-1.5 rounded-full glass-strong mb-6 text-sm font-medium tracking-wide text-gray-300">
           🎉 Phiên bản mới nhất v{version}
         </div>
         
-        {/* Banners Slider */}
-        <div className="hero-element hero-banner w-full max-w-5xl mx-auto mb-12 rounded-2xl overflow-hidden glass-strong p-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)] perspective-1000">
-          <div className="relative w-full aspect-[16/7] md:aspect-[21/9] rounded-xl overflow-hidden">
-            {banners.map((src, index) => (
-              <Image
-                key={src}
-                src={src}
-                alt={`PFC Hero Banner ${index + 1}`}
-                fill
-                className={`object-cover transition-opacity duration-1000 ease-in-out ${
-                  index === currentBanner ? "opacity-100" : "opacity-0"
-                }`}
-                priority={index === 0}
-              />
-            ))}
+        {/* Full Width Banners Slider */}
+        <div className="hero-element hero-banner w-full max-w-[1600px] mx-auto mb-12 rounded-2xl overflow-hidden glass-strong p-2 shadow-[0_30px_60px_rgba(0,0,0,0.6)] perspective-1000">
+          <div className="relative w-full aspect-[16/7] md:aspect-[21/9] rounded-xl overflow-hidden bg-black">
+            {mediaItems.map((item, index) => {
+              const isActive = index === currentIndex;
+              return (
+                <div
+                  key={item.src}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center justify-center ${
+                    isActive ? "opacity-100 z-10" : "opacity-0 z-0"
+                  }`}
+                >
+                  {item.type === "video" ? (
+                    <video
+                      src={item.src}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src={item.src}
+                      alt={`PFC Hero Banner ${index}`}
+                      fill
+                      className="object-cover"
+                      priority={index === 1}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
         
