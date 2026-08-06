@@ -2,9 +2,9 @@ export default function Footer() {
   return (
     <footer className="py-12 border-t border-white/10 relative z-10 mt-12 glass">
       <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs">
-            P
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center p-0.5">
+            <img src="/logo.png" alt="PFC Logo" className="w-full h-full object-contain drop-shadow-md" />
           </div>
           <span className="font-bold text-gray-300">PFC | Presentation For Church</span>
         </div>
