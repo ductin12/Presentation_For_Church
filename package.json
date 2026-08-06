@@ -1,6 +1,6 @@
 {
   "name": "easyworship-app",
-  "version": "1.1.6",
+  "version": "2.0.1",
   "description": "Presentation For Church - Worship Presentation App",
   "main": "main.js",
   "scripts": {
@@ -24,15 +24,24 @@
       "live.html",
       "edit-song.html",
       "src/**/*",
-      "data/**/*.xml",
-      "data/songs.json",
+      "data/**/*",
       "fonts/**/*",
+      "media/**/*",
       "package.json"
+    ],
+    "asarUnpack": [
+      "media/**/*"
     ],
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
       ],
       "icon": "icon.ico"
     },
@@ -45,7 +54,13 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Presentation For Church"
+      "shortcutName": "Presentation For Church",
+      "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh",
+      "artifactName": "Presentation.For.Church.Setup.${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Presentation.For.Church.Portable.${version}.${ext}"
     }
   },
   "devDependencies": {

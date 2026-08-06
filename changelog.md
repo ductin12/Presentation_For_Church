@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.0.1] - 2026-08-06
+
+### Đã thêm (Added)
+- **Đóng gói Windows x64 (Electron Builder & NSIS):**
+  - Hỗ trợ xuất ra hai định dạng chuẩn cho máy tính Windows (x64): Bản cài đặt trọn gói `Presentation.For.Church.Setup.2.0.1.exe` (tạo Shortcut trên Desktop & Start Menu) và bản chạy ngay không cần cài đặt `Presentation.For.Church.Portable.2.0.1.exe`.
+  - **Trình gỡ cài đặt thông minh (Uninstaller - `build/installer.nsh`):** Khi người dùng thực hiện gỡ phần mềm khỏi máy tính, một hộp thoại thông báo bằng tiếng Việt sẽ xuất hiện hỏi người dùng có muốn xóa hay bảo lưu toàn bộ dữ liệu ứng dụng (`%APPDATA%`, gồm danh sách bài hát, cấu hình cá nhân và kho media). Mặc định hệ thống chọn sẵn nút **"No"** (Giữ lại toàn bộ dữ liệu), an toàn tuyệt đối cho các lần nâng cấp hoặc sửa đổi.
+- **Hệ thống Style Mặc định (Default Style Templates):**
+  - Tích hợp sẵn bộ 7 mẫu style hiển thị lời bài hát chuyên nghiệp (`Yellow`, `White`, `Red`, `Blue`, `Navi`, `Orange`, `Black`) vào file hệ thống `data/style-templates.json`.
+  - Tự động nạp bộ 7 style chuẩn này cho người dùng mới cài đặt lần đầu hoặc khi máy tính đang có danh sách style bị trống.
+- **Cơ chế Import Media tự động & Giao diện Theo dõi (Async Media Import):**
+  - Trong lần đầu tiên mở ứng dụng sau khi cài đặt, hệ thống tự động chép toàn bộ kho media offline đi kèm sang thư mục người dùng (`userData/media`) theo cơ chế **bất đồng bộ ngầm** (async sequential copy kèm khoảng nghỉ ngắn), ngăn chặn triệt để tình trạng đơ/lag hay treo ứng dụng (UI freeze) khi nạp lượng file lớn.
+  - Trang bị thông báo Toast hiện đại ngay góc dưới bên phải màn hình UI, hiển thị theo thời gian thực thanh phần trăm tiến trình (`0% -> 100%`) và tên tập tin đang chép. Ngay khi đạt 100%, hệ thống tự làm mới (refresh) danh sách media để người dùng dùng được ngay, sau đó tự ẩn thông báo sau 4 giây.
+
+### Thay đổi (Changed)
+- **Tối ưu hóa Kho Media & Dung lượng Bộ cài (Siêu Nhẹ):**
+  - Thay thế trọn bộ sưu tập hình nền và video (Media) mới: độ thẩm mỹ vượt trội, hiệu ứng mượt mà và nhẹ nhàng hơn rất nhiều so với bộ media cũ.
+  - Nhờ kho media mới và cấu trúc hợp lý, dung lượng tập tin cài đặt `Setup.exe` giảm 82%, từ **731 MB xuống chỉ còn ~126.8 MB**, cực kỳ tiện lợi khi chia sẻ qua Zalo, Google Drive hoặc USB.
+  - Cấu hình `asarUnpack: ["media/**/*"]` trong `package.json` đưa toàn bộ video ra ngoài tệp nén asar tổng, giúp trình phát video trong Electron stream ở tốc độ phần cứng tối ưu nhất mà không chiếm dụng bộ đệm RAM.
+- **Kiến trúc & Tự động hóa Dữ liệu:**
+  - Hoàn thiện tái cấu trúc codebase theo hướng mô-đun hóa (`modular-rebuild`), phân chia logic mạch lạc và dễ bảo trì hơn giữa các file giao diện (`index.html`, `edit-song.html`, `live.html`) và tiến trình chính (`main.js`, `preload.js`).
+  - Nâng cấp lệnh đóng gói dữ liệu trong `package.json` thành `data/**/*` để bảo đảm tất cả tập tin Kinh Thánh XML, danh sách bài hát và bộ style mặc định luôn được tự động chép trọn vẹn vào trong mọi bản dịch release.
+  - Cập nhật và điều chỉnh nhẹ dữ liệu cơ bản trong danh sách bài hát `data/songs.json`.
+
+### Đã sửa (Fixed)
+- **Giao diện Custom Style:** Sửa lỗi hiển thị màu sắc trong các hộp (box) tinh chỉnh phong cách tùy chỉnh (custom style), chấm dứt hiện tượng màu chữ bị trùng với màu nền gây khó nhìn cho người thao tác.
+- **Đồng bộ hiển thị Trình chiếu:** Hiệu chỉnh cơ chế kết xuất văn bản và độ chính xác của hình ảnh/video giữa Editor, Preview, màn hình giám sát Live Monitor và cửa sổ trình chiếu ra màn hình phụ Screen Live.
+
 ## [1.1.6] - 2026-05-15
 
 ### Đã thêm (Added)

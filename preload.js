@@ -27,7 +27,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   exportSongsToFile: () => ipcRenderer.invoke('export-songs-to-file'),
   showOpenDialog: () => ipcRenderer.invoke('show-open-dialog'),
   showSaveDialog: (data) => ipcRenderer.invoke('show-save-dialog', data),
-  importMedia: () => ipcRenderer.invoke('import-media'),
+  importMedia: (filePaths) => ipcRenderer.invoke('import-media', filePaths),
+  deleteMedia: (mediaName) => ipcRenderer.invoke('delete-media', mediaName),
+  showMediaLocation: (mediaName) => ipcRenderer.invoke('show-media-location', mediaName),
   loadMedia: () => ipcRenderer.invoke('load-media'),
   selectFolder: () => ipcRenderer.invoke('select-folder'),
   showOpenDialogMulti: (opts) => ipcRenderer.invoke('show-open-dialog-multi', opts),
@@ -66,5 +68,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onLiveRefreshCustomFonts: (callback) => {
     ipcRenderer.removeAllListeners('live-refresh-custom-fonts');
     ipcRenderer.on('live-refresh-custom-fonts', callback);
+  },
+  onMediaImportStart: (callback) => {
+    ipcRenderer.removeAllListeners('media-import-start');
+    ipcRenderer.on('media-import-start', callback);
+  },
+  onMediaImportProgress: (callback) => {
+    ipcRenderer.removeAllListeners('media-import-progress');
+    ipcRenderer.on('media-import-progress', callback);
+  },
+  onMediaImportDone: (callback) => {
+    ipcRenderer.removeAllListeners('media-import-done');
+    ipcRenderer.on('media-import-done', callback);
   }
 });

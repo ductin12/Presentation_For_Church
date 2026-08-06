@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog, protocol, net, screen } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, protocol, net, screen, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -754,7 +754,29 @@ function initializeData() {
   if (!fs.existsSync(userBibleDataPath)) fs.mkdirSync(userBibleDataPath, { recursive: true });
   if (!fs.existsSync(customFontsDir)) fs.mkdirSync(customFontsDir, { recursive: true });
   ensureJsonFile(bibleVersionRegistryPath, { versions: {} });
-  ensureJsonFile(styleTemplatesPath, { templates: [] });
+  const bundledStyles = path.join(__dirname, 'data', 'style-templates.json');
+  if (!fs.existsSync(styleTemplatesPath)) {
+    if (fs.existsSync(bundledStyles)) {
+      fs.copyFileSync(bundledStyles, styleTemplatesPath);
+    } else {
+      ensureJsonFile(styleTemplatesPath, { templates: [] });
+    }
+  } else {
+    try {
+      const existingStyles = JSON.parse(fs.readFileSync(styleTemplatesPath, 'utf8'));
+      if (!existingStyles || !Array.isArray(existingStyles.templates) || existingStyles.templates.length === 0) {
+        if (fs.existsSync(bundledStyles)) {
+          fs.copyFileSync(bundledStyles, styleTemplatesPath);
+        }
+      }
+    } catch (err) {
+      if (fs.existsSync(bundledStyles)) {
+        fs.copyFileSync(bundledStyles, styleTemplatesPath);
+      } else {
+        ensureJsonFile(styleTemplatesPath, { templates: [] });
+      }
+    }
+  }
   ensureJsonFile(customFontsPath, { fonts: [] });
   migrateBundledBibleVersionsToUserData();
   
@@ -942,6 +964,89 @@ function setupMenu(win) {
   ];
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
+}
+
+async function importBundledMediaIfNeeded(win) {
+  try {
+    const destDir = getMediaFolderPath();
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+
+    let srcDir = null;
+    if (process.resourcesPath) {
+      const unpacked = path.join(process.resourcesPath, 'app.asar.unpacked', 'media');
+      if (fs.existsSync(unpacked)) {
+        srcDir = unpacked;
+      }
+    }
+    if (!srcDir) {
+      const devPath = path.join(__dirname, 'media');
+      if (fs.existsSync(devPath)) {
+        srcDir = devPath;
+      }
+    }
+
+    if (!srcDir || !fs.existsSync(srcDir)) return;
+
+    const markerPath = path.join(destDir, '.media-imported-v2');
+    if (fs.existsSync(markerPath)) return;
+
+    const files = fs.readdirSync(srcDir).filter(f => !f.startsWith('.') && fs.statSync(path.join(srcDir, f)).isFile());
+    if (files.length === 0) {
+      fs.writeFileSync(markerPath, new Date().toISOString());
+      return;
+    }
+
+    let copiedCount = 0;
+    const total = files.length;
+
+    await new Promise(resolve => {
+      if (!win || win.isDestroyed()) return resolve();
+      if (win.webContents.isLoading()) {
+        win.webContents.once('did-finish-load', () => setTimeout(resolve, 1500));
+      } else {
+        setTimeout(resolve, 1500);
+      }
+    });
+
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('media-import-start', { total });
+    }
+
+    for (let i = 0; i < total; i++) {
+      const fileName = files[i];
+      const srcFile = path.join(srcDir, fileName);
+      const destFile = path.join(destDir, fileName);
+
+      try {
+        if (!fs.existsSync(destFile)) {
+          await fs.promises.copyFile(srcFile, destFile);
+          copiedCount++;
+        }
+      } catch (err) {
+        console.error(`Failed to copy media file ${fileName}:`, err);
+      }
+
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('media-import-progress', {
+          current: i + 1,
+          total,
+          fileName
+        });
+      }
+      await new Promise(r => setTimeout(r, 20));
+    }
+
+    fs.writeFileSync(markerPath, new Date().toISOString());
+
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('media-import-done', { copiedCount, total });
+    }
+    console.log(`[Media] Bundled media import completed. Copied ${copiedCount}/${total} files.`);
+  } catch (e) {
+    console.error('[Media] Failed to import bundled media:', e);
+  }
 }
 
 // 4. App Lifecycle
@@ -1589,18 +1694,59 @@ app.whenReady().then(() => {
     return null;
   });
 
-  ipcMain.handle('import-media', async () => {
-    const r = await dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'], filters: [{ name: 'Media Files', extensions: ['jpg', 'jpeg', 'png', 'mp4', 'mov', 'm4v', 'webm'] }] });
+  ipcMain.handle('import-media', async (e, filePaths) => {
+    let pathsToImport = [];
+    if (Array.isArray(filePaths) && filePaths.length > 0) {
+      pathsToImport = filePaths;
+    } else {
+      const r = await dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'], filters: [{ name: 'Media Files', extensions: ['jpg', 'jpeg', 'png', 'mp4', 'mov', 'm4v', 'webm'] }] });
+      if (!r.canceled && r.filePaths.length > 0) {
+        pathsToImport = r.filePaths;
+      }
+    }
     const mediaPath = getMediaFolderPath();
-    if (!r.canceled && r.filePaths.length > 0) {
-      return r.filePaths.map(p => {
+    if (!fs.existsSync(mediaPath)) fs.mkdirSync(mediaPath, { recursive: true });
+    if (pathsToImport.length > 0) {
+      return pathsToImport.map(p => {
         const name = path.basename(p);
         const dest = path.join(mediaPath, name);
-        fs.copyFileSync(p, dest);
+        if (path.resolve(p) !== path.resolve(dest)) {
+          fs.copyFileSync(p, dest);
+        }
         return { name, path: dest, url: pathToFileURL(dest).toString(), type: isVideo(name) ? 'video' : 'image', mimeType: getMediaMimeType(name) };
       });
     }
     return null;
+  });
+
+  ipcMain.handle('delete-media', async (e, mediaName) => {
+    try {
+      const mediaPath = getMediaFolderPath();
+      const fullPath = path.join(mediaPath, mediaName);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+        return { success: true };
+      }
+      return { success: false, error: 'File not found' };
+    } catch (err) {
+      console.error('Delete media error:', err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('show-media-location', async (e, mediaName) => {
+    try {
+      const mediaPath = getMediaFolderPath();
+      const fullPath = path.join(mediaPath, mediaName);
+      if (fs.existsSync(fullPath)) {
+        shell.showItemInFolder(fullPath);
+        return { success: true };
+      }
+      return { success: false, error: 'File not found' };
+    } catch (err) {
+      console.error('Show media location error:', err);
+      return { success: false, error: err.message };
+    }
   });
 
   ipcMain.handle('load-media', () => {
@@ -1714,6 +1860,7 @@ app.whenReady().then(() => {
   });
 
   createWindow();
+  importBundledMediaIfNeeded(mainWindow);
 
 });
 

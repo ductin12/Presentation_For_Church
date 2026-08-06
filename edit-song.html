@@ -4,8 +4,8 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Tahoma&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Tahoma&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
 <script id="tailwind-config">
         tailwind.config = {
             theme: {
@@ -44,6 +44,14 @@
         .edit-song-modal span {
             color: #111827;
         }
+        .edit-song-modal select,
+        .edit-song-modal input:not([type="color"]),
+        .edit-song-modal select option,
+        .edit-song-modal select optgroup {
+            color: #111827 !important;
+            background-color: #ffffff !important;
+            -webkit-text-fill-color: #111827 !important;
+        }
         .edit-song-modal .text-win-dark-gray {
             color: #374151;
         }
@@ -52,7 +60,8 @@
         }
         .edit-song-modal .win-button,
         .edit-song-modal .toolbar-btn {
-            color: #111827;
+            color: #111827 !important;
+            -webkit-text-fill-color: #111827 !important;
         }
         .win-button {
             border: 1px solid #707070;
