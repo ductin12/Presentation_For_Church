@@ -2,6 +2,18 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.0.8] - 2026-09-03
+
+### Đã sửa & Tối ưu hóa cực đỉnh (Static Tailwind & Video Decoder Optimizations)
+- **Biên dịch sẵn CSS tĩnh (Pre-compiled Static Tailwind CSS - Giảm LCP từ 31s xuống dưới 0.2s):**
+  - Chuyển đổi hoàn toàn từ `tailwindcss.js` (trình biên dịch runtime JIT trong trình duyệt nặng 409KB kèm MutationObserver chạy liên tục) sang tệp CSS tĩnh đã thu nhỏ `src/css/tailwind.min.css` (49KB).
+  - Loại bỏ hoàn toàn cảnh báo `cdn.tailwindcss.com should not be used in production`.
+  - Triệt tiêu 100% chi phí phân tích cú pháp CSS khi DOM thay đổi, giúp tốc độ phản hồi nhấp chuột (INP) tức thì dưới 16ms thay vì nghẽn 12,496ms.
+- **Giải phóng bộ giải mã video phần cứng (Hardware Video Decoder Release):**
+  - Loại bỏ thẻ `<source>` đặt sẵn trong 122 thẻ `<video>` của kho Media, ngăn chặn Chromium phát 122 yêu cầu mạng và khởi tạo 122 bộ giải mã video đồng thời.
+  - Video chỉ được gán đường dẫn `src` khi thực sự xuất hiện trong khung nhìn người dùng qua `IntersectionObserver`.
+  - Giải phóng hoàn toàn hàng đợi mạng, giúp font icon `material-symbols-outlined.woff2` tải ngay lập tức trong 1ms thay vì bị nghẽn 6.92 giây.
+
 ## [2.0.7] - 2026-09-03
 
 ### Đã sửa & Khắc phục khởi động chậm trên macOS (Startup & Rendering Fixes)

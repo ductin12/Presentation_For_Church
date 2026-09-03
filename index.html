@@ -6,27 +6,9 @@
     <meta charset="utf-8" />
     <title>PFC | Presentation For Church</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <script src="src/js/tailwindcss.js"></script>
+    <link href="src/css/tailwind.min.css" rel="stylesheet" />
     <link href="fonts/inter/inter.css" rel="stylesheet" />
     <link href="fonts/material-symbols/material-symbols.css" rel="stylesheet" />
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#5048e5",
-                        "background-light": "#f6f6f8",
-                        "background-dark": "#121121",
-                    },
-                    fontFamily: {
-                        "display": ["Inter"]
-                    },
-                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
-                },
-            },
-        }
-    </script>
     <style>
         /* CMG Sans font family */
         @font-face {
@@ -5382,8 +5364,7 @@
                 const url = item.url || `app-media://${encodeURIComponent(item.name)}`;
                 if (item.type === 'video') {
                     div.innerHTML = `
-                        <video muted preload="none" data-src="${url}">
-                            <source src="${url}" type="${item.mimeType || 'video/mp4'}" />
+                        <video muted playsinline preload="none" data-src="${url}">
                         </video>
                         <div class="video-overlay transition-all">
                             <span class="material-symbols-outlined text-white text-3xl drop-shadow-lg">play_circle</span>
@@ -6680,7 +6661,6 @@
                     div.innerHTML = `
                     ${defaultBadge}
                     <video class="w-full h-full object-cover" muted playsinline preload="none" data-src="${url}">
-                        <source src="${url}" type="${mimeType}" />
                     </video>
                     <span class="absolute inset-0 flex items-center justify-center text-white text-[10px] font-bold bg-black/20 pointer-events-none">VIDEO</span>
                 `;
