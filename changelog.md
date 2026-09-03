@@ -2,6 +2,16 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.1.2] - 2026-09-03
+
+### Đã sửa & Cập nhật Tài liệu (UI Fix & README Documentation Integration)
+- **Sửa lỗi hiển thị ô tìm kiếm bài hát (Search Input Fix):**
+  - Tăng khoảng đệm bên trái (`padding-left: 28px`) cho ô nhập liệu tìm kiếm thư viện bài hát.
+  - Căn chỉnh biểu tượng kính lúp (`search`) với `pointer-events-none` và khoảng cách hợp lý, loại bỏ hoàn toàn hiện tượng icon bị đè lên chữ `Search...`.
+- **Tích hợp toàn diện Changelog vào `README.md`:**
+  - Bổ sung bảng tổng hợp các cải tiến nổi bật từ tất cả các phiên bản gần nhất trực tiếp trong tài liệu `README.md` trang chủ GitHub.
+  - Cung cấp liên kết tải nhanh các tệp cài đặt cho macOS (Apple Silicon, Intel) và Windows (Setup, Portable).
+
 ## [2.1.1] - 2026-09-03
 
 ### Đã sửa & Khắc phục lỗi ẩn giao diện khi bật Screen Live trên macOS

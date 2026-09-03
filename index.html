@@ -1127,11 +1127,12 @@
                                 class="px-2 py-1 text-xs font-bold uppercase tracking-wider text-white/40 hover:text-white/70"
                                 onclick="switchLibraryTab('bible')">Bible</button>
                         </div>
-                        <div class="relative">
+                        <div class="relative flex items-center">
                             <span
-                                class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">search</span>
+                                class="material-symbols-outlined absolute left-2 text-slate-400 text-[14px] pointer-events-none select-none">search</span>
                             <input id="library-search"
-                                class="pl-5 pr-2 py-0 bg-white border-none rounded text-[10px] text-slate-900 placeholder-slate-400 focus:ring-1 focus:ring-primary/30 w-44 h-6"
+                                style="padding-left: 28px;"
+                                class="pr-2 py-0 bg-white border-none rounded text-[11px] text-slate-900 placeholder-slate-400 focus:ring-1 focus:ring-primary/30 w-44 h-6 outline-none"
                                 placeholder="Search..." type="text" oninput="filterLibrary()"
                                 onkeydown="if((event.ctrlKey || event.metaKey) && event.key === 'a') { this.select(); event.preventDefault(); }" />
                         </div>

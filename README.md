@@ -1,89 +1,135 @@
-# Presentation For Church App - v2.0.1
+# Presentation For Church (PFC) - Worship Presentation App
 
-Ứng dụng trình chiếu chuyên nghiệp dành cho nhà thờ — quản lý bài hát, Kinh Thánh Tiếng Việt, kho media (video, ảnh nền) và lịch trình thờ phượng. Phiên bản mới nhất **2.0.1** được tinh chỉnh tối đa về hiệu năng, dung lượng nhẹ gọn và có sẵn trình cài đặt cho hệ điều hành Windows x64.
+[![GitHub Release](https://img.shields.io/github/v/release/ductin12/Presentation_For_Church?color=5048e5&label=Phi%C3%AAn%20b%E1%BA%A3n%20m%E1%BB%9Bi%20nh%E1%BA%A5t)](https://github.com/ductin12/Presentation_For_Church/releases/latest)
+[![Platform](https://img.shields.io/badge/N%E1%BB%81n%20t%E1%BA%A3ng-macOS%20%7C%20Windows-blue)](https://github.com/ductin12/Presentation_For_Church/releases/latest)
+[![Offline Ready](https://img.shields.io/badge/Ho%E1%BA%A1t%20%C4%91%E1%BB%99ng-Offline%20100%25-success)](https://github.com/ductin12/Presentation_For_Church)
 
-## Tài liệu chuẩn
+Ứng dụng trình chiếu chuyên nghiệp, hiện đại và siêu tốc dành cho nhà thờ — tích hợp sẵn quản lý bài hát, Kinh Thánh Tiếng Việt nhiều bản dịch, kho media động (video, ảnh nền) trọn gói offline, hệ thống mẫu style đa dạng và trình chiếu đa màn hình (Screen Live).
 
-Các tài liệu vận hành và quy ước phát triển nằm trong `docs/`:
+---
 
-- `docs/README.md` - Trang mục lục
-- `docs/architecture.md` - Kiến trúc và luồng dữ liệu
-- `docs/rules.md` - Quy tắc làm việc bắt buộc
-- `docs/debugging-playbook.md` - Quy trình debug
-- `docs/feature-workflow.md` - Quy trình thêm tính năng
-- `docs/ui-guidelines.md` - Chuẩn giao diện
-- `docs/data-contracts.md` - Chuẩn dữ liệu và migration
-- `changelog.md` - Nhật ký toàn bộ các thay đổi qua từng phiên bản
+## 📥 Tải Về Phiên Bản Mới Nhất
 
-## Tính năng Nổi bật (v2.0.1)
+Bạn có thể tải ngay bộ cài đặt tương ứng với hệ điều hành của mình từ mục [Releases](https://github.com/ductin12/Presentation_For_Church/releases/latest):
 
-- **Quản lý Thư viện Bài hát**: Thêm, sửa, xóa, tìm kiếm thông minh có hỗ trợ từ khóa/alias và xuất thư viện ra JSON.
-- **Tra cứu & Trình chiếu Kinh Thánh Tiếng Việt Thông minh**: Tích hợp nhiều bản dịch phổ biến (Bản Dịch Mới, Bản Phổ Thông, 1925, English NIV...). Khi tìm kiếm từ khóa, hệ thống tự động nhận diện và hiển thị rõ số câu (vd: `Thi Thiên 92:12`), đồng thời tự động cuộn (auto-scroll) và chọn đúng câu Kinh Thánh đó trên cả màn hình điều khiển Preview lẫn Live khi đưa vào danh sách trình chiếu.
-- **Hệ thống Style Templates (Mới)**:
-  - Tích hợp sẵn **7 mẫu Style trình chiếu chuẩn đẹp** (`Yellow`, `White`, `Red`, `Blue`, `Navi`, `Orange`, `Black`).
-  - Hỗ trợ tải lên và sử dụng các font chữ tùy chỉnh (`.ttf`, `.otf`), tùy biến khung nền (boxStyle), độ dày viền chữ (textStroke) và căn lề linh hoạt.
-- **Kho Media Offline Siêu Nhẹ & Mượt mà (Mới)**:
-  - Bộ cài đặt gọn nhẹ (chỉ **~126 MB**), đã tích hợp trọn gói kho media offline video & ảnh nền sống động, thẩm mỹ cao.
-  - **Tự động Import ngầm khi chạy lần đầu**: Cơ chế bất đồng bộ không gây đơ/lag máy, kèm thanh thông báo phần trăm (%) tiến trình ngay trên góc giao diện.
-- **Lịch trình Thờ phượng (Schedule)**: Kéo thả linh hoạt, hỗ trợ lưu/mở tập tin lịch trình (`.bcsch`), tối ưu hiển thị thumbnail tĩnh giúp ứng dụng chạy nhẹ.
-- **Trình chiếu Đa màn hình (Screen Live)**: Tự động kết xuất ra màn hình phụ (HDMI/VGA), điều khiển dễ dàng bằng phím tắt tùy chỉnh và cơ chế hiển thị màn hình kép monitor.
+| Hệ điều hành | Loại tệp cài đặt | Mô tả |
+| :--- | :--- | :--- |
+| **macOS (Apple Silicon)** | `.dmg (arm64)` | Dành cho MacBook M1, M2, M3, M4 |
+| **macOS (Intel)** | `.dmg (x64)` | Dành cho các dòng máy Mac chạy chip Intel |
+| **Windows x64** | `Setup.exe` | Trình cài đặt tự động (Khuyên dùng, an toàn dữ liệu) |
+| **Windows x64** | `Portable.exe` | Bản chạy trực tiếp không cần cài đặt |
 
-## Trình Cài Đặt & Gỡ Cài Đặt (Windows x64)
+---
 
-Phiên bản **v2.0.1** xuất xưởng 2 dạng bộ cài chuẩn tại thư mục `dist/` sau khi build:
+## 🌟 Tính Năng Nổi Bật
 
-1. **`Presentation.For.Church.Setup.2.0.1.exe` (~126 MB - Khuyên Dùng)**:
-   - Bản cài đặt trọn gói offline cho máy Windows x64.
-   - Tự động tạo Shortcut trên Desktop và Start Menu.
-   - **Trình gỡ cài đặt (Uninstaller) an toàn dữ liệu**: Khi gỡ phần mềm khỏi máy tính, ứng dụng sẽ có hộp thoại thông báo hỏi bạn có muốn xóa hay giữ lại toàn bộ dữ liệu (danh sách bài hát, media, cấu hình) hay không. Mặc định trỏ sẵn nút **"No"** (Giữ lại dữ liệu) để bạn an tâm nâng cấp.
-2. **`Presentation.For.Church.Portable.2.0.1.exe` (~106 MB)**:
-   - Bản rút gọn chạy thẳng trực tiếp không cần cài đặt vào hệ thống (Portable).
+- **Quản lý Thư viện Bài hát Siêu tốc**:
+  - Tìm kiếm thông minh tức thì, hỗ trợ tiếng Việt có dấu và không dấu, tìm theo số thứ tự, tựa đề hoặc lời bài hát.
+  - Tự động nhảy vào khung Preview xem trước toàn bộ các khổ thơ ngay khi bấm chọn bài.
+  - Hỗ trợ nhập (Import) bài hát từ Word (`.docx`), Văn bản (`.txt`), JSON và xuất (Export) thư viện nhanh chóng.
+- **Kinh Thánh Tiếng Việt & Đa Bản Dịch**:
+  - Nạp sẵn các bản dịch phổ biến: Bản Phổ Thông, Bản Dịch Mới, Truyền Thống 1925, NIV Tiếng Anh,...
+  - Bộ nhớ đệm dữ liệu JSON tạo sẵn giúp nạp 1,189 chương Kinh Thánh trong **20ms**.
+  - Cơ chế tự động cuộn (Auto-scroll) và đánh dấu câu tra cứu chính xác trên cả màn hình Preview lẫn Live.
+- **Hệ Thống Mẫu Trình Chiếu (Style Templates)**:
+  - Tích hợp sẵn nhiều mẫu style chuẩn phụng vụ (`Yellow`, `White`, `Red`, `Blue`, `Navi`, `Orange`, `Black`).
+  - Hỗ trợ đổi font chữ tùy chỉnh (`.ttf`, `.otf`), viền chữ phát sáng (text-stroke), đổ bóng đa lớp và hộp nền trong mờ (box-style).
+- **Kho Media Offline 100%**:
+  - Không phụ thuộc internet, tích hợp sẵn hàng chục video loop và hình ảnh nền chất lượng cao.
+  - Cơ chế tải theo nhu cầu (Lazy Loading qua IntersectionObserver) giúp tiết kiệm 100% RAM và CPU khi duyệt kho media.
+- **Trình Chiếu Đa Màn Hình (Screen Live)**:
+  - Tự động nhận diện màn hình phụ/máy chiếu (HDMI, VGA, Không dây).
+  - Tự động đưa nội dung ra toàn màn hình máy chiếu mà không ảnh hưởng tới cửa sổ điều khiển của người chỉnh.
+  - Giữ cố định tiêu điểm thao tác, không bị mất icon trên Dock hay Command + Tab trên macOS.
 
-## Đóng gói ứng dụng (Build & Release)
+---
 
-Dự án sử dụng `electron-builder` để tạo bộ cài. Để tiến hành biên dịch ứng dụng ra file `.exe` (hoặc `.dmg` cho macOS), chạy lệnh:
+## 📋 Nhật Ký Cập Nhật & Thay Đổi (Changelog Highlights)
 
+> 💡 *Để xem toàn bộ chi tiết mã nguồn và lịch sử phát triển, vui lòng xem tệp [`changelog.md`](changelog.md).*
+
+### 🚀 [2.1.2] - 2026-09-03
+- **Giao diện & Trải nghiệm (UI/UX):** Khắc phục triệt để lỗi biểu tượng kính lúp và chữ `Search...` bị đè lên nhau tại ô tìm kiếm thư viện bài hát.
+- **Tài liệu dự án:** Tích hợp trực tiếp bảng tổng hợp cập nhật Changelog vào `README.md` giúp người dùng dễ dàng theo dõi các phiên bản mới nhất ngay trên trang chủ GitHub.
+
+### 🛡️ [2.1.1] - 2026-09-03
+- **Ổn định macOS:** Khắc phục lỗi khi bấm *Screen Live* làm ẩn mất cửa sổ chính, biến mất icon trên thanh Dock và mất khỏi danh sách `Command + Tab`.
+- **Tối ưu hiển thị:** Cửa sổ Screen Live mở ở chế độ `showInactive`, duy trì tiêu điểm và cửa sổ điều khiển luôn ở phía trước người vận hành.
+- **Cấp độ nổi thông minh:** Tự động điều chỉnh cấp độ nổi (`alwaysOnTop`) theo số lượng màn hình kết nối.
+
+### ⚡ [2.1.0] - 2026-09-03
+- **Khởi động:** Loại bỏ hoàn toàn cảnh báo lỗi *"Cannot create BrowserWindow before app is ready"* khi khởi động ứng dụng trên macOS.
+- **Đồng bộ đa nền tảng:** Xác thực đồng bộ 100% tất cả các tối ưu hóa và tính năng mới nhất trên cả hai hệ điều hành macOS và Windows.
+
+### 🎨 [2.0.9] - 2026-09-03
+- **Chuẩn hóa Icon Apple:** Tái tạo toàn bộ icon theo chuẩn Squircle của Apple macOS (bo góc mịn 185px, kênh Alpha trong suốt 100%, bóng đổ đa tầng tự nhiên).
+- **Hỗ trợ Retina:** Biên dịch tệp `icon.icns` đa độ phân giải bằng Apple `iconutil`, giúp icon trên Dock, Command + Tab, Finder và Mission Control hiển thị sắc nét đồng nhất.
+
+### 🏎️ [2.0.8] - 2026-09-03
+- **Biên dịch CSS Tĩnh (Pre-compiled Tailwind CSS):** Thay thế trình biên dịch runtime `tailwindcss.js` nặng 409KB bằng tệp CSS tĩnh đã nén `tailwind.min.css` (49KB). Giảm thời gian vẽ lớn nhất (LCP) từ 31 giây xuống **dưới 0.2 giây**!
+- **Giải phóng Bộ Giải Mã Video Phần Cứng:** Xóa bỏ thẻ nạp video đồng loạt trong kho media, triệt tiêu 122 kết nối mạng ngầm, giúp font chữ nạp trong 1ms và CPU giảm về 0%.
+
+### 🚀 [2.0.7] - 2026-09-03
+- **Triệt tiêu Màn hình Trắng khi Mở App:** Cấu hình cửa sổ với `show: false`, màu nền `#121121` và sự kiện `ready-to-show`.
+- **Pre-built Bible Cache:** Tạo sẵn bộ nhớ đệm JSON 1,189 chương Kinh Thánh, nạp tức thì trong **20ms** thay vì phải phân tích XML mất 5-10 giây.
+- **Lazy Loading Kinh Thánh:** Hoãn nạp Kinh Thánh ngầm sau 2 giây nhàn rỗi để ưu tiên mở ứng dụng mượt mà.
+
+### 📦 [2.0.6] & [2.0.5] - 2026-09-03
+- **Tự động hóa phát hành:** Tích hợp Skill đóng gói ứng dụng tự động (`pfc-release-workflow`) đồng thời cho Mac và Windows.
+- **Xem trước bài hát tức thì:** Bổ sung tính năng tự động hiển thị bài hát vào khung Preview ngay khi click chuột vào danh sách thư viện.
+- **Dọn dẹp dung lượng:** Tự động xóa các bản build cũ và file rác sau khi phát hành.
+
+### 🌐 [2.0.4] & [2.0.3] - 2026-09-03
+- **Chạy Offline 100%:** Chuyển đổi toàn bộ font chữ (Inter, Material Symbols) và thư viện từ CDN trực tuyến về lưu trữ cục bộ nội bộ, ứng dụng hoạt động hoàn hảo khi không có kết nối internet.
+
+---
+
+## 🛠️ Cài Đặt & Phát Triển (Development)
+
+### Yêu cầu môi trường
+- [Node.js](https://nodejs.org/) (khuyên dùng phiên bản v18 trở lên).
+- Trình quản lý gói `npm`.
+
+### Hướng dẫn cài đặt
 ```bash
-# Đóng gói ra bản cài đặt cho Windows x64 (.exe)
-npm run build:win
-
-# Đóng gói ra bản cho macOS (.dmg)
-npm run build:mac
-```
-
-Tập tin bộ cài đặt sau khi hoàn thiện sẽ nằm trong thư mục `dist/`.
-
-## Git Clone Project
-
-```bash
+# 1. Clone mã nguồn dự án
 git clone https://github.com/ductin12/Presentation_For_Church.git
-```
 
-## Cài đặt và Chạy môi trường Dev
-
-```bash
+# 2. Truy cập thư mục dự án
 cd Presentation_For_Church
+
+# 3. Cài đặt các gói phụ thuộc
 npm install
+
+# 4. Chạy ứng dụng trong môi trường phát triển
 npm start
 ```
 
-### Xử lý lỗi thường gặp khi Dev / Cài đặt
-
-**1. Lỗi timeout khi `npm install` (ETIMEDOUT):**
-Nếu bạn gặp lỗi mạng khi cài đặt các gói phụ thuộc, hãy thử sử dụng registry mirror tại khu vực Châu Á:
-
+### Đóng gói ứng dụng (Build Release)
 ```bash
-npm install --registry=https://registry.npmmirror.com
+# Đóng gói tự động cho cả macOS (.dmg) và Windows (.exe):
+npm run build:all
+
+# Hoặc đóng gói riêng cho từng hệ điều hành:
+npm run build:mac   # macOS ARM64 & x64
+npm run build:win   # Windows Setup & Portable
 ```
 
-**2. Lỗi không tìm thấy package.json (ENOENT):**
-Hãy chắc chắn bạn đã truy cập đúng vào thư mục của dự án trước khi thực hiện lệnh:
+---
 
-```bash
-cd Presentation_For_Church
-```
+## 📖 Tài Liệu Tham Khảo
 
-## Yêu cầu Hệ thống
+Toàn bộ tài liệu quy chuẩn kỹ thuật nằm trong thư mục `docs/`:
+- [`docs/README.md`](docs/README.md) - Mục lục tài liệu kỹ thuật
+- [`docs/architecture.md`](docs/architecture.md) - Kiến trúc hệ thống và luồng dữ liệu
+- [`docs/rules.md`](docs/rules.md) - Các quy tắc phát triển bắt buộc
+- [`docs/debugging-playbook.md`](docs/debugging-playbook.md) - Cẩm nang xử lý lỗi và debug
+- [`docs/feature-workflow.md`](docs/feature-workflow.md) - Quy trình thêm tính năng mới
+- [`docs/ui-guidelines.md`](docs/ui-guidelines.md) - Quy chuẩn thiết kế giao diện UI/UX
+- [`changelog.md`](changelog.md) - Toàn văn nhật ký thay đổi qua từng phiên bản
 
-- [Node.js](https://nodejs.org/) (v18+ cho môi trường lập trình/build)
-- Hệ điều hành: Windows 10/11 (x64) hoặc macOS (ARM/Intel).
+---
+
+## 📄 Bản Quyền & Giấy Phép
+
+Phần mềm được phát triển phục vụ cho công tác thờ phượng và các hoạt động của Hội Thánh Chúa. Mọi đóng góp phát triển đều được hoan nghênh.
