@@ -1085,7 +1085,9 @@ async function importBundledMediaIfNeeded(win) {
 // 4. App Lifecycle
 bootstrapGpuAccelerationPreference();
 app.whenReady().then(() => {
-  if (process.platform === 'darwin' && app.dock) {
+  // On macOS packaged app, system automatically uses native icon.icns for Dock and Command+Tab.
+  // In dev mode (npm start), explicitly set dock icon from squircle icon.png
+  if (process.platform === 'darwin' && app.dock && !app.isPackaged) {
     const dockIconPath = path.join(__dirname, 'icon.png');
     if (fs.existsSync(dockIconPath)) {
       app.dock.setIcon(dockIconPath);

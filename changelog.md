@@ -2,6 +2,16 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.0.9] - 2026-09-03
+
+### Đã sửa & Chuẩn hóa Biểu tượng ứng dụng macOS (macOS Native Squircle Icon & App Switcher Fix)
+- **Chuẩn hóa Icon theo chuẩn thiết kế Apple macOS (Big Sur / Sonoma / Sequoia):**
+  - Tái tạo bộ icon chuẩn Apple với hình dạng bo góc mượt mà (Squircle radius 185px trên kích thước nội dung 824x824, viền đệm trong suốt 100px và hiệu ứng đổ bóng đa lớp tinh tế).
+  - Tệp `.icns` và `.png` hiện đã có kênh trong suốt (Alpha Channel) 100%, không còn hiện tượng viền đen hoặc hình vuông 90 độ sắc cạnh trên thanh Dock.
+- **Sửa lỗi hiển thị Command + Tab (Application Switcher) chập chờn / hình vuông:**
+  - Khắc phục xung đột giữa `app.dock.setIcon()` động tại runtime và bộ điều phối cửa sổ của macOS WindowServer.
+  - Ứng dụng đóng gói macOS hiện sử dụng trực tiếp tệp bundle đa độ phân giải `icon.icns` gốc cho cả thanh Dock, thanh chuyển đổi ứng dụng Command + Tab, Mission Control, Spotlight và Finder.
+
 ## [2.0.8] - 2026-09-03
 
 ### Đã sửa & Tối ưu hóa cực đỉnh (Static Tailwind & Video Decoder Optimizations)
