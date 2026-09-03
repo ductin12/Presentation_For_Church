@@ -2,6 +2,16 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.0.5] - 2026-09-03
+
+### Đã sửa & Cải tiến (Fixed & Improved)
+- **Hỗ trợ 100% Offline (Không cần kết nối Internet):**
+  - Đưa toàn bộ thư viện Tailwind CSS Compiler về lưu trữ cục bộ (`src/js/tailwindcss.js`), loại bỏ hoàn toàn việc gọi qua CDN trực tuyến. Giao diện tải tức thì 0ms, không còn tình trạng trắng màn hình hay vỡ giao diện khi mất mạng.
+  - Tải và nhúng toàn bộ font icon Material Symbols Outlined cục bộ (`fonts/material-symbols/`), đảm bảo toàn bộ icon luôn hiển thị đầy đủ, sắc nét khi offline.
+  - Đóng gói font `Inter` cục bộ (`fonts/inter/`) và cấu hình font dự phòng hệ thống mượt mà cho macOS và Windows.
+  - Thay thế toàn bộ link ảnh placeholder trực tuyến (`placehold.co`) bằng ảnh SVG nội tuyến siêu nhẹ (data URI).
+  - Loại bỏ hoàn toàn các liên kết ra Internet bên ngoài trong `index.html`, `edit-song.html` và `live.html`.
+
 ## [2.0.4] - 2026-09-03
 
 ### Đã thêm & Cải tiến (Added & Improved)
