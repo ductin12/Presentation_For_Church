@@ -2,6 +2,19 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.0.3] - 2026-09-03
+
+### Đã sửa & Cải tiến (Fixed & Improved)
+- **Hỗ trợ trọn vẹn Icon ứng dụng trên macOS & Windows:**
+  - Tạo bộ icon đa độ phân giải chuẩn macOS (`icon.icns` và `icon.png` 1024x1024) từ ảnh gốc, khắc phục triệt để hiện tượng hiển thị icon tạm/icon lạ trên Dock.
+  - Tích hợp `app.dock.setIcon` tự động nạp logo khi ứng dụng chạy trên macOS.
+  - Cấu hình thuộc tính `icon` cho cả cửa sổ chính (`mainWindow`) và cửa sổ trình chiếu (`liveWindow`).
+- **Khắc phục lỗi chuyển tab và kích hoạt cửa sổ trên macOS:**
+  - Bổ sung xử lý sự kiện `app.on('activate')`: khi người dùng bấm `Command + Tab` hoặc bấm vào icon trên Dock để quay lại ứng dụng, cửa sổ chính sẽ tự động được khôi phục (restore), hiển thị (show) và lấy tiêu điểm (focus).
+- **Cập nhật đóng gói Build (Electron Builder):**
+  - Cập nhật `package.json` bổ sung đường dẫn `icon: build/icon.icns` cho macOS và `build/icon.ico` cho Windows.
+  - Đóng gói đầy đủ các file icon vào gói phát hành (`files`).
+
 ## [2.0.1] - 2026-08-06
 
 ### Đã thêm (Added)

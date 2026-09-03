@@ -1,6 +1,6 @@
 {
   "name": "easyworship-app",
-  "version": "2.0.1",
+  "version": "2.0.3",
   "description": "Presentation For Church - Worship Presentation App",
   "main": "main.js",
   "scripts": {
@@ -27,6 +27,9 @@
       "data/**/*",
       "fonts/**/*",
       "media/**/*",
+      "icon.png",
+      "icon.ico",
+      "icon.icns",
       "package.json"
     ],
     "asarUnpack": [
@@ -43,7 +46,7 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "icon.ico"
+      "icon": "build/icon.ico"
     },
     "mac": {
       "target": [
@@ -52,6 +55,7 @@
           "arch": ["arm64", "x64"]
         }
       ],
+      "icon": "build/icon.icns",
       "category": "public.app-category.utilities",
       "identity": null
     },

@@ -870,6 +870,9 @@ function createLiveWindow(initialBounds = null) {
     hasShadow: false,
     show: false,
     backgroundColor: '#000000',
+    icon: fs.existsSync(path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png'))
+      ? path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png')
+      : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       autoplayPolicy: 'no-user-gesture-required'
@@ -916,9 +919,13 @@ function createLiveWindow(initialBounds = null) {
 }
 
 function createWindow() {
+  const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+  const iconPath = path.join(__dirname, iconFile);
+
   const win = new BrowserWindow({
     width: 1400,
     height: 900,
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -930,6 +937,22 @@ function createWindow() {
   mainWindow = win;
   win.loadFile('index.html');
   setupMenu(win);
+
+  // When the main window is closed, also destroy the live (presentation) window.
+  // On Windows, 'window-all-closed' only fires when ALL BrowserWindows are closed.
+  // Without this, closing the main window leaves liveWindow alive, so the app
+  // never quits and the presentation screen stays visible.
+  win.on('closed', () => {
+    mainWindow = null;
+    flushLiveWindowBounds();
+    if (liveWindowSyncTimer) {
+      clearTimeout(liveWindowSyncTimer);
+      liveWindowSyncTimer = null;
+    }
+    if (liveWindow && !liveWindow.isDestroyed()) {
+      liveWindow.destroy();
+    }
+  });
 }
 
 function setupMenu(win) {
@@ -1052,6 +1075,13 @@ async function importBundledMediaIfNeeded(win) {
 // 4. App Lifecycle
 bootstrapGpuAccelerationPreference();
 app.whenReady().then(() => {
+  if (process.platform === 'darwin' && app.dock) {
+    const dockIconPath = path.join(__dirname, 'icon.png');
+    if (fs.existsSync(dockIconPath)) {
+      app.dock.setIcon(dockIconPath);
+    }
+  }
+
   initializeData();
   screen.on('display-added', () => scheduleLiveWindowSync('display-added', true, 250));
   screen.on('display-removed', () => scheduleLiveWindowSync('display-removed', true, 250));
@@ -1866,6 +1896,15 @@ app.whenReady().then(() => {
 
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  } else if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
 app.on('before-quit', () => {
   flushLiveWindowBounds();
   if (liveWindowSyncTimer) {
