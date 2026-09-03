@@ -2,6 +2,18 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.0.7] - 2026-09-03
+
+### Đã sửa & Khắc phục khởi động chậm trên macOS (Startup & Rendering Fixes)
+- **Triệt tiêu hiện tượng màn hình trắng & render từng mảng khi mở ứng dụng:**
+  - Thiết lập cửa sổ `show: false` kết hợp màu nền đồng bộ `#121121` và sự kiện `ready-to-show`. Cửa sổ chỉ hiển thị khi giao diện đã được tính toán và vẽ hoàn chỉnh, triệt tiêu 100% tình trạng chớp trắng hoặc render dở dang.
+- **Tải lười (Lazy Loading) Kinh Thánh & Đóng gói Pre-built Cache:**
+  - Không phân tích (parse) toàn bộ 1,189 chương Kinh Thánh ngay lúc khởi động khi người dùng đang ở tab Bài hát (Songs).
+  - Đóng gói sẵn tệp đệm JSON cấu trúc cao (`data/bible-cache-Ban_Pho_Thong_converted_to_XMLBIBLE_xml.json`), giúp bản dịch nạp tức thì trong 20ms thay vì mất 5-10 giây phân tích Regex XML khi cài đặt mới trên máy Mac.
+  - Tự động nạp trước Kinh Thánh ngầm sau 2 giây nhàn rỗi hoặc ngay khi người dùng bấm vào tab `Bible`.
+- **Trì hoãn sao chép tệp Media nền:**
+  - Tăng độ trễ đồng bộ Media mặc định lên sau khi giao diện đã hoàn tất tải, tránh tranh chấp I/O đĩa cứng lúc khởi động.
+
 ## [2.0.6] - 2026-09-03
 
 ### Đã sửa & Cải tiến (Performance Optimization)

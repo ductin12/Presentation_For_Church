@@ -929,6 +929,8 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1400,
     height: 900,
+    show: false,
+    backgroundColor: '#121121',
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -941,6 +943,10 @@ function createWindow() {
   mainWindow = win;
   win.loadFile('index.html');
   setupMenu(win);
+
+  win.once('ready-to-show', () => {
+    win.show();
+  });
 
   // When the main window is closed, also destroy the live (presentation) window.
   // On Windows, 'window-all-closed' only fires when ALL BrowserWindows are closed.
@@ -1460,34 +1466,37 @@ app.whenReady().then(() => {
     const xmlName = normalizeBibleFileName(fileName || defaultBibleXmlName);
     const cacheName = `bible-cache-${xmlName.replace(/[^a-zA-Z0-9.-]/g, '_')}.json`;
     const cachePath = path.join(userDataPath, cacheName);
+    const bundledCachePath = path.join(bundledBibleDataPath, cacheName);
     const xmlPath = resolveBibleXmlPath(xmlName);
     const sourceStat = xmlPath && fs.existsSync(xmlPath) ? fs.statSync(xmlPath) : null;
 
     console.log(`[Bible] Loading Version: ${xmlName}`);
 
-    // Try loading from cache first
+    // Try loading from cache first (check userDataPath, then bundled data)
     try {
+      let targetCache = null;
       if (fs.existsSync(cachePath)) {
-        const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+        targetCache = cachePath;
+      } else if (fs.existsSync(bundledCachePath)) {
+        targetCache = bundledCachePath;
+      }
+
+      if (targetCache) {
+        const cached = JSON.parse(fs.readFileSync(targetCache, 'utf8'));
 
         const cachedItems = Array.isArray(cached)
           ? cached
           : (cached && Array.isArray(cached.items) ? cached.items : null);
 
         if (cachedItems && cachedItems.length > 0) {
-          const cachedSource = cached && !Array.isArray(cached) ? cached.source : null;
-          const cacheMatchesSource = !!(sourceStat && cachedSource && cachedSource.mtimeMs === sourceStat.mtimeMs && cachedSource.size === sourceStat.size);
-
-          if (!sourceStat || cacheMatchesSource) {
-            console.log(`[Bible] ${cachedItems.length} chapters loaded from cache.`);
-            return cachedItems;
-          }
+          console.log(`[Bible] ${cachedItems.length} chapters loaded from cache.`);
+          return cachedItems;
         }
 
-        fs.unlinkSync(cachePath);
+        if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
       }
     } catch (e) {
-      if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
+      if (fs.existsSync(cachePath)) try { fs.unlinkSync(cachePath); } catch (_) {}
     }
 
     // Parse XML and build cache

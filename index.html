@@ -3216,16 +3216,30 @@
 
                 updateBibleVersionStatus();
 
-                if (bibleVersions.length > 0 && preferredVersion) {
-                    if (bibleLibrary.length === 0 || !hasCurrent) {
-                        await changeBibleVersion(preferredVersion);
+                if (currentLibraryTab === 'bible') {
+                    if (bibleVersions.length > 0 && preferredVersion) {
+                        if (bibleLibrary.length === 0 || !hasCurrent) {
+                            await changeBibleVersion(preferredVersion);
+                        }
+                    } else {
+                        bibleLibrary = [];
+                        renderLibrary();
                     }
                 } else {
-                    bibleLibrary = [];
-                    renderLibrary();
+                    // Pre-warm Bible in the background after startup idle
+                    if (preferredVersion && bibleLibrary.length === 0) {
+                        setTimeout(() => {
+                            if (bibleLibrary.length === 0 && currentBibleVersionFileName) {
+                                window.electronAPI.loadBibleParsed(currentBibleVersionFileName).then(data => {
+                                    if (data && data.length > 0) {
+                                        bibleLibrary = data;
+                                        if (currentLibraryTab === 'bible') renderLibrary();
+                                    }
+                                }).catch(() => {});
+                            }
+                        }, 2000);
+                    }
                 }
-
-                renderLibrary();
             } catch (e) { console.error(e); }
         }
 
@@ -4190,9 +4204,12 @@
                 songsBtn.classList.add('text-white/40');
                 songsBtn.classList.remove('text-white', 'border-b-2', 'border-primary');
                 if (versionSelector) versionSelector.classList.remove('hidden');
-                loadBibleVersions(); // Refresh versions
+                if (bibleLibrary.length === 0 && currentBibleVersionFileName) {
+                    changeBibleVersion(currentBibleVersionFileName);
+                } else {
+                    filterLibrary();
+                }
             }
-            filterLibrary();
         }
 
         // --- Resizer Logic ---
