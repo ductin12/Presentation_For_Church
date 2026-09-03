@@ -2,6 +2,15 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.1.1] - 2026-09-03
+
+### Đã sửa & Khắc phục lỗi ẩn giao diện khi bật Screen Live trên macOS
+- **Khắc phục hiện tượng cửa sổ chính, Dock icon và Command + Tab biến mất khi bật Screen Live:**
+  - Vô hiệu hóa triệt để thuộc tính `skipTaskbar` trên macOS (chỉ áp dụng trên Windows). Thuộc tính này trên macOS trước đây đã chuyển ứng dụng sang chế độ chạy ngầm `Accessory`, làm ẩn icon ứng dụng khỏi thanh Dock và khỏi danh sách chuyển tab `Command + Tab`.
+  - Thay đổi phương thức hiển thị cửa sổ Screen Live sang `showInactive()`, ngăn chặn cửa sổ trình chiếu cướp tiêu điểm (focus) từ cửa sổ điều khiển chính.
+  - Luôn duy trì và đưa cửa sổ điều khiển chính (`mainWindow`) lên phía trước để người vận hành tiếp tục thao tác chuyển bài và trình chiếu dễ dàng.
+  - Hạ cấp độ nổi (`alwaysOnTop`) của cửa sổ Screen Live trên chế độ màn hình đơn (máy tính xách tay) từ `screen-saver` xuống `floating` để không che khuất và khóa cứng màn hình của hệ thống.
+
 ## [2.1.0] - 2026-09-03
 
 ### Đã sửa & Khắc phục cảnh báo lỗi khởi động (Startup Exception Fix & Cross-Platform Sync)

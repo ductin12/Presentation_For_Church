@@ -579,7 +579,7 @@ function computeDesiredLiveWindowState() {
     targetId,
     bounds,
     shouldFullscreen: isMultiDisplay,
-    skipTaskbar: isMultiDisplay
+    skipTaskbar: process.platform === 'win32' && isMultiDisplay
   };
 }
 
@@ -627,9 +627,11 @@ function syncLiveWindowToPreferredDisplay(reason = 'manual', force = false) {
         }
         liveWindow.setFullScreen(true);
       }
-      try {
-        liveWindow.setSkipTaskbar(desired.skipTaskbar);
-      } catch (e) {}
+      if (process.platform === 'win32') {
+        try {
+          liveWindow.setSkipTaskbar(desired.skipTaskbar);
+        } catch (e) {}
+      }
     } else {
       if (isFullscreen) {
         liveWindow.setFullScreen(false);
@@ -637,17 +639,24 @@ function syncLiveWindowToPreferredDisplay(reason = 'manual', force = false) {
       if (boundsChanged || displayChanged || monitorCountChanged || force) {
         liveWindow.setBounds(desired.bounds, false);
       }
-      try {
-        liveWindow.setSkipTaskbar(desired.skipTaskbar);
-      } catch (e) {}
+      if (process.platform === 'win32') {
+        try {
+          liveWindow.setSkipTaskbar(desired.skipTaskbar);
+        } catch (e) {}
+      }
     }
 
     if (!wasVisible) {
-      liveWindow.show();
+      if (process.platform === 'darwin' && mainWindow && !mainWindow.isDestroyed()) {
+        liveWindow.showInactive();
+      } else {
+        liveWindow.show();
+      }
     }
 
     if (!wasVisible || displayChanged || monitorCountChanged) {
-      liveWindow.setAlwaysOnTop(true, 'screen-saver');
+      const topLevel = desired.shouldFullscreen ? 'screen-saver' : 'floating';
+      liveWindow.setAlwaysOnTop(true, topLevel);
       if (desired.shouldFullscreen) {
         try {
           liveWindow.moveTop();
@@ -869,7 +878,7 @@ function createLiveWindow(initialBounds = null) {
     fullscreenable: true,
     alwaysOnTop: true,
     visibleOnAllWorkspaces: true,
-    skipTaskbar: desired.skipTaskbar,
+    skipTaskbar: process.platform === 'win32' && desired.skipTaskbar,
     autoHideMenuBar: true,
     hasShadow: false,
     show: false,
@@ -883,7 +892,8 @@ function createLiveWindow(initialBounds = null) {
     }
   });
 
-  liveWindow.setAlwaysOnTop(true, 'screen-saver');
+  const initialTopLevel = desired.shouldFullscreen ? 'screen-saver' : 'floating';
+  liveWindow.setAlwaysOnTop(true, initialTopLevel);
   liveWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   liveWindow.setMenuBarVisibility(false);
   liveWindow.loadFile('live.html');
@@ -908,6 +918,9 @@ function createLiveWindow(initialBounds = null) {
     }
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('live-window-opened');
+      if (!mainWindow.isFocused()) {
+        mainWindow.focus();
+      }
     }
   });
   liveWindow.on('closed', () => {
