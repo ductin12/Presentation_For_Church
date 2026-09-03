@@ -1928,6 +1928,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 app.on('activate', () => {
+  if (!app.isReady()) return;
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   } else if (mainWindow && !mainWindow.isDestroyed()) {

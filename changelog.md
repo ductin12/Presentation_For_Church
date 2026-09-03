@@ -2,6 +2,16 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.1.0] - 2026-09-03
+
+### Đã sửa & Khắc phục cảnh báo lỗi khởi động (Startup Exception Fix & Cross-Platform Sync)
+- **Triệt tiêu hoàn toàn hộp thoại cảnh báo "Cannot create BrowserWindow before app is ready":**
+  - Khắc phục sự kiện `activate` của macOS kích hoạt sớm khi người dùng nhấp đúp mở ứng dụng từ Finder/Dock trước khi chu trình `app.whenReady()` hoàn tất.
+  - Thêm điều kiện kiểm tra `if (!app.isReady()) return;` trong sự kiện `activate`, ngăn chặn việc tạo cửa sổ trước khi Electron sẵn sàng, loại bỏ vĩnh viễn popup cảnh báo lỗi khi mở app.
+- **Xác thực đồng bộ 100% tính năng và tối ưu hóa cho Windows:**
+  - Toàn bộ các tối ưu hóa CSS tĩnh (`tailwind.min.css` 49KB), kho dữ liệu cache Kinh Thánh JSON tạo sẵn, cơ chế Lazy Loading, và giải phóng bộ giải mã video phần cứng đều được chia sẻ đồng nhất trên cả hai nền tảng macOS và Windows.
+  - Bộ cài đặt Windows (`Setup.exe` và `Portable.exe`) được build đồng bộ từ cùng một phiên bản mã nguồn tối ưu.
+
 ## [2.0.9] - 2026-09-03
 
 ### Đã sửa & Chuẩn hóa Biểu tượng ứng dụng macOS (macOS Native Squircle Icon & App Switcher Fix)
