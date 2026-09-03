@@ -1,4 +1,4 @@
-# Presentation For Church (EasyWorship App) - v2.0.1
+# Presentation For Church App - v2.0.1
 
 Ứng dụng trình chiếu chuyên nghiệp dành cho nhà thờ — quản lý bài hát, Kinh Thánh Tiếng Việt, kho media (video, ảnh nền) và lịch trình thờ phượng. Phiên bản mới nhất **2.0.1** được tinh chỉnh tối đa về hiệu năng, dung lượng nhẹ gọn và có sẵn trình cài đặt cho hệ điều hành Windows x64.
 
@@ -31,6 +31,7 @@ Các tài liệu vận hành và quy ước phát triển nằm trong `docs/`:
 ## Trình Cài Đặt & Gỡ Cài Đặt (Windows x64)
 
 Phiên bản **v2.0.1** xuất xưởng 2 dạng bộ cài chuẩn tại thư mục `dist/` sau khi build:
+
 1. **`Presentation.For.Church.Setup.2.0.1.exe` (~126 MB - Khuyên Dùng)**:
    - Bản cài đặt trọn gói offline cho máy Windows x64.
    - Tự động tạo Shortcut trên Desktop và Start Menu.
@@ -53,6 +54,7 @@ npm run build:mac
 Tập tin bộ cài đặt sau khi hoàn thiện sẽ nằm trong thư mục `dist/`.
 
 ## Git Clone Project
+
 ```bash
 git clone https://github.com/ductin12/Presentation_For_Church.git
 ```
@@ -69,12 +71,14 @@ npm start
 
 **1. Lỗi timeout khi `npm install` (ETIMEDOUT):**
 Nếu bạn gặp lỗi mạng khi cài đặt các gói phụ thuộc, hãy thử sử dụng registry mirror tại khu vực Châu Á:
+
 ```bash
 npm install --registry=https://registry.npmmirror.com
 ```
 
 **2. Lỗi không tìm thấy package.json (ENOENT):**
 Hãy chắc chắn bạn đã truy cập đúng vào thư mục của dự án trước khi thực hiện lệnh:
+
 ```bash
 cd Presentation_For_Church
 ```

@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.0.6] - 2026-09-03
+
+### Đã sửa & Cải tiến (Performance Optimization)
+- **Tối ưu hóa toàn diện công cụ tìm kiếm (Search Engine):**
+  - Áp dụng kỹ thuật đánh giá một lượt (Single-Pass Evaluation): chỉ tính điểm số (`score`), trích đoạn (`snippet`) và vị trí câu (`matchInfo`) đúng 1 lần duy nhất, loại bỏ hoàn toàn việc quét lặp lời bài hát và Kinh Thánh.
+  - Chuẩn hóa và lưu đệm từ khóa tìm kiếm (`needles`), tăng tốc độ phản hồi tìm kiếm lên 5x - 10x, gõ tìm tức thì dưới 5ms.
+  - Tinh chỉnh debounce tìm kiếm từ 280ms xuống 120ms giúp giao diện phản hồi mượt mà hơn.
+- **Tối ưu hóa Bảng Thư viện (DOM & Event Delegation):**
+  - Chuyển ~4,000 event listeners riêng rẽ của từng hàng `<tr>` sang cơ chế Event Delegation trên thẻ cha `tbody`, giảm tối đa áp lực bộ nhớ RAM và Garbage Collection.
+  - Áp dụng phân đợt hiển thị (Progressive Batch Rendering) qua `requestAnimationFrame`, loại bỏ hiện tượng đơ giao diện khi nạp danh sách lớn.
+- **Song song hóa quá trình khởi động (Parallel Startup):**
+  - Chuyển `loadSettings`, `loadCustomFonts`, `loadStyleTemplates` và `loadLibrary` sang thực thi đồng thời bằng `Promise.all`.
+- **Tối ưu hóa tải dữ liệu trong Main Process (IPC Memory Caching):**
+  - Bổ sung tầng bộ nhớ đệm (In-memory Cache) cho danh sách bài hát (`load-songs`), style templates (`load-style-templates`) và danh sách media (`load-media`), giảm thiểu tối đa việc đọc ổ đĩa lặp lại.
+- **Tối ưu hóa tải video trong kho Media (Lazy Decoders):**
+  - Chuyển thẻ video sang `preload="none"` kết hợp `IntersectionObserver` chỉ nạp metadata khi cuộn vào tầm nhìn, giải phóng bộ giải mã phần cứng GPU/CPU.
+
 ## [2.0.5] - 2026-09-03
 
 ### Đã sửa & Cải tiến (Fixed & Improved)

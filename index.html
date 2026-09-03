@@ -3590,10 +3590,11 @@
 
         // --- Initialization ---
         window.addEventListener('DOMContentLoaded', async () => {
-            await loadSettings();
-            syncBulkReplaceFieldOptions();
-            await loadCustomFonts();
-            await loadStyleTemplates();
+            await Promise.all([
+                loadSettings().then(() => syncBulkReplaceFieldOptions()),
+                loadCustomFonts(),
+                loadStyleTemplates()
+            ]);
             loadLibrary();
             loadBibleVersions();
             loadMedia();
@@ -4563,7 +4564,7 @@
         function matchesSearchText(text, query, options = {}) {
             if (!query) return false;
             const haystacks = getMatchVariants(text, options);
-            const needles = getMatchVariants(query, options);
+            const needles = options.needles || getMatchVariants(query, options);
 
             return needles.some(needle => needle && haystacks.some(haystack => haystack.includes(needle)));
         }
@@ -4578,20 +4579,22 @@
             return lines;
         }
 
-        function findSearchSnippet(text, query) {
+        function findSearchSnippet(text, query, options = {}) {
             if (!text || !query) return null;
             const lines = getLyricsLines(text);
-            const matchLine = lines.find(line => matchesSearchText(line, query, { allowCompact: false }));
+            const searchOptions = { allowCompact: false, ...options };
+            const matchLine = lines.find(line => matchesSearchText(line, query, searchOptions));
             return matchLine ? renderHighlightedSnippet(matchLine, query) : null;
         }
 
-        function findMatchingVerseInfo(lyrics, query) {
+        function findMatchingVerseInfo(lyrics, query, options = {}) {
             if (!lyrics || !query) return null;
             const verses = String(lyrics).split(/\n\n/).map(v => v.trim()).filter(Boolean);
+            const searchOptions = { allowCompact: false, ...options };
             for (let i = 0; i < verses.length; i++) {
                 const verseText = verses[i];
                 const lines = verseText.split('\n').map(l => l.trim()).filter(Boolean);
-                const hasMatch = lines.some(line => matchesSearchText(line, query, { allowCompact: false }));
+                const hasMatch = lines.some(line => matchesSearchText(line, query, searchOptions));
                 if (hasMatch) {
                     const numMatch = verseText.match(/^(\d+)\s/);
                     return {
@@ -4618,25 +4621,54 @@
             return map;
         }
 
-        function getSearchScore(item, query, options = {}) {
-            if (!query) return 0;
-            const normalizedDigits = String(query).replace(/\D+/g, '');
+        function createSearchContext(query) {
+            if (!query) return null;
+            return {
+                query,
+                normalizedDigits: String(query).replace(/\D+/g, ''),
+                needles: getMatchVariants(query),
+                nonCompactNeedles: getMatchVariants(query, { allowCompact: false })
+            };
+        }
+
+        function evaluateSearchItem(item, searchContext, options = {}) {
+            if (!searchContext) {
+                return { item, score: 0, snippet: null, matchInfo: null, songNumber: options.songNumber || '' };
+            }
+            const { query, normalizedDigits, needles, nonCompactNeedles } = searchContext;
             const songNumber = options.songNumber ? String(options.songNumber) : '';
             const rawSongNumber = songNumber ? String(parseInt(songNumber, 10)) : '';
 
+            // 1. Số thứ tự bài hát (ưu tiên cao nhất)
             if (songNumber && normalizedDigits) {
                 if (normalizedDigits === songNumber || normalizedDigits === rawSongNumber) {
-                    return 1200;
+                    const snippet = item.lyrics ? findSearchSnippet(item.lyrics, query, { needles: nonCompactNeedles }) : null;
+                    return { item, score: 1200, snippet, matchInfo: null, songNumber };
                 }
             }
 
-            const titleMatch = matchesSearchText(item.title, query);
-            const lyricsSnippet = item.lyrics ? findSearchSnippet(item.lyrics, query) : null;
-            const lyricsMatch = !!(lyricsSnippet && lyricsSnippet.text);
+            // 2. Tiêu đề
+            const titleMatch = matchesSearchText(item.title, query, { needles });
+            if (titleMatch) {
+                const snippet = item.lyrics ? findSearchSnippet(item.lyrics, query, { needles: nonCompactNeedles }) : null;
+                let matchInfo = null;
+                if (options.isBible && item.lyrics) {
+                    matchInfo = findMatchingVerseInfo(item.lyrics, query, { needles: nonCompactNeedles });
+                }
+                return { item, score: 1000, snippet, matchInfo, songNumber };
+            }
 
-            if (titleMatch) return 1000;
-            if (lyricsMatch) return 800;
-            return 0;
+            // 3. Nội dung / Lời bài hát
+            const snippet = item.lyrics ? findSearchSnippet(item.lyrics, query, { needles: nonCompactNeedles }) : null;
+            if (snippet && snippet.text) {
+                let matchInfo = null;
+                if (options.isBible && item.lyrics) {
+                    matchInfo = findMatchingVerseInfo(item.lyrics, query, { needles: nonCompactNeedles });
+                }
+                return { item, score: 800, snippet, matchInfo, songNumber };
+            }
+
+            return { item, score: 0, snippet: null, matchInfo: null, songNumber };
         }
 
         function truncateTitleWords(title, maxWords = 9) {
@@ -4657,34 +4689,46 @@
             return `${item.type || 'song'}:${item.title || ''}`;
         }
 
+        let _lastSelectedLibraryRow = null;
         function applyLibrarySelection() {
             const selectedKey = getLibraryItemKey(currentEditingSong);
+            if (_lastSelectedLibraryRow) {
+                _lastSelectedLibraryRow.style.backgroundColor = '';
+                _lastSelectedLibraryRow.style.fontWeight = '';
+                _lastSelectedLibraryRow = null;
+            }
+            if (!selectedKey) return;
             const rows = document.querySelectorAll('tbody tr[data-library-key]');
-            rows.forEach(row => {
-                const isSelected = selectedKey && row.dataset.libraryKey === selectedKey;
-                row.style.backgroundColor = isSelected ? '#86cdff' : '';
-                row.style.fontWeight = isSelected ? 'bold' : '';
-            });
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i].dataset.libraryKey === selectedKey) {
+                    rows[i].style.backgroundColor = '#86cdff';
+                    rows[i].style.fontWeight = 'bold';
+                    _lastSelectedLibraryRow = rows[i];
+                    break;
+                }
+            }
         }
 
         function syncLibraryHeaderActions() {
             const importBtn = document.getElementById('header-import-btn');
             const exportBtn = document.getElementById('header-export-btn');
-            const primaryActionBtn = document.getElementById('library-primary-action-btn');
-            const addNewSongBtn = document.getElementById('library-add-new-song-btn');
-            const isSongs = currentLibraryTab === 'songs';
-
-            if (importBtn) {
-                importBtn.title = isSongs ? 'Import bài hát từ file' : 'Import bản dịch Kinh Thánh XML';
-            }
-            if (exportBtn) {
-                exportBtn.classList.toggle('hidden', !isSongs);
-            }
-            if (primaryActionBtn) {
-                primaryActionBtn.textContent = 'ADD TO SCHEDULE';
-            }
-            if (addNewSongBtn) {
-                addNewSongBtn.classList.toggle('hidden', !isSongs);
+            if (currentLibraryTab === 'songs') {
+                if (importBtn) {
+                    importBtn.classList.remove('hidden');
+                    importBtn.title = 'Import bài hát (Word .docx, Text .txt, JSON)';
+                }
+                if (exportBtn) {
+                    exportBtn.classList.remove('hidden');
+                    exportBtn.title = 'Export thư viện bài hát JSON';
+                }
+            } else {
+                if (importBtn) {
+                    importBtn.classList.remove('hidden');
+                    importBtn.title = 'Quản lý bản dịch Kinh Thánh XML';
+                }
+                if (exportBtn) {
+                    exportBtn.classList.add('hidden');
+                }
             }
         }
 
@@ -4704,14 +4748,17 @@
         async function loadLibrary() {
             try {
                 console.log('Fetching songs/bible from main process...');
-                songLibrary = await window.electronAPI.loadSongs();
-                songLibrary = songLibrary.map(song => {
+                const [songs, bible] = await Promise.all([
+                    window.electronAPI.loadSongs(),
+                    window.electronAPI.loadBible()
+                ]);
+                songLibrary = (songs || []).map(song => {
                     if (song.style && typeof song.style.fontSize === 'string' && song.style.fontSize.endsWith('pt')) {
                         song.style.fontSize = Math.round(parseFloat(song.style.fontSize) * 2 / 3) + 'px';
                     }
                     return song;
                 });
-                savedBibleList = await window.electronAPI.loadBible();
+                savedBibleList = bible || [];
                 console.log('Songs loaded:', songLibrary.length);
                 console.log('Saved Bible loaded:', savedBibleList.length);
                 renderLibrary();
@@ -4728,31 +4775,89 @@
             }
         }
 
+        let _currentRenderedItemsMap = new Map();
+        let _libraryListenersAttached = false;
+        function setupLibraryTableDelegation(tbody) {
+            if (_libraryListenersAttached || !tbody) return;
+            _libraryListenersAttached = true;
+
+            tbody.addEventListener('click', (e) => {
+                const tr = e.target.closest('tr[data-library-key]');
+                if (!tr) return;
+                const item = _currentRenderedItemsMap.get(tr.dataset.libraryKey);
+                if (!item) return;
+
+                const addHint = e.target.closest('.library-add-hint');
+                if (addHint) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectItemInLibrary(item);
+                    addToSchedule(item);
+                    return;
+                }
+                selectItemInLibrary(item);
+            });
+
+            tbody.addEventListener('dblclick', (e) => {
+                const tr = e.target.closest('tr[data-library-key]');
+                if (!tr) return;
+                const item = _currentRenderedItemsMap.get(tr.dataset.libraryKey);
+                if (!item) return;
+                e.stopPropagation();
+                addToSchedule(item);
+            });
+
+            tbody.addEventListener('contextmenu', (e) => {
+                const tr = e.target.closest('tr[data-library-key]');
+                if (!tr) return;
+                const item = _currentRenderedItemsMap.get(tr.dataset.libraryKey);
+                if (!item) return;
+                e.preventDefault();
+                showContextMenu(e, item);
+            });
+        }
+
+        let _libraryRenderToken = 0;
+        function renderLibraryRowsBatch(tbody, rowsData, startIndex, batchSize, token) {
+            if (token !== _libraryRenderToken) return;
+            const endIndex = Math.min(startIndex + batchSize, rowsData.length);
+            const fragment = document.createDocumentFragment();
+
+            for (let i = startIndex; i < endIndex; i++) {
+                fragment.appendChild(rowsData[i]);
+            }
+            tbody.appendChild(fragment);
+
+            if (endIndex < rowsData.length) {
+                requestAnimationFrame(() => {
+                    renderLibraryRowsBatch(tbody, rowsData, endIndex, batchSize, token);
+                });
+            } else {
+                applyLibrarySelection();
+            }
+        }
+
         function renderLibrary() {
             const tbody = document.querySelector('tbody');
             if (!tbody) return;
             tbody.innerHTML = '';
+            _currentRenderedItemsMap.clear();
+            setupLibraryTableDelegation(tbody);
             syncLibraryHeaderActions();
 
             const query = document.getElementById('library-search').value.trim();
+            const searchCtx = query ? createSearchContext(query) : null;
+            const token = ++_libraryRenderToken;
 
             if (currentLibraryTab === 'songs') {
                 const songNumberMap = getSongNumberMap(songLibrary);
-                const filtered = query
-                    ? songLibrary
-                        .map(item => ({
-                            item,
-                            songNumber: songNumberMap.get(getLibraryItemKey(item)) || '',
-                            score: getSearchScore(item, query, {
-                                songNumber: songNumberMap.get(getLibraryItemKey(item)) || ''
-                            })
-                        }))
-                        .filter(entry => entry.score > 0)
-                    : songLibrary.map(item => ({
-                        item,
-                        songNumber: songNumberMap.get(getLibraryItemKey(item)) || '',
-                        score: 0
-                    }));
+                const evaluated = songLibrary.map(item => evaluateSearchItem(item, searchCtx, {
+                    songNumber: songNumberMap.get(getLibraryItemKey(item)) || ''
+                }));
+
+                const filtered = searchCtx
+                    ? evaluated.filter(entry => entry.score > 0)
+                    : evaluated;
 
                 const sorted = [...filtered].sort((a, b) => {
                     if (b.score !== a.score) return b.score - a.score;
@@ -4763,12 +4868,16 @@
                     tbody.innerHTML = '<tr><td class="px-4 py-2 text-[10px] text-slate-400">Library is empty.</td></tr>';
                     return;
                 }
-                const fragment = document.createDocumentFragment();
-                sorted.forEach(({ item, songNumber }) => {
+
+                const rows = [];
+                for (let i = 0; i < sorted.length; i++) {
+                    const { item, songNumber, snippet } = sorted[i];
+                    const key = getLibraryItemKey(item);
+                    _currentRenderedItemsMap.set(key, item);
+
                     const tr = document.createElement('tr');
                     tr.className = 'cursor-pointer select-none';
-                    tr.dataset.libraryKey = getLibraryItemKey(item);
-                    const snippet = findSearchSnippet(item.lyrics, query);
+                    tr.dataset.libraryKey = key;
                     const displayTitle = formatSongListTitle(item, songNumber);
                     tr.innerHTML = `<td class="px-3 py-1.5">
                         <div class="group flex items-start gap-2">
@@ -4779,59 +4888,48 @@
                             <button type="button" class="library-add-hint shrink-0 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto" title="Thêm vào schedule">+</button>
                         </div>
                     </td>`;
-                    tr.onclick = () => { selectItemInLibrary(item); };
-                    tr.ondblclick = (e) => { e.stopPropagation(); addToSchedule(item); };
-                    tr.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e, item); };
-                    const addHintButton = tr.querySelector('.library-add-hint');
-                    if (addHintButton) {
-                        addHintButton.onclick = (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            selectItemInLibrary(item);
-                            addToSchedule(item);
-                        };
-                    }
-                    fragment.appendChild(tr);
-                });
-                tbody.appendChild(fragment);
-                applyLibrarySelection();
-            } else {
-                const filtered = query
-                    ? bibleLibrary
-                        .map(item => ({ item, score: getSearchScore(item, query) }))
-                        .filter(entry => entry.score > 0)
-                    : bibleLibrary.map(item => ({ item, score: 0 }));
+                    rows.push(tr);
+                }
 
-                const sorted = query
+                renderLibraryRowsBatch(tbody, rows, 0, 70, token);
+            } else {
+                const evaluated = bibleLibrary.map(item => evaluateSearchItem(item, searchCtx, { isBible: true }));
+
+                const filtered = searchCtx
+                    ? evaluated.filter(entry => entry.score > 0)
+                    : evaluated;
+
+                const sorted = searchCtx
                     ? [...filtered].sort((a, b) => {
                         if (b.score !== a.score) return b.score - a.score;
                         return a.item.title.localeCompare(b.item.title, 'vi');
                     })
-                    : filtered;
+                    : evaluated;
 
                 if (sorted.length === 0) {
                     tbody.innerHTML = '<tr><td class="px-4 py-2 text-[10px] text-slate-400">No chapters found.</td></tr>';
                     return;
                 }
-                const fragment = document.createDocumentFragment();
-                sorted.forEach(({ item }) => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'cursor-pointer select-none';
-                    tr.dataset.libraryKey = getLibraryItemKey(item);
-                    const snippet = findSearchSnippet(item.lyrics, query);
+
+                const rows = [];
+                for (let i = 0; i < sorted.length; i++) {
+                    const { item, snippet, matchInfo } = sorted[i];
                     let displayTitle = item.title;
                     let startVerseIndex = 0;
-                    if (query && item.lyrics) {
-                        const matchInfo = findMatchingVerseInfo(item.lyrics, query);
-                        if (matchInfo && matchInfo.verseNumber) {
-                            displayTitle = `${item.title}:${matchInfo.verseNumber}`;
-                            startVerseIndex = matchInfo.verseIndex;
-                        }
+                    if (matchInfo && matchInfo.verseNumber) {
+                        displayTitle = `${item.title}:${matchInfo.verseNumber}`;
+                        startVerseIndex = matchInfo.verseIndex;
                     }
                     const itemToSelect = (startVerseIndex > 0 || displayTitle !== item.title)
                         ? { ...item, title: displayTitle, startVerseIndex }
                         : item;
 
+                    const key = getLibraryItemKey(item);
+                    _currentRenderedItemsMap.set(key, itemToSelect);
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'cursor-pointer select-none';
+                    tr.dataset.libraryKey = key;
                     tr.innerHTML = `<td class="px-3 py-1.5">
                         <div class="group flex items-start gap-2">
                             <div class="min-w-0 flex-1">
@@ -4841,11 +4939,6 @@
                             <button type="button" class="library-add-hint shrink-0 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto" title="Thêm vào schedule">+</button>
                         </div>
                     </td>`;
-                    tr.onclick = () => { selectItemInLibrary(itemToSelect); };
-                    tr.ondblclick = (e) => { e.stopPropagation(); addToSchedule(itemToSelect); };
-                    tr.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e, itemToSelect); };
-                    const addHintButton = tr.querySelector('.library-add-hint');
-                    if (addHintButton) {
                         addHintButton.onclick = (e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -5279,13 +5372,15 @@
                 const url = item.url || `app-media://${encodeURIComponent(item.name)}`;
                 if (item.type === 'video') {
                     div.innerHTML = `
-                        <video muted preload="metadata">
+                        <video muted preload="none" data-src="${url}">
                             <source src="${url}" type="${item.mimeType || 'video/mp4'}" />
                         </video>
                         <div class="video-overlay transition-all">
                             <span class="material-symbols-outlined text-white text-3xl drop-shadow-lg">play_circle</span>
                         </div>
                     `;
+                    const v = div.querySelector('video');
+                    if (v) getMediaObserver().observe(v);
                 } else {
                     div.innerHTML = `<img src="${url}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'96\' height=\'72\' viewBox=\'0 0 96 72\'%3E%3Crect width=\'96\' height=\'72\' fill=\'%231e293b\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%2364748b\' font-family=\'sans-serif\' font-size=\'10\'%3ENo Media%3C/text%3E%3C/svg%3E'" />`;
                 }
@@ -5662,7 +5757,7 @@
         let _filterTimer = null;
         function filterLibrary() {
             clearTimeout(_filterTimer);
-            _filterTimer = setTimeout(renderLibrary, 280);
+            _filterTimer = setTimeout(renderLibrary, 120);
         }
 
         // --- Schedule Logic ---
@@ -6533,6 +6628,24 @@
             }
         }
 
+        let _mediaObserver = null;
+        function getMediaObserver() {
+            if (_mediaObserver) return _mediaObserver;
+            _mediaObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const video = entry.target;
+                        if (video.dataset.src && !video.src) {
+                            video.src = video.dataset.src;
+                            video.preload = 'metadata';
+                        }
+                        _mediaObserver.unobserve(video);
+                    }
+                });
+            }, { rootMargin: '120px' });
+            return _mediaObserver;
+        }
+
         function renderMedia() {
             const container = document.querySelector('#media-library-container .grid');
             if (!container) return;
@@ -6556,11 +6669,13 @@
                 if (item.type === 'video') {
                     div.innerHTML = `
                     ${defaultBadge}
-                    <video class="w-full h-full object-cover" muted playsinline preload="metadata">
+                    <video class="w-full h-full object-cover" muted playsinline preload="none" data-src="${url}">
                         <source src="${url}" type="${mimeType}" />
                     </video>
                     <span class="absolute inset-0 flex items-center justify-center text-white text-[10px] font-bold bg-black/20 pointer-events-none">VIDEO</span>
                 `;
+                    const v = div.querySelector('video');
+                    if (v) getMediaObserver().observe(v);
                 } else {
                     div.innerHTML = `
                     ${defaultBadge}

@@ -307,13 +307,16 @@ function removeBibleVersionCache(fileName) {
   }
 }
 
+let _cachedStyleTemplates = null;
 function loadStyleTemplatesSync() {
+  if (_cachedStyleTemplates) return _cachedStyleTemplates;
   try {
     if (!styleTemplatesPath || !fs.existsSync(styleTemplatesPath)) return { templates: [] };
     const raw = JSON.parse(fs.readFileSync(styleTemplatesPath, 'utf8'));
-    return {
+    _cachedStyleTemplates = {
       templates: Array.isArray(raw && raw.templates) ? raw.templates : []
     };
+    return _cachedStyleTemplates;
   } catch (e) {
     console.error('[Templates] Failed to load style templates:', e);
     return { templates: [] };
@@ -328,6 +331,7 @@ function saveStyleTemplatesSync(payload) {
   if (!ok) {
     throw new Error('Không thể ghi file style-templates.json');
   }
+  _cachedStyleTemplates = normalized;
   return normalized;
 }
 
@@ -1250,10 +1254,15 @@ app.whenReady().then(() => {
     }
   });
 
+  let _cachedSongs = null;
+  function invalidateSongsCache() { _cachedSongs = null; }
+
   ipcMain.handle('load-songs', () => {
+    if (_cachedSongs) return _cachedSongs;
     try {
       const items = JSON.parse(fs.readFileSync(songsFilePath, 'utf8') || '[]');
-      return items.map(migrateItem);
+      _cachedSongs = items.map(migrateItem);
+      return _cachedSongs;
     } catch (e) { return []; }
   });
 
@@ -1583,6 +1592,7 @@ app.whenReady().then(() => {
       if (idx !== -1) items[idx] = song; else items.push(song);
       
       saveAndBackupSync(filePath, items);
+      if (song.type !== 'bible') invalidateSongsCache();
       return { success: true, item: song, list: items };
     } catch (e) { throw e; }
   });
@@ -1593,6 +1603,7 @@ app.whenReady().then(() => {
       let items = JSON.parse(fs.readFileSync(filePath, 'utf8') || '[]');
       items = items.filter(i => i.id !== data.id);
       saveAndBackupSync(filePath, items);
+      if (data.type !== 'bible') invalidateSongsCache();
       return items;
     } catch (e) { throw e; }
   });
@@ -1681,6 +1692,7 @@ app.whenReady().then(() => {
 
         if (mode === 'apply' && changedSongs) {
           saveAndBackupSync(songsFilePath, songs);
+          invalidateSongsCache();
         }
       }
 
@@ -1737,6 +1749,7 @@ app.whenReady().then(() => {
     const mediaPath = getMediaFolderPath();
     if (!fs.existsSync(mediaPath)) fs.mkdirSync(mediaPath, { recursive: true });
     if (pathsToImport.length > 0) {
+      invalidateMediaCache();
       return pathsToImport.map(p => {
         const name = path.basename(p);
         const dest = path.join(mediaPath, name);
@@ -1755,6 +1768,7 @@ app.whenReady().then(() => {
       const fullPath = path.join(mediaPath, mediaName);
       if (fs.existsSync(fullPath)) {
         fs.unlinkSync(fullPath);
+        invalidateMediaCache();
         return { success: true };
       }
       return { success: false, error: 'File not found' };
@@ -1779,16 +1793,21 @@ app.whenReady().then(() => {
     }
   });
 
+  let _cachedMedia = null;
+  function invalidateMediaCache() { _cachedMedia = null; }
+
   ipcMain.handle('load-media', () => {
+    if (_cachedMedia) return _cachedMedia;
     try {
       const mediaPath = getMediaFolderPath();
       if (!fs.existsSync(mediaPath)) return [];
-      return fs.readdirSync(mediaPath)
+      _cachedMedia = fs.readdirSync(mediaPath)
         .filter(f => fs.statSync(path.join(mediaPath, f)).isFile() && isSupportedMedia(f))
         .map(f => {
           const fullPath = path.join(mediaPath, f);
           return { name: f, path: fullPath, url: pathToFileURL(fullPath).toString(), type: isVideo(f) ? 'video' : 'image', mimeType: getMediaMimeType(f) };
         });
+      return _cachedMedia;
     } catch (e) { return []; }
   });
 
@@ -1875,6 +1894,7 @@ app.whenReady().then(() => {
             }
             if (addedCount > 0) {
               saveAndBackupSync(songsFilePath, currentItems);
+              invalidateSongsCache();
               console.log(`Imported and saved ${addedCount} songs from JSON array.`);
             }
             results.push({ type: 'json-array', data: content, imported: true });
