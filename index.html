@@ -4939,17 +4939,10 @@
                             <button type="button" class="library-add-hint shrink-0 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto" title="Thêm vào schedule">+</button>
                         </div>
                     </td>`;
-                        addHintButton.onclick = (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            selectItemInLibrary(itemToSelect);
-                            addToSchedule(itemToSelect);
-                        };
-                    }
-                    fragment.appendChild(tr);
-                });
-                tbody.appendChild(fragment);
-                applyLibrarySelection();
+                    rows.push(tr);
+                }
+
+                renderLibraryRowsBatch(tbody, rows, 0, 70, token);
             }
         }
 
