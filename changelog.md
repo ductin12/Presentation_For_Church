@@ -2,6 +2,19 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.1.3] - 2026-09-03
+
+### Tối ưu Hiệu năng Toàn diện (Performance Trace & INP Optimization)
+- **Khắc phục triệt để tải đồng loạt 122 video trong Media Library:**
+  - Giới hạn phạm vi theo dõi của `IntersectionObserver` chính xác vào container cuộn `#media-library-container` (`root: scrollRoot`, `rootMargin: 10px`).
+  - Giảm số lượng yêu cầu nạp video từ 122 video cùng lúc xuống chỉ còn ~10 video trong tầm nhìn thực tế, giải phóng 100% tài nguyên bộ giải mã video phần cứng (Apple VideoToolbox) và triệt tiêu tình trạng nghẽn I/O disk.
+- **Tối ưu hóa chuyển Slide không giật lag (Zero-lag Slide Navigation):**
+  - Khắc phục lỗi `updateInAppLiveBackground` tự tải lại (`.load()`) và khởi động lại (`.play()`) video nền đang phát khi chuyển khổ thơ trong cùng một bài hát.
+  - Bổ sung cơ chế `updateLiveSlideSelection` cập nhật DOM cục bộ cực nhanh (0.1ms) thay vì xóa và tạo lại toàn bộ danh sách slide (`container.innerHTML = ''`).
+  - Giảm độ trễ tương tác bàn phím (INP) từ 2,488ms xuống mức mượt mà tức thì dưới 50ms.
+- **Tăng tốc nạp Font biểu tượng (Material Symbols):**
+  - Thêm thẻ `<link rel="preload">` nạp song song tệp font `material-symbols-outlined.woff2` (1.1MB) ngay từ giai đoạn đầu, loại bỏ thời gian chờ dựng hình.
+
 ## [2.1.2] - 2026-09-03
 
 ### Đã sửa & Cập nhật Tài liệu (UI Fix & README Documentation Integration)

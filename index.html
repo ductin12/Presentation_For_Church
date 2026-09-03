@@ -6,6 +6,7 @@
     <meta charset="utf-8" />
     <title>PFC | Presentation For Church</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="preload" href="./fonts/material-symbols/material-symbols-outlined.woff2" as="font" type="font/woff2" crossorigin />
     <link href="src/css/tailwind.min.css" rel="stylesheet" />
     <link href="fonts/inter/inter.css" rel="stylesheet" />
     <link href="fonts/material-symbols/material-symbols.css" rel="stylesheet" />
@@ -6128,6 +6129,49 @@
             }
         }
 
+        function updateLiveSlideSelection(activeIndex) {
+            const container = document.getElementById('live-slides-container');
+            if (!container) return;
+            const children = container.children;
+            if (children.length !== liveSlides.length) {
+                renderLiveSlides();
+                return;
+            }
+            for (let i = 0; i < children.length; i++) {
+                const div = children[i];
+                const isActive = (i === activeIndex);
+                const header = div.firstElementChild;
+                const body = div.lastElementChild;
+                if (!header || !body) continue;
+
+                let onAirBadge = header.querySelector('.on-air-badge');
+                if (isActive) {
+                    header.classList.remove('bg-slate-500');
+                    header.classList.add('bg-indigo-600');
+                    if (!onAirBadge) {
+                        const badge = document.createElement('span');
+                        badge.className = 'text-[7px] bg-white/20 px-1 rounded on-air-badge';
+                        badge.textContent = 'ON AIR';
+                        header.appendChild(badge);
+                    }
+                    body.classList.remove('font-medium');
+                    body.classList.add('font-bold', 'text-slate-900', 'dark:text-white');
+                    body.style.backgroundColor = '#b3e4ff';
+                    if (_liveShouldScroll) {
+                        _liveShouldScroll = false;
+                        div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                } else {
+                    header.classList.remove('bg-indigo-600');
+                    header.classList.add('bg-slate-500');
+                    if (onAirBadge) onAirBadge.remove();
+                    body.classList.remove('font-bold');
+                    body.classList.add('font-medium');
+                    body.style.backgroundColor = '';
+                }
+            }
+        }
+
         function goLiveSlide(index) {
             currentLiveIndex = index;
             currentLiveSlideIndex = index;
@@ -6136,7 +6180,7 @@
             // Update in-app live output
             updateLiveOutput(slide.content);
             _liveShouldScroll = true;
-            renderLiveSlides();
+            updateLiveSlideSelection(index);
 
             // Keep the currently active live background when changing slides of the live song
             const scheduleItem = schedule[currentLiveScheduleIndex];
@@ -6152,8 +6196,6 @@
                 text: slide.content,
                 background: background
             });
-
-            renderSchedule();
         }
 
         function goLive(slide) {
@@ -6193,7 +6235,7 @@
                 div.innerHTML = `
                 <div class="${isActive ? 'bg-indigo-600' : 'bg-slate-500'} text-white px-2 py-0.5 text-[9px] font-bold uppercase flex justify-between transition-colors" ${labelColor ? `style="background-color:${labelColor}"` : ''}>
                     <span>${slideLabel}</span>
-                    ${isActive ? '<span class="text-[7px] bg-white/20 px-1 rounded">ON AIR</span>' : ''}
+                    ${isActive ? '<span class="text-[7px] bg-white/20 px-1 rounded on-air-badge">ON AIR</span>' : ''}
                 </div>
                 <div class="p-2 text-xs ${isActive ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'} leading-tight" ${isActive ? 'style="background-color:#b3e4ff"' : ''}>
                     ${slide.content.replace(/\n/g, '<br/>')}
@@ -6623,6 +6665,7 @@
         let _mediaObserver = null;
         function getMediaObserver() {
             if (_mediaObserver) return _mediaObserver;
+            const scrollRoot = document.getElementById('media-library-container');
             _mediaObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -6634,7 +6677,10 @@
                         _mediaObserver.unobserve(video);
                     }
                 });
-            }, { rootMargin: '120px' });
+            }, {
+                root: scrollRoot || null,
+                rootMargin: '10px'
+            });
             return _mediaObserver;
         }
 
@@ -6896,21 +6942,42 @@
             const liveVid = document.getElementById('live-bg-video');
             const normalizedBackground = normalizeSlideBackground(background);
 
-            liveImg.classList.add('hidden');
-            liveVid.classList.add('hidden');
-
-            if (!normalizedBackground) return;
+            if (!normalizedBackground) {
+                if (liveImg) liveImg.classList.add('hidden');
+                if (liveVid) {
+                    liveVid.classList.add('hidden');
+                    liveVid.pause();
+                }
+                currentLiveBackground = null;
+                return;
+            }
 
             if (normalizedBackground.mediaType === 'video') {
-                liveVid.classList.remove('hidden');
-                liveVid.src = normalizedBackground.url;
-                liveVid.load();
-                liveVid.play().catch((error) => {
-                    console.warn('[Live] Failed to play live background video:', error);
-                });
+                if (liveImg) liveImg.classList.add('hidden');
+                if (liveVid) {
+                    liveVid.classList.remove('hidden');
+                    // Chỉ tải lại và play nếu URL thực sự thay đổi, tránh giật lag khi chuyển slide
+                    if (liveVid.dataset.currentSrc !== normalizedBackground.url) {
+                        liveVid.dataset.currentSrc = normalizedBackground.url;
+                        liveVid.src = normalizedBackground.url;
+                        liveVid.load();
+                        liveVid.play().catch((error) => {
+                            console.warn('[Live] Failed to play live background video:', error);
+                        });
+                    }
+                }
             } else {
-                liveImg.classList.remove('hidden');
-                liveImg.src = normalizedBackground.url;
+                if (liveVid) {
+                    liveVid.classList.add('hidden');
+                    liveVid.pause();
+                }
+                if (liveImg) {
+                    liveImg.classList.remove('hidden');
+                    if (liveImg.dataset.currentSrc !== normalizedBackground.url) {
+                        liveImg.dataset.currentSrc = normalizedBackground.url;
+                        liveImg.src = normalizedBackground.url;
+                    }
+                }
             }
             currentLiveBackground = normalizedBackground;
             updateMediaMonitorBackground(normalizedBackground);

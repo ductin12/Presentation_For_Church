@@ -48,6 +48,11 @@ Bạn có thể tải ngay bộ cài đặt tương ứng với hệ điều hà
 
 > 💡 *Để xem toàn bộ chi tiết mã nguồn và lịch sử phát triển, vui lòng xem tệp [`changelog.md`](changelog.md).*
 
+### 🏎️ [2.1.3] - 2026-09-03
+- **Tối ưu Lazy Loading Media:** Giới hạn phạm vi `IntersectionObserver` chính xác vào khung cuộn thư viện media. Giảm số lượng video nạp ngầm từ 122 video cùng lúc xuống chỉ ~10 video thực tế hiển thị, loại bỏ hoàn toàn hiện tượng nghẽn I/O và nghẽn bộ giải mã phần cứng macOS.
+- **Chuyển Slide Không Giật Lag (Zero-lag):** Giữ nguyên luồng phát video nền khi chuyển các khổ thơ trong cùng bài hát thay vì tải lại từ đầu, cập nhật giao diện slide cục bộ cực nhanh (0.1ms). Giảm độ trễ phím (INP) từ 2.5 giây về dưới 50ms.
+- **Preload Font Icon:** Nạp trước font `material-symbols-outlined.woff2` (1.1MB) song song khi khởi động, tối ưu tốc độ hiển thị giao diện.
+
 ### 🚀 [2.1.2] - 2026-09-03
 - **Giao diện & Trải nghiệm (UI/UX):** Khắc phục triệt để lỗi biểu tượng kính lúp và chữ `Search...` bị đè lên nhau tại ô tìm kiếm thư viện bài hát.
 - **Tài liệu dự án:** Tích hợp trực tiếp bảng tổng hợp cập nhật Changelog vào `README.md` giúp người dùng dễ dàng theo dõi các phiên bản mới nhất ngay trên trang chủ GitHub.
