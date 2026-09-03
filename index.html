@@ -3041,7 +3041,13 @@
             applyAllBtn.disabled = !hasScheduleItem;
 
             if (!hasScheduleItem) {
-                status.textContent = 'Template xem trước, chưa có item schedule để lưu.';
+                if (currentEditingSong) {
+                    status.textContent = currentEditingSong.type === 'bible'
+                        ? 'Đang xem trước Kinh Thánh từ thư viện.'
+                        : 'Đang xem trước bài hát từ thư viện.';
+                } else {
+                    status.textContent = 'Template xem trước, chưa có item schedule để lưu.';
+                }
                 return;
             }
 
@@ -4934,6 +4940,11 @@
         function selectItemInLibrary(item) {
             currentEditingSong = item;
             applyLibrarySelection();
+            if (item) {
+                currentScheduleIndex = -1;
+                renderSchedule();
+                loadToPreview(item);
+            }
         }
 
         // --- Context Menu ---
@@ -6013,7 +6024,7 @@
             currentLiveScheduleIndex = currentScheduleIndex;
             // Áp dụng style sang live
             currentLiveStyle = normalizeSlideStyle(currentPreviewStyle);
-            const scheduleItem = schedule[currentLiveScheduleIndex];
+            const scheduleItem = (currentLiveScheduleIndex >= 0 ? schedule[currentLiveScheduleIndex] : null) || currentEditingSong || null;
             const defaultBg = globalSettings.defaultMedia || globalSettings.background || null;
             currentLiveBackground = normalizeSlideBackground(
                 currentPreviewBackground || getEffectiveScheduleBackground(scheduleItem) || defaultBg || currentLiveBackground || null
@@ -6074,7 +6085,7 @@
             _liveShouldScroll = true;
             renderLiveSlides();
 
-            const scheduleItem = schedule[currentLiveScheduleIndex];
+            const scheduleItem = (currentLiveScheduleIndex >= 0 ? schedule[currentLiveScheduleIndex] : null) || currentEditingSong || null;
             const defaultBg = globalSettings.defaultMedia || globalSettings.background || null;
             const background = currentPreviewBackground || getEffectiveScheduleBackground(scheduleItem) || defaultBg || currentLiveBackground || null;
             updateInAppLiveBackground(background);

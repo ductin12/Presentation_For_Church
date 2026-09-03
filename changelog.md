@@ -11,6 +11,8 @@ Tất cả các thay đổi và cập nhật quan trọng của dự án đượ
   - Cấu hình thuộc tính `icon` cho cả cửa sổ chính (`mainWindow`) và cửa sổ trình chiếu (`liveWindow`).
 - **Khắc phục lỗi chuyển tab và kích hoạt cửa sổ trên macOS:**
   - Bổ sung xử lý sự kiện `app.on('activate')`: khi người dùng bấm `Command + Tab` hoặc bấm vào icon trên Dock để quay lại ứng dụng, cửa sổ chính sẽ tự động được khôi phục (restore), hiển thị (show) và lấy tiêu điểm (focus).
+- **Tự động nạp vào Preview khi chọn bài hát trong thư viện (Auto-Preview):**
+  - Khi click chọn bất kỳ bài hát nào trong danh sách Songs (hoặc bản dịch Kinh Thánh), toàn bộ bài hát sẽ tự động được phân tách các slide và tải ngay vào khung Preview để người vận hành xem trước đầy đủ lời, style và hình nền.
 - **Cập nhật đóng gói Build (Electron Builder):**
   - Cập nhật `package.json` bổ sung đường dẫn `icon: build/icon.icns` cho macOS và `build/icon.ico` cho Windows.
   - Đóng gói đầy đủ các file icon vào gói phát hành (`files`).
