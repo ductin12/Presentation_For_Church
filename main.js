@@ -27,15 +27,43 @@ function getCpuUsage() {
 }
 
 // 1. Storage Helpers
+// 1. Storage Helpers
 function safeWriteSync(filePath, data) {
   const tmpPath = filePath + '.tmp';
   try {
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    // On Windows, clear read-only attribute if target file exists
+    if (fs.existsSync(filePath)) {
+      try { fs.chmodSync(filePath, 0o666); } catch (_) {}
+    }
+
     fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf8');
-    fs.renameSync(tmpPath, filePath);
+    try {
+      fs.renameSync(tmpPath, filePath);
+    } catch (renameErr) {
+      // Windows NTFS fallback: renameSync throws if destination exists/locked
+      fs.copyFileSync(tmpPath, filePath);
+      try { fs.unlinkSync(tmpPath); } catch (_) {}
+    }
     return true;
   } catch (e) {
-    if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
-    return false;
+    console.error('safeWriteSync failed for ' + filePath, e);
+    if (fs.existsSync(tmpPath)) {
+      try { fs.unlinkSync(tmpPath); } catch (_) {}
+    }
+    // Direct write fallback as last resort
+    try {
+      if (fs.existsSync(filePath)) {
+        try { fs.chmodSync(filePath, 0o666); } catch (_) {}
+      }
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+      return true;
+    } catch (directErr) {
+      console.error('Direct write fallback failed for ' + filePath, directErr);
+      return false;
+    }
   }
 }
 
@@ -45,9 +73,23 @@ function saveAndBackupSync(filePath, data) {
       for (let i = 2; i >= 1; i--) {
         const old = `${filePath.replace('.json', '')}.backup.${i}.json`;
         const next = `${filePath.replace('.json', '')}.backup.${i + 1}.json`;
-        if (fs.existsSync(old)) fs.renameSync(old, next);
+        if (fs.existsSync(old)) {
+          try {
+            if (fs.existsSync(next)) {
+              try { fs.chmodSync(next, 0o666); } catch (_) {}
+              try { fs.unlinkSync(next); } catch (_) {}
+            }
+            fs.renameSync(old, next);
+          } catch (_) {
+            try { fs.copyFileSync(old, next); fs.unlinkSync(old); } catch (__) {}
+          }
+        }
       }
-      fs.copyFileSync(filePath, `${filePath.replace('.json', '')}.backup.1.json`);
+      const bkp1 = `${filePath.replace('.json', '')}.backup.1.json`;
+      if (fs.existsSync(bkp1)) {
+        try { fs.chmodSync(bkp1, 0o666); } catch (_) {}
+      }
+      fs.copyFileSync(filePath, bkp1);
     }
   } catch (e) {
     console.error('Backup failed:', e);
@@ -62,7 +104,9 @@ let mainWindow = null;
 let globalSettings = {};
 let liveWindowTargetDisplayId = null;
 const bundledBibleDataPath = path.join(__dirname, 'data');
-const defaultBibleXmlName = 'Bible_Vietnamese_Version_1925.xml';
+const defaultBibleXmlName = fs.existsSync(path.join(__dirname, 'data', '01_Ban_Truyen_Thong_1925.xml'))
+  ? '01_Ban_Truyen_Thong_1925.xml'
+  : 'Bible_Vietnamese_Version_1925.xml';
 const bibleMigrationMarkerPath = () => path.join(userBibleDataPath || userDataPath || app.getPath('userData'), '.bible-versions-migrated');
 
 // Bible book name mapping (English XML → Vietnamese)
@@ -753,6 +797,24 @@ function replaceWithRegex(text, regex, replaceText) {
 
 function initializeData() {
   userDataPath = app.getPath('userData');
+
+  // Auto-migration from legacy easyworship-app directory if present
+  try {
+    const parentDir = path.dirname(userDataPath);
+    const legacyUserDataPath = path.join(parentDir, 'easyworship-app');
+    const newSongsFile = path.join(userDataPath, 'songs.json');
+    if (fs.existsSync(legacyUserDataPath) && (!fs.existsSync(newSongsFile) || fs.statSync(newSongsFile).size < 10)) {
+      console.log(`[Migration] Detected legacy data at ${legacyUserDataPath}. Migrating to ${userDataPath}...`);
+      if (!fs.existsSync(userDataPath)) fs.mkdirSync(userDataPath, { recursive: true });
+      if (typeof fs.cpSync === 'function') {
+        fs.cpSync(legacyUserDataPath, userDataPath, { recursive: true, errorOnExist: false });
+      }
+      console.log('[Migration] Legacy user data migrated successfully!');
+    }
+  } catch (migErr) {
+    console.warn('[Migration] Could not auto-migrate from easyworship-app:', migErr);
+  }
+
   songsFilePath = path.join(userDataPath, 'songs.json');
   bibleFilePath = path.join(userDataPath, 'bible.json');
   settingsFilePath = path.join(userDataPath, 'settings.json');
@@ -797,9 +859,12 @@ function initializeData() {
     const bundledSongs = path.join(__dirname, 'data', 'songs.json');
     if (fs.existsSync(bundledSongs)) {
       fs.copyFileSync(bundledSongs, songsFilePath);
+      try { fs.chmodSync(songsFilePath, 0o666); } catch (_) {}
     } else {
       safeWriteSync(songsFilePath, []);
     }
+  } else {
+    try { fs.chmodSync(songsFilePath, 0o666); } catch (_) {}
   }
   
   if (!fs.existsSync(bibleFilePath)) safeWriteSync(bibleFilePath, []);
@@ -836,6 +901,9 @@ function initializeData() {
       globalSettings = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
       if (!globalSettings.mediaPath) {
         globalSettings.mediaPath = defaultMediaFolderPath;
+      } else if (globalSettings.mediaPath.includes('easyworship-app') && !fs.existsSync(globalSettings.mediaPath)) {
+        const candidate = globalSettings.mediaPath.replace(/easyworship-app/g, 'blessingworship-app');
+        if (fs.existsSync(candidate)) globalSettings.mediaPath = candidate;
       }
       if (typeof globalSettings.allowSingleDisplayLiveWindow !== 'boolean') {
         globalSettings.allowSingleDisplayLiveWindow = true;
@@ -957,6 +1025,24 @@ function createWindow() {
   win.loadFile('index.html');
   setupMenu(win);
 
+  // Enable standard text editing context menu (Cut, Copy, Paste, Delete, Select All) on Windows/Mac
+  win.webContents.on('context-menu', (event, params) => {
+    if (params.isEditable) {
+      const inputMenu = Menu.buildFromTemplate([
+        { role: 'undo', label: 'Hoàn tác' },
+        { role: 'redo', label: 'Làm lại' },
+        { type: 'separator' },
+        { role: 'cut', label: 'Cắt' },
+        { role: 'copy', label: 'Sao chép' },
+        { role: 'paste', label: 'Dán' },
+        { role: 'delete', label: 'Xóa' },
+        { type: 'separator' },
+        { role: 'selectAll', label: 'Chọn tất cả' }
+      ]);
+      inputMenu.popup({ window: win });
+    }
+  });
+
   win.once('ready-to-show', () => {
     win.show();
   });
@@ -1001,7 +1087,18 @@ function setupMenu(win) {
     },
     {
       label: 'Edit',
-      submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }]
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'pasteAndMatchStyle' },
+        { role: 'delete' },
+        { type: 'separator' },
+        { role: 'selectAll' }
+      ]
     },
     {
       label: 'View',
@@ -1296,7 +1393,16 @@ app.whenReady().then(() => {
 
   ipcMain.handle('load-bible-xml', () => {
     try {
-      const p = resolveBibleXmlPath(defaultBibleXmlName) || resolveBibleXmlPath('Bible_Vietnamese.xml');
+      let p = resolveBibleXmlPath(defaultBibleXmlName)
+        || resolveBibleXmlPath('01_Ban_Truyen_Thong_1925.xml')
+        || resolveBibleXmlPath('Bible_Vietnamese_Version_1925.xml')
+        || resolveBibleXmlPath('Bible_Vietnamese.xml');
+      if (!p) {
+        const files = listBibleXmlFiles();
+        if (files && files.length > 0) {
+          p = resolveBibleXmlPath(files[0].fileName);
+        }
+      }
       if (p && fs.existsSync(p)) {
         return fs.readFileSync(p, 'utf8');
       }
@@ -1600,6 +1706,10 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
+  });
+
   ipcMain.handle('save-song', (event, rawSong) => {
     try {
       let song = { ...rawSong };
@@ -1612,13 +1722,17 @@ app.whenReady().then(() => {
       const filePath = song.type === 'bible' ? bibleFilePath : songsFilePath;
       let items = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8') || '[]') : [];
       
-      const idx = items.findIndex(s => s.id === song.id);
+      const idx = items.findIndex(s => String(s.id) === String(song.id));
       if (idx !== -1) items[idx] = song; else items.push(song);
       
-      saveAndBackupSync(filePath, items);
+      const ok = saveAndBackupSync(filePath, items);
+      if (!ok) throw new Error('Không thể lưu tệp dữ liệu bài hát vào ổ đĩa!');
       if (song.type !== 'bible') invalidateSongsCache();
       return { success: true, item: song, list: items };
-    } catch (e) { throw e; }
+    } catch (e) {
+      console.error('Error in save-song:', e);
+      throw e;
+    }
   });
 
   ipcMain.handle('delete-song', (event, data) => {

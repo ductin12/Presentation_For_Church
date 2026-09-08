@@ -646,14 +646,21 @@
 
         .lyrics-slide-label-input {
             flex: 1;
-            border: none;
+            border: 1px solid transparent;
+            border-radius: 2px;
             background: transparent;
             font-size: 11px;
             font-weight: bold;
-            color: #333;
+            color: #334155;
             outline: none;
-            padding: 0;
-            height: 100%;
+            padding: 1px 6px;
+            height: 20px;
+            transition: border-color 0.15s, background-color 0.15s;
+        }
+
+        .lyrics-slide-label-input:focus {
+            background: #ffffff;
+            border-color: #94a3b8;
         }
 
         .lyrics-slide-content {
@@ -661,9 +668,23 @@
             outline: none;
             font-size: 12px;
             line-height: 1.5;
-            color: #000;
-            min-height: 40px;
+            color: #0f172a;
+            background: #ffffff;
+            min-height: 44px;
             white-space: pre-wrap;
+            cursor: text;
+            user-select: text;
+            -webkit-user-select: text;
+            border: 1px solid #e2e8f0;
+            border-radius: 2px;
+            margin: 2px;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .lyrics-slide-content:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+            background: #f8fafc;
         }
 
         .lyrics-slide-content i {
@@ -816,8 +837,10 @@
         }
 
 
-        font-size: 11px;
-        cursor: pointer;
+        .size-dropdown-item {
+            padding: 2px 8px;
+            font-size: 11px;
+            cursor: pointer;
         }
 
         .size-dropdown-item:hover {
@@ -1187,8 +1210,10 @@
                             ADD TO SCHEDULE
                         </button>
                         <button id="library-add-new-song-btn" onclick="openAddNewSongFromLibrary()"
-                            class="hidden flex-1 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 text-[11px] font-bold rounded flex items-center justify-center gap-2 transition-colors shadow-sm">
-                            ADD NEW SONG
+                            class="flex-1 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 text-[11px] font-bold rounded flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                            title="Tạo bài hát mới vào thư viện">
+                            <span class="material-symbols-outlined text-[14px]">add</span>
+                            ADD SONG
                         </button>
                     </div>
                 </div>
@@ -1275,8 +1300,8 @@
             <span>1920x1080</span>
             <span id="cpu-usage-display">CPU: 0%</span>
         </div>
-        <div class="text-[9px] font-medium text-slate-500 dark:text-slate-400">
-            v1.0.5
+        <div id="app-version-display" class="text-[9px] font-medium text-slate-500 dark:text-slate-400">
+            v2.1.3
         </div>
     </footer>
 
@@ -1401,44 +1426,45 @@
 
                     <div class="hybrid-size-control" id="size-control-container">
                         <input type="number" id="font-size-input" class="hybrid-size-input" value="80" min="1"
-                            max="500">
+                            max="500" onchange="setFontSize(this.value)" onkeydown="if(event.key==='Enter') setFontSize(this.value)">
                         <span style="font-size:10px;color:#666;padding:0 2px;user-select:none;">px</span>
-                        <div class="hybrid-size-btn" onclick="toggleSizeDropdown()">
+                        <div class="hybrid-size-btn" onclick="toggleSizeDropdown()" onmousedown="event.preventDefault()">
                             <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
                         </div>
                         <div class="size-dropdown" id="size-dropdown-menu">
-                            <div class="size-dropdown-item" onclick="setSizeValue(8)">8</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(10)">10</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(12)">12</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(14)">14</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(18)">18</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(24)">24</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(36)">36</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(48)">48</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(60)">60</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(72)">72</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(96)">96</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(120)">120</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(150)">150</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(180)">180</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(200)">200</div>
-                            <div class="size-dropdown-item" onclick="setSizeValue(250)">250</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(8)">8</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(10)">10</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(12)">12</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(14)">14</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(18)">18</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(24)">24</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(36)">36</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(48)">48</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(60)">60</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(72)">72</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(96)">96</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(120)">120</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(150)">150</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(180)">180</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(200)">200</div>
+                            <div class="size-dropdown-item" onmousedown="event.preventDefault()" onclick="setSizeValue(250)">250</div>
                         </div>
                     </div>
 
                     <div class="divider-win"></div>
-                    <button class="toolbar-btn" onclick="formatDoc('bold')" title="Bold"><span
+                    <button class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatDoc('bold')" title="Bold"><span
                             class="font-bold">B</span></button>
-                    <button class="toolbar-btn" onclick="formatDoc('italic')" title="Italic"><span
+                    <button class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatDoc('italic')" title="Italic"><span
                             class="italic font-serif">I</span></button>
-                    <button class="toolbar-btn" onclick="formatDoc('underline')" title="Underline"><span
+                    <button class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatDoc('underline')" title="Underline"><span
                             class="underline">U</span></button>
                     <div class="divider-win"></div>
-                    <label class="toolbar-btn relative" title="Text Color">
+                    <label class="toolbar-btn relative" title="Text Color" onmousedown="saveEditorSelection()">
                         <span class="font-bold text-[10px]">A</span>
                         <div class="absolute bottom-0 left-1 right-1 h-[3px] bg-red-500" id="color-indicator"></div>
                         <input type="color" id="text-color-picker" value="#ffffff"
                             class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            oninput="applyTextColor(this.value)"
                             onchange="applyTextColor(this.value)">
                     </label>
                     <div class="divider-win"></div>
@@ -2932,13 +2958,15 @@
             return text.split('\n').map(line => {
                 if (!line.trim()) return '<div class="chord-line">&nbsp;</div>';
 
-                // Wrap [Chord] and the following text unit (until space or next chord) in a chord-unit span
-                // This ensures the chord and its word stay together on the same line
-                const html = line.replace(/\[(.*?)\]([^\s\[]*)/g, (match, chord, wordPart) => {
-                    return `<span class="chord-unit"><span class="chord-anchor"><span class="chord-mark">${escapeHtml(chord)}</span></span>${escapeHtml(wordPart)}</span>`;
-                });
+                if (line.includes('[')) {
+                    // Wrap [Chord] and the following text unit (until space, next chord, or HTML tag start) in a chord-unit span
+                    const html = line.replace(/\[(.*?)\]([^\s\[<]*)/g, (match, chord, wordPart) => {
+                        return `<span class="chord-unit"><span class="chord-anchor"><span class="chord-mark">${escapeHtml(chord)}</span></span>${wordPart}</span>`;
+                    });
+                    return `<div class="chord-line">${html}</div>`;
+                }
 
-                return `<div class="chord-line">${html}</div>`;
+                return `<div class="chord-line">${line}</div>`;
             }).join('');
         }
 
@@ -3598,6 +3626,12 @@
             loadMedia();
             setTimeout(loadSystemFonts, 0);
             setTimeout(syncMonitorVisibility, 0);
+            if (window.electronAPI && window.electronAPI.getAppVersion) {
+                window.electronAPI.getAppVersion().then(v => {
+                    const el = document.getElementById('app-version-display');
+                    if (el && v) el.innerText = `v${v}`;
+                }).catch(() => {});
+            }
             document.querySelectorAll('#style-template-manager-modal input, #style-template-manager-modal select').forEach(el => {
                 el.addEventListener('input', updateStyleTemplatePreview);
                 el.addEventListener('change', updateStyleTemplatePreview);
@@ -4182,6 +4216,7 @@
                 bibleBtn.classList.add('text-white/40');
                 bibleBtn.classList.remove('text-white', 'border-b-2', 'border-primary');
                 if (versionSelector) versionSelector.classList.add('hidden');
+                filterLibrary();
             } else {
                 bibleBtn.classList.add('text-white', 'border-b-2', 'border-primary');
                 bibleBtn.classList.remove('text-white/40');
@@ -4194,6 +4229,7 @@
                     filterLibrary();
                 }
             }
+            syncLibraryHeaderActions();
         }
 
         // --- Resizer Logic ---
@@ -4713,23 +4749,18 @@
         function syncLibraryHeaderActions() {
             const importBtn = document.getElementById('header-import-btn');
             const exportBtn = document.getElementById('header-export-btn');
-            if (currentLibraryTab === 'songs') {
-                if (importBtn) {
-                    importBtn.classList.remove('hidden');
-                    importBtn.title = 'Import bài hát (Word .docx, Text .txt, JSON)';
-                }
-                if (exportBtn) {
-                    exportBtn.classList.remove('hidden');
-                    exportBtn.title = 'Export thư viện bài hát JSON';
-                }
-            } else {
-                if (importBtn) {
-                    importBtn.classList.remove('hidden');
-                    importBtn.title = 'Quản lý bản dịch Kinh Thánh XML';
-                }
-                if (exportBtn) {
-                    exportBtn.classList.add('hidden');
-                }
+            const addNewSongBtn = document.getElementById('library-add-new-song-btn');
+            const isSongs = currentLibraryTab === 'songs';
+
+            if (importBtn) {
+                importBtn.classList.remove('hidden');
+                importBtn.title = isSongs ? 'Import bài hát (Word .docx, Text .txt, JSON)' : 'Quản lý bản dịch Kinh Thánh XML';
+            }
+            if (exportBtn) {
+                exportBtn.classList.toggle('hidden', !isSongs);
+            }
+            if (addNewSongBtn) {
+                addNewSongBtn.classList.toggle('hidden', !isSongs);
             }
         }
 
@@ -5193,9 +5224,156 @@
 
         // --- Song Editor Logic (Block Model) ---
 
+        let savedEditorSelection = null;
+
+        function saveEditorSelection() {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+            const range = sel.getRangeAt(0);
+            const container = range.commonAncestorContainer;
+            const el = container.nodeType === 1 ? container : container.parentElement;
+            if (el && el.closest('.lyrics-slide-content, #editor-preview-text')) {
+                savedEditorSelection = range.cloneRange();
+            }
+        }
+
+        function getActiveEditorRange() {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+                const range = sel.getRangeAt(0);
+                const container = range.commonAncestorContainer;
+                const el = container.nodeType === 1 ? container : container.parentElement;
+                if (el && el.closest('.lyrics-slide-content, #editor-preview-text')) {
+                    savedEditorSelection = range.cloneRange();
+                    return range;
+                }
+            }
+            if (savedEditorSelection && !savedEditorSelection.collapsed) {
+                if (document.body.contains(savedEditorSelection.commonAncestorContainer)) {
+                    const sel2 = window.getSelection();
+                    sel2.removeAllRanges();
+                    sel2.addRange(savedEditorSelection);
+                    return savedEditorSelection;
+                }
+            }
+            return null;
+        }
+
+        function applyInlineStyleToSelection(stylesObj) {
+            const range = getActiveEditorRange();
+            if (!range || range.collapsed) return false;
+
+            const container = range.commonAncestorContainer;
+            const el = container.nodeType === 1 ? container : container.parentElement;
+            const editable = el ? el.closest('.lyrics-slide-content, #editor-preview-text') : null;
+            if (!editable) return false;
+
+            try {
+                // If selection exactly covers an existing span, update its styles directly
+                if (el && el.tagName === 'SPAN' && el !== editable && range.toString() === el.textContent) {
+                    for (const [prop, val] of Object.entries(stylesObj)) {
+                        if (val) el.style[prop] = val;
+                    }
+                    syncEditorContentFrom(editable);
+                    return true;
+                }
+
+                const fragment = range.extractContents();
+                // If extracted fragment is just one span element, update it directly
+                if (fragment.childNodes.length === 1 && fragment.firstChild.nodeType === 1 && fragment.firstChild.tagName === 'SPAN') {
+                    const innerSpan = fragment.firstChild;
+                    for (const [prop, val] of Object.entries(stylesObj)) {
+                        if (val) innerSpan.style[prop] = val;
+                    }
+                    range.insertNode(innerSpan);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    const newRange = document.createRange();
+                    newRange.selectNodeContents(innerSpan);
+                    sel.addRange(newRange);
+                    savedEditorSelection = newRange.cloneRange();
+                    syncEditorContentFrom(editable);
+                    return true;
+                }
+
+                const span = document.createElement('span');
+                for (const [prop, val] of Object.entries(stylesObj)) {
+                    if (val) span.style[prop] = val;
+                }
+                span.appendChild(fragment);
+                range.insertNode(span);
+
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                const newRange = document.createRange();
+                newRange.selectNodeContents(span);
+                sel.addRange(newRange);
+                savedEditorSelection = newRange.cloneRange();
+
+                syncEditorContentFrom(editable);
+                return true;
+            } catch (e) {
+                console.error('Failed to apply inline style to selection:', e);
+                return false;
+            }
+        }
+
+        function syncEditorContentFrom(sourceEl) {
+            if (!sourceEl) return;
+            if (sourceEl.id === 'editor-preview-text') {
+                if (currentActiveSlideBlock) {
+                    const contentDiv = currentActiveSlideBlock.querySelector('.lyrics-slide-content');
+                    if (contentDiv && contentDiv.innerHTML !== sourceEl.innerHTML) {
+                        contentDiv.innerHTML = sourceEl.innerHTML;
+                    }
+                }
+            } else if (sourceEl.classList && sourceEl.classList.contains('lyrics-slide-content')) {
+                const previewEl = document.getElementById('editor-preview-text');
+                if (previewEl && previewEl.innerHTML !== sourceEl.innerHTML) {
+                    previewEl.innerHTML = sourceEl.innerHTML;
+                }
+            }
+            scaleVirtualCanvas('editor-virtual-canvas', 'editor-preview-box');
+        }
+
         function formatDoc(cmd, val = null) {
-            const previewEl = document.getElementById('editor-preview-text');
-            if (!previewEl) return;
+            const range = getActiveEditorRange();
+            if (range && !range.collapsed) {
+                switch (cmd) {
+                    case 'bold':
+                        document.execCommand('bold', false, null);
+                        break;
+                    case 'italic':
+                        document.execCommand('italic', false, null);
+                        break;
+                    case 'underline':
+                        document.execCommand('underline', false, null);
+                        break;
+                    case 'fontName':
+                        applyInlineStyleToSelection({ fontFamily: val });
+                        break;
+                    case 'fontSize':
+                        applyInlineStyleToSelection({ fontSize: (parseInt(val, 10) || 80) + 'px' });
+                        break;
+                    case 'foreColor':
+                        applyInlineStyleToSelection({ color: val });
+                        break;
+                    case 'justifyLeft':
+                    case 'justifyCenter':
+                    case 'justifyRight':
+                        document.execCommand(cmd, false, null);
+                        break;
+                }
+                const container = range.commonAncestorContainer;
+                const el = container.nodeType === 1 ? container : container.parentElement;
+                const editable = el ? el.closest('.lyrics-slide-content, #editor-preview-text') : null;
+                if (editable) {
+                    syncEditorContentFrom(editable);
+                }
+                return;
+            }
+
+            // No text selected: fallback to global slide/song style
             switch (cmd) {
                 case 'bold':
                     editorStyle.fontWeight = editorStyle.fontWeight === 'bold' ? 'normal' : 'bold';
@@ -5215,13 +5393,25 @@
         }
 
         function applyFont(fontName) {
+            if (!fontName) return;
+            const range = getActiveEditorRange();
+            if (range && !range.collapsed) {
+                applyInlineStyleToSelection({ fontFamily: fontName });
+                return;
+            }
             editorStyle.fontFamily = fontName;
             applyEditorStyle();
         }
 
         function applyTextColor(color) {
-            editorStyle.color = color;
+            if (!color) return;
             document.getElementById('color-indicator').style.backgroundColor = color;
+            const range = getActiveEditorRange();
+            if (range && !range.collapsed) {
+                applyInlineStyleToSelection({ color: color });
+                return;
+            }
+            editorStyle.color = color;
             applyEditorStyle();
         }
 
@@ -5314,6 +5504,18 @@
 
             // Setup Toolbar Listeners
             document.getElementById('font-size-input').onchange = (e) => setFontSize(e.target.value);
+
+            // Auto-focus Title input on modal open
+            setTimeout(() => {
+                const titleInput = document.getElementById('song-title');
+                if (titleInput) {
+                    titleInput.focus();
+                    if (!song) titleInput.select();
+                }
+            }, 120);
+
+            // Setup 2-way preview text synchronization
+            setupEditorPreviewSync();
 
             // Initial scale
             setTimeout(() => {
@@ -5484,13 +5686,20 @@
         });
 
         function setFontSize(size) {
-            editorStyle.fontSize = size + 'px';
+            const sizePx = (parseInt(size, 10) || 80) + 'px';
+            const range = getActiveEditorRange();
+            if (range && !range.collapsed) {
+                applyInlineStyleToSelection({ fontSize: sizePx });
+                return;
+            }
+            editorStyle.fontSize = sizePx;
             applyEditorStyle();
         }
 
         function renderLyricsEditor(text) {
             const container = document.getElementById('lyrics-editor-container');
             container.innerHTML = '';
+            currentActiveSlideBlock = null;
 
             const slides = text.split(/\n\s*\n/).filter(s => s.trim() !== "");
             if (slides.length === 0) slides.push("");
@@ -5498,6 +5707,13 @@
             slides.forEach((content, index) => {
                 addSlideToEditor(content, index);
             });
+            if (container.firstElementChild) {
+                currentActiveSlideBlock = container.firstElementChild;
+                const contentDiv = currentActiveSlideBlock.querySelector('.lyrics-slide-content');
+                if (contentDiv) {
+                    updateEditorPreview(contentDiv.innerHTML);
+                }
+            }
         }
 
         function addSlideToEditor(content, index, focus = false) {
@@ -5519,13 +5735,17 @@
             block.innerHTML = `
             <div class="lyrics-slide-header">
                 <div class="lyrics-slide-num">${index + 1}</div>
-                <input class="lyrics-slide-label-input" placeholder="Label (optional)..." value="${label}" spellcheck="false">
+                <input class="lyrics-slide-label-input" placeholder="Nhãn (vd: Điệp khúc, Đoạn 1)..." value="${label}" spellcheck="false" title="Nhãn phân đoạn (tùy chọn)">
             </div>
             <div class="lyrics-slide-content" contenteditable="true" spellcheck="false">${body.replace(/\n/g, '<br>')}</div>
         `;
 
             const contentDiv = block.querySelector('.lyrics-slide-content');
             const labelInput = block.querySelector('.lyrics-slide-label-input');
+
+            block.onclick = () => {
+                currentActiveSlideBlock = block;
+            };
 
             // Apply label color immediately
             function updateLabelColor() {
@@ -5536,16 +5756,24 @@
             }
             updateLabelColor();
             labelInput.addEventListener('input', updateLabelColor);
+            labelInput.addEventListener('focus', () => {
+                currentActiveSlideBlock = block;
+            });
 
             let lastEnterTime = 0;
 
             contentDiv.oninput = () => {
-                updateEditorPreview(contentDiv.innerText);
+                currentActiveSlideBlock = block;
+                updateEditorPreview(contentDiv.innerHTML);
             };
 
             contentDiv.onfocus = () => {
-                updateEditorPreview(contentDiv.innerText);
+                currentActiveSlideBlock = block;
+                updateEditorPreview(contentDiv.innerHTML);
             };
+
+            contentDiv.addEventListener('mouseup', saveEditorSelection);
+            contentDiv.addEventListener('keyup', saveEditorSelection);
 
             contentDiv.onkeydown = (e) => {
                 if (e.key === 'Enter') {
@@ -5596,13 +5824,52 @@
             const afterFragment = afterRange.extractContents();
             const tempDiv = document.createElement('div');
             tempDiv.appendChild(afterFragment);
-            const afterText = tempDiv.innerText.trim();
+            const afterText = tempDiv.innerHTML.trim();
 
             // Update current slide preview
-            updateEditorPreview(contentDiv.innerText);
+            updateEditorPreview(contentDiv.innerHTML);
 
             // Add new slide with the extracted content
             addSlideToEditor(afterText, index + 1, true);
+        }
+
+        function serializeSlideContent(contentDiv) {
+            if (!contentDiv) return '';
+            const clone = contentDiv.cloneNode(true);
+
+            clone.querySelectorAll('div, p').forEach(el => {
+                el.before('\n');
+            });
+            clone.querySelectorAll('br').forEach(el => {
+                el.replaceWith('\n');
+            });
+
+            const hasFormatting = clone.querySelector('span[style], font, b, strong, i, em, u');
+            if (!hasFormatting) {
+                return clone.textContent
+                    .replace(/\r\n/g, '\n')
+                    .split('\n')
+                    .map(l => l.trim())
+                    .join('\n')
+                    .replace(/\n{3,}/g, '\n\n')
+                    .trim();
+            }
+
+            clone.querySelectorAll('span').forEach(s => {
+                if (!s.getAttribute('style') || !s.textContent.trim()) {
+                    if (!s.textContent.trim()) s.remove();
+                    else s.replaceWith(...s.childNodes);
+                }
+            });
+
+            let html = clone.innerHTML;
+            return html
+                .replace(/\r\n/g, '\n')
+                .split('\n')
+                .map(l => l.trim())
+                .join('\n')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
         }
 
         function getLyricsFromEditor() {
@@ -5610,7 +5877,8 @@
             const blocks = Array.from(container.querySelectorAll('.lyrics-slide-block'));
             return blocks.map(block => {
                 const label = block.querySelector('.lyrics-slide-label-input').value.trim();
-                const content = block.querySelector('.lyrics-slide-content').innerText.trim();
+                const contentDiv = block.querySelector('.lyrics-slide-content');
+                const content = serializeSlideContent(contentDiv);
                 if (label) {
                     return (label + '\n' + content).trim();
                 }
@@ -5971,13 +6239,34 @@
             }
         }
 
-        function updateEditorPreview(text) {
+        let currentActiveSlideBlock = null;
+
+        function updateEditorPreview(htmlOrText) {
             const previewEl = document.getElementById('editor-preview-text');
             if (previewEl) {
-                previewEl.innerText = text;
+                previewEl.innerHTML = htmlOrText || '';
                 applyEditorStyle();
             }
         }
+
+        function setupEditorPreviewSync() {
+            const previewEl = document.getElementById('editor-preview-text');
+            if (!previewEl) return;
+            previewEl.oninput = () => {
+                if (currentActiveSlideBlock) {
+                    const contentDiv = currentActiveSlideBlock.querySelector('.lyrics-slide-content');
+                    if (contentDiv && contentDiv.innerHTML !== previewEl.innerHTML) {
+                        contentDiv.innerHTML = previewEl.innerHTML;
+                    }
+                }
+            };
+            previewEl.addEventListener('mouseup', saveEditorSelection);
+            previewEl.addEventListener('keyup', saveEditorSelection);
+        }
+
+        document.addEventListener('selectionchange', () => {
+            saveEditorSelection();
+        });
 
         // --- Presentation Logic ---
         const labelPattern = /^(Verse|Chorus|Bridge|Pre-Chorus|Tag|End|Đoạn|Điệp khúc|Kết)/i;
@@ -7332,6 +7621,8 @@
 
         // --- Keyboard Support ---
         window.addEventListener('keydown', (e) => {
+            const songModal = document.getElementById('song-editor-modal');
+            if (songModal && songModal.style.display === 'flex') return;
             if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) return;
             const combo = eventToCombo(e);
             const action = shortcutActionMap[combo];

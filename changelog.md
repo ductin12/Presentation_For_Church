@@ -2,6 +2,38 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.1.5] - 2026-09-08
+
+### Tính năng Mới & Đổi tên Nhận diện Toàn diện (Rich Text Editor & BlessingWorship Rebrand)
+- **Định dạng Rich Text độc lập theo từng ký tự, từng chữ và từng dòng (Word-Style):**
+  - Hỗ trợ bôi đen văn bản trong Song Editor để chỉnh sửa độc lập: Cỡ chữ (Font Size), Phông chữ (Font Family), In đậm (B), In nghiêng (I), Gạch chân (U) và Màu sắc (Text Color) cho riêng đoạn/chữ/dòng được chọn thay vì đổi toàn bộ bài hát.
+  - Bảo toàn vùng bôi đen (Selection Tracking) khi người dùng nhấp vào thanh công cụ, ngăn ngừa mất tiêu điểm.
+  - Tự động fallback về style toàn bài khi không có đoạn nào được bôi đen.
+  - Đồng bộ 2 chiều tức thì (2-way sync) giữa khung soạn thảo slide và khung xem trước màn hình.
+  - Cửa sổ Screen Live (màn hình phụ / máy chiếu) và màn hình Live Output tự động hiển thị chính xác các định dạng chữ độc lập và kết hợp mượt mà với hợp âm `[Chord]`.
+- **Đổi toàn bộ nhận diện `easyworship` sang `blessingworship`:**
+  - Chuẩn hóa tên ứng dụng thành `blessingworship-app` trong cấu hình package và script cài đặt.
+  - Tích hợp cơ chế **tự động di chuyển dữ liệu (Auto-Migration)** trong `main.js`: Tự động nhận diện và sao chép toàn bộ bài hát, media, cài đặt từ thư mục `easyworship-app` cũ sang `blessingworship-app` mới khi khởi chạy, bảo toàn dữ liệu 100%.
+- **Quy chuẩn phát hành mới (Release Gate):**
+  - Tích hợp bước xác nhận bắt buộc với người dùng trước khi build gói cài đặt hoặc phát hành release.
+
+## [2.1.4] - 2026-09-08
+
+### Đã sửa & Cải tiến Toàn diện (Song Editor Windows Fix & Library UI Enhancements)
+- **Khắc phục triệt để lỗi không chỉnh sửa và lưu được bài hát trên Windows:**
+  - **Sửa lỗi ghi đè tệp NTFS (`safeWriteSync` & `saveAndBackupSync`):** Khắc phục lỗi `fs.renameSync` bị hệ điều hành Windows chặn ném lỗi `EPERM`/`EEXIST` khi ghi đè `songs.json`. Bổ sung cơ chế fallback tự động với `fs.copyFileSync`, gỡ cờ Read-Only (`chmodSync 0o666`), và fallback ghi trực tiếp `fs.writeFileSync`. Dữ liệu chỉnh sửa tiêu đề và lời bài hát được lưu vĩnh viễn và an toàn tuyệt đối.
+  - **Kích hoạt phím tắt chỉnh sửa chuẩn trên Windows:** Bổ sung vai trò `{ role: 'delete' }` và `{ role: 'selectAll' }` vào menu ứng dụng Electron, giúp phím `Delete` và tổ hợp phím `Ctrl + A` hoạt động mượt mà trong toàn bộ các ô nhập liệu của Song Editor.
+  - **Menu ngữ cảnh chuột phải Native (Context Menu):** Bổ sung menu chuột phải (Cut, Copy, Paste, Delete, Select All) khi thao tác trên bất kỳ ô nhập liệu nào của ứng dụng.
+  - **Trải nghiệm Song Editor mượt mà:** Thêm hiệu ứng viền focus rõ nét cho từng khổ thơ (`lyrics-slide-content`), tự động đặt con trỏ vào ô tiêu đề khi mở modal, đồng bộ 2 chiều tức thì từ khung xem trước sang khổ thơ, và chặn phím tắt trình chiếu toàn cục khi đang gõ nội dung bài hát.
+- **Khôi phục nút "+ ADD SONG" trên các bản đóng gói chính thức:**
+  - Đưa nút `+ ADD SONG` hiển thị song song ngay bên cạnh nút `ADD TO SCHEDULE` ở thanh tiêu đề thư viện bài hát.
+  - Tự động ẩn nút `+ ADD SONG` khi chuyển sang tab Kinh Thánh (Bible) để giữ giao diện gọn gàng.
+  - Đóng gói đầy đủ vào các bộ cài đặt phân phối cho cả macOS và Windows.
+- **Hiển thị phiên bản ứng dụng động (Dynamic App Version):**
+  - Đồng bộ số phiên bản hiển thị tại thanh trạng thái phía dưới cửa sổ thông qua API Electron `app.getVersion()`, loại bỏ chuỗi phiên bản cứng cũ.
+- **Tương thích dữ liệu Kinh Thánh XML linh hoạt:**
+  - Bổ sung cơ chế fallback tự động nhận diện tệp XML Kinh Thánh truyền thống dù được đặt tên theo quy chuẩn mới (`01_Ban_Truyen_Thong_1925.xml`) hay tên gốc (`Bible_Vietnamese_Version_1925.xml`).
+
 ## [2.1.3] - 2026-09-03
 
 ### Tối ưu Hiệu năng Toàn diện (Performance Trace & INP Optimization)

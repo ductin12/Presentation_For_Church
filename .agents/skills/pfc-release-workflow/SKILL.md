@@ -16,6 +16,16 @@ Skill này cung cấp quy trình chuẩn hóa và tự động hóa từng bư�
 
 ## 📋 Các Bước Thực Hiện Chuẩn
 
+### Bước 0: Xác Nhận Người Dùng (User Confirmation Gate - BẮT BUỘC)
+
+Sau khi hoàn thành mọi chỉnh sửa mã nguồn và kiểm thử sơ bộ:
+- **TUYỆT ĐỐI KHÔNG** tự ý build, commit, push hay release ngay.
+- **LUÔN LUÔN DỪNG LẠI** và hỏi người dùng:
+  > *"Bạn còn muốn chỉnh sửa gì thêm không? Nếu có thì tiếp tục chỉnh, nếu không thì tiến hành build phiên bản mới, update documents, update github, release phiên bản mới."*
+- **CHỈ KHI** người dùng xác nhận KHÔNG còn chỉnh sửa gì thêm (hoặc yêu cầu release/build), mới tiến hành từ Bước 1 trở đi!
+
+---
+
 ### Bước 1: Kiểm Tra Cú Pháp & Kiểm Thử Nhanh (Preflight Check)
 
 Trước khi nâng version và build, đảm bảo toàn bộ mã nguồn không có lỗi cú pháp để tránh lỗi runtime:

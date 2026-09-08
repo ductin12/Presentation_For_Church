@@ -93,6 +93,10 @@
             will-change: opacity;
         }
 
+        .lyrics-text * {
+            paint-order: stroke fill;
+        }
+
         /* Double-buffer layers for crossfade */
         .buffer-a, .buffer-b {
             position: absolute;
@@ -416,7 +420,11 @@
 
         function setText(text) {
             const el = document.getElementById('lyrics-text');
-            el.textContent = text || '';
+            if (text && /<[a-z][\s\S]*>/i.test(text)) {
+                el.innerHTML = text.split('\n').map(l => `<div class="slide-line">${l || '&nbsp;'}</div>`).join('');
+            } else {
+                el.textContent = text || '';
+            }
             fitTextToBox(el, document.getElementById('text-box'), currentStyle);
         }
 

@@ -48,6 +48,17 @@ Bạn có thể tải ngay bộ cài đặt tương ứng với hệ điều hà
 
 > 💡 *Để xem toàn bộ chi tiết mã nguồn và lịch sử phát triển, vui lòng xem tệp [`changelog.md`](changelog.md).*
 
+### ✨ [2.1.5] - 2026-09-08
+- **Định dạng Rich Text độc lập từng ký tự, từng chữ và từng dòng (Word-Style):** Chỉnh sửa cỡ chữ, phông chữ, in đậm, in nghiêng, gạch chân và màu sắc riêng biệt cho từng đoạn bôi đen trong Song Editor. Tự động đồng bộ với màn hình Live và máy chiếu.
+- **Đổi tên nhận diện BlessingWorship:** Cập nhật toàn diện sang `blessingworship-app` kèm tính năng Auto-Migration tự động sao chép bảo toàn dữ liệu từ `easyworship-app` cũ.
+- **Quy chuẩn phát hành mới:** Thêm bước xác nhận người dùng trước khi build và phát hành release.
+
+### 🛠️ [2.1.4] - 2026-09-08
+- **Khắc phục lỗi chỉnh sửa & lưu bài hát trên Windows:** Xử lý triệt để lỗi ghi đè tệp NTFS `songs.json` (`safeWriteSync`), kích hoạt các vai trò phím tắt `Delete`, `Ctrl + A` và menu ngữ cảnh chuột phải trên Windows.
+- **Nút "+ ADD SONG" chính thức:** Đưa nút `+ ADD SONG` hiển thị trực tiếp bên cạnh `ADD TO SCHEDULE` trong thư viện bài hát trên tất cả các bản đóng gói macOS & Windows.
+- **Đồng bộ phiên bản động:** Thanh footer hiển thị chính xác phiên bản từ runtime Electron `app.getVersion()`.
+- **Tương thích Kinh Thánh XML:** Tự động nhận diện linh hoạt các định dạng tên tệp XML trong thư mục `data/`.
+
 ### 🏎️ [2.1.3] - 2026-09-03
 - **Tối ưu Lazy Loading Media:** Giới hạn phạm vi `IntersectionObserver` chính xác vào khung cuộn thư viện media. Giảm số lượng video nạp ngầm từ 122 video cùng lúc xuống chỉ ~10 video thực tế hiển thị, loại bỏ hoàn toàn hiện tượng nghẽn I/O và nghẽn bộ giải mã phần cứng macOS.
 - **Chuyển Slide Không Giật Lag (Zero-lag):** Giữ nguyên luồng phát video nền khi chuyển các khổ thơ trong cùng bài hát thay vì tải lại từ đầu, cập nhật giao diện slide cục bộ cực nhanh (0.1ms). Giảm độ trễ phím (INP) từ 2.5 giây về dưới 50ms.

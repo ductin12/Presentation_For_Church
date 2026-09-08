@@ -11,3 +11,8 @@ long_verses_report.json
 index_test.html
 scan_bible.js
 Trace-*.json
+.agents/*
+.claude/*
+.codex/*
+.gemini/*
+.cursor/*
