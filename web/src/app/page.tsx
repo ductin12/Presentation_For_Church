@@ -2,6 +2,7 @@ import { getAppData } from "@/utils/data";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
+import DownloadSection from "@/components/Download";
 import Changelog from "@/components/Changelog";
 import Footer from "@/components/Footer";
 
@@ -15,6 +16,7 @@ export default function Home() {
       <div id="features">
         <Features />
       </div>
+      <DownloadSection version={version} />
       <Changelog content={changelogHTML} />
       <Footer />
     </main>

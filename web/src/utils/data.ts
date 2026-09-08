@@ -7,47 +7,69 @@ export interface AppData {
 }
 
 export function getAppData(): AppData {
-  // Đường dẫn trỏ ra thư mục gốc của repo
-  const rootDir = path.join(process.cwd(), '..');
+  // Kiểm tra thư mục gốc repo (thư mục cha nếu chạy từ thư mục web, hoặc thư mục hiện tại)
+  const candidateDirs = [
+    path.join(process.cwd(), '..'),
+    process.cwd(),
+  ];
   
-  let version = '2.0.1'; // Default fallback
-  try {
-    const pkgPath = path.join(rootDir, 'package.json');
-    const pkgContent = fs.readFileSync(pkgPath, 'utf8');
-    const pkg = JSON.parse(pkgContent);
-    if (pkg.version) {
-      version = pkg.version;
+  let version = '2.1.6'; // Default fallback v2.1.6
+  let foundRootDir = candidateDirs[0];
+
+  for (const dir of candidateDirs) {
+    try {
+      const pkgPath = path.join(dir, 'package.json');
+      if (fs.existsSync(pkgPath)) {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+        if (pkg.name === 'blessingworship-app' && pkg.version) {
+          version = pkg.version;
+          foundRootDir = dir;
+          break;
+        } else if (pkg.version && pkg.name !== 'web') {
+          version = pkg.version;
+          foundRootDir = dir;
+        }
+      }
+    } catch {
+      // Continue search
     }
-  } catch (error) {
-    console.warn('Could not read parent package.json, using fallback version.');
   }
 
   let changelogHTML = '';
   try {
-    const changelogPath = path.join(rootDir, 'changelog.md');
-    const changelogContent = fs.readFileSync(changelogPath, 'utf8');
-    
-    // Tìm section của version mới nhất. Format thường là: ## [x.x.x] - YYYY-MM-DD
-    const versionHeader = `## [${version}]`;
-    const startIndex = changelogContent.indexOf(versionHeader);
-    
-    let latestChanges = '';
-    if (startIndex !== -1) {
-      // Bỏ qua dòng header ## [x.x.x]
-      const contentAfterHeader = changelogContent.substring(startIndex + versionHeader.length);
-      // Tìm header của phiên bản tiếp theo
-      const endIndex = contentAfterHeader.indexOf('## [');
-      if (endIndex !== -1) {
-        latestChanges = contentAfterHeader.substring(0, endIndex);
+    const changelogPath = path.join(foundRootDir, 'changelog.md');
+    if (fs.existsSync(changelogPath)) {
+      const changelogContent = fs.readFileSync(changelogPath, 'utf8');
+      
+      // Tìm section của version mới nhất. Format: ## [x.x.x]
+      const versionHeader = `## [${version}]`;
+      const startIndex = changelogContent.indexOf(versionHeader);
+      
+      let latestChanges = '';
+      if (startIndex !== -1) {
+        const contentAfterHeader = changelogContent.substring(startIndex + versionHeader.length);
+        const endIndex = contentAfterHeader.indexOf('## [');
+        if (endIndex !== -1) {
+          latestChanges = contentAfterHeader.substring(0, endIndex);
+        } else {
+          latestChanges = contentAfterHeader;
+        }
       } else {
-        latestChanges = contentAfterHeader;
+        latestChanges = changelogContent; 
       }
-    } else {
-      latestChanges = changelogContent; 
+      changelogHTML = latestChanges.trim();
     }
-    changelogHTML = latestChanges.trim(); // Chúng ta sẽ parse markdown bằng marked ở component
   } catch (error) {
     console.warn('Could not read changelog.md', error);
+  }
+
+  if (!changelogHTML) {
+    changelogHTML = `### Bản cập nhật v2.1.6
+- **Sửa lỗi chính tả toàn diện trong thư viện bài hát (\`data/songs.json\`):** Rà soát toàn bộ 294 bài hát và hiệu đính 223 lỗi dấu câu chuẩn xác.
+- **Tách slide tự động với Enter 2 lần:** Nhấn Enter lần 2 trên dòng trống để tạo ngay slide mới mà không cần thao tác chuột.
+- **Kéo thả hoán đổi vị trí slide (Drag & Drop):** Tự do sắp xếp thứ tự các khổ thơ trong bài hát trực quan.
+- **Tối ưu trải nghiệm soạn thảo Rich Text & cỡ chữ:** Giữ khung soạn thảo chuẩn mực, đồng bộ hoàn hảo với màn hình xem trước và máy chiếu.
+- **Đồng bộ tắt ứng dụng và Live Screen:** Thoát sạch sẽ toàn màn hình phụ trên macOS và Windows khi tắt app.`;
   }
 
   return {

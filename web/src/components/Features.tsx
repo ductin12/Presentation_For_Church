@@ -3,40 +3,40 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Layout, BookOpen, Layers, MonitorPlay, Sparkles, Gift } from "lucide-react";
+import { FileEdit, BookOpen, Tv, Sparkles, Library, Gift } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const features = [
   {
-    icon: <Layout className="w-6 h-6 text-blue-400" />,
-    title: "Quản lý Bài Hát Dễ Dàng",
-    description: "Thêm, sửa và tìm kiếm bài hát cực kỳ nhanh chóng. Dễ dàng lưu trữ và chia sẻ kho lời nhạc của Hội Thánh chỉ với vài thao tác."
+    icon: <FileEdit className="w-6 h-6 text-blue-400" />,
+    title: "Soạn Thảo Bài Hát & Rich Text",
+    description: "Tô màu, đổi font/cỡ chữ, in đậm nghiêng linh hoạt. Kéo thả (Drag & Drop) đổi vị trí slide và nhấn Enter 2 lần tự động ngắt khổ mới cực kỳ tiện lợi."
   },
   {
-    icon: <BookOpen className="w-6 h-6 text-purple-400" />,
-    title: "Kinh Thánh Thông Minh",
-    description: "Tra cứu siêu tốc nhiều bản dịch Kinh Thánh. Màn hình tự động cuộn nhịp nhàng theo câu chữ, giúp hội chúng dễ dàng theo dõi lời Chúa."
+    icon: <Library className="w-6 h-6 text-emerald-400" />,
+    title: "Kho 290+ Bài Hát Chuẩn Chính Tả",
+    description: "Thư viện thánh ca phong phú đã được rà soát và hiệu đính lỗi chính tả tiếng Việt tỉ mỉ từng dấu câu, sẵn sàng thờ phượng ngay mà không lo sai từ."
   },
   {
-    icon: <Layers className="w-6 h-6 text-emerald-400" />,
-    title: "Giao Diện Đẹp Mắt, Sẵn Sàng",
-    description: "Cung cấp nhiều mẫu trình chiếu tuyệt đẹp. Bạn có thể thoải mái tùy chỉnh phông chữ, màu sắc và hình nền cho phù hợp với phong cách của Hội Thánh."
+    icon: <Tv className="w-6 h-6 text-purple-400" />,
+    title: "Live Screen Đồng Bộ 2 Màn Hình",
+    description: "Xuất tín hiệu ra máy chiếu/TV phụ độc lập với bảng điều khiển. Tự động đồng bộ tắt bật triệt để trên cả macOS và Windows khi thoát ứng dụng."
   },
   {
-    icon: <Sparkles className="w-6 h-6 text-amber-400" />,
-    title: "Trình Chiếu Hình Ảnh & Video Mượt Mà",
-    description: "Thêm hình ảnh, video vào danh sách trình chiếu một cách trơn tru. Hệ thống xử lý thông minh đảm bảo không bao giờ gây giật lag khi đang nhóm lại."
+    icon: <BookOpen className="w-6 h-6 text-amber-400" />,
+    title: "Tra Cứu Kinh Thánh Siêu Tốc",
+    description: "Tìm kiếm nhanh các phân đoạn Kinh Thánh theo sách, chương, câu. Giao diện hiển thị trang trọng, dễ đọc cho toàn thể hội chúng."
   },
   {
-    icon: <MonitorPlay className="w-6 h-6 text-rose-400" />,
-    title: "Hỗ Trợ Mọi Loại Máy Tính",
-    description: "Dù Hội Thánh đang sử dụng máy tính Windows đời cũ hay MacBook mới nhất, ứng dụng đều hoạt động cực kỳ mượt mà và ổn định."
+    icon: <Sparkles className="w-6 h-6 text-rose-400" />,
+    title: "Hình Ảnh & Video Nền Mượt Mà",
+    description: "Tích hợp video nền chuyển động và hình ảnh chủ đề phong phú. Cơ chế giải mã tối ưu giúp chuyển slide mượt mà, không bao giờ giật lag."
   },
   {
     icon: <Gift className="w-6 h-6 text-pink-400" />,
-    title: "Hoàn Toàn Miễn Phí",
-    description: "Sứ mệnh của chúng tôi là phục vụ cộng đồng. Trải nghiệm trọn vẹn mọi tính năng chuyên nghiệp nhất mà không yêu cầu bất kỳ khoản phí nào."
+    title: "Đa Nền Tảng & 100% Miễn Phí",
+    description: "Hỗ trợ đầy đủ macOS (Apple Silicon & Intel) và Windows (Setup & Portable USB). Dự án phụng sự cộng đồng, hoàn toàn miễn phí mãi mãi."
   }
 ];
 

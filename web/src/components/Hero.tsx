@@ -121,12 +121,10 @@ export default function Hero({ version }: HeroProps) {
 
         <div className="hero-element flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
-            href="https://github.com/ductin12/Presentation_For_Church/releases/latest"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#download"
             className="px-8 py-4 rounded-xl bg-white text-black font-semibold hover:scale-105 transition-transform duration-300 shadow-[0_0_40px_rgba(255,255,255,0.3)]"
           >
-            Tải xuống miễn phí
+            Tải xuống miễn phí v{version}
           </a>
           <a
             href="https://github.com/ductin12/Presentation_For_Church"
@@ -134,7 +132,7 @@ export default function Hero({ version }: HeroProps) {
             rel="noopener noreferrer"
             className="px-8 py-4 rounded-xl glass hover:bg-white/10 transition-colors duration-300 font-medium"
           >
-            Xem mã nguồn Github
+            Xem mã nguồn GitHub
           </a>
         </div>
         

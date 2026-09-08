@@ -13,12 +13,15 @@ export default function Footer() {
           &copy; {new Date().getFullYear()} PFC. Đây là dự án cộng đồng miễn phí.
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-gray-400">
+        <div className="flex items-center gap-6 text-sm text-gray-400">
+          <a href="#download" className="hover:text-white text-emerald-400 transition-colors">
+            Tải về ứng dụng
+          </a>
           <a href="https://github.com/ductin12/Presentation_For_Church/issues" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-            Báo lỗi
+            Báo lỗi & Góp ý
           </a>
           <a href="https://github.com/ductin12/Presentation_For_Church/releases" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-            Tải về (Releases)
+            Tất cả bản phát hành
           </a>
         </div>
       </div>
