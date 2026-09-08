@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.1.6] - 2026-09-09
+
+### Đã sửa & Cải tiến Toàn diện (Spellcheck, Song Editor Drag-Drop, Double-Enter & Live Screen Sync)
+- **Sửa lỗi chính tả toàn diện trong thư viện bài hát (`data/songs.json`):**
+  - Rà soát toàn bộ 294 bài hát và tự động áp dụng 223 sửa đổi trên 126 bài hát.
+  - Sửa triệt để các lỗi nhầm lẫn dấu hỏi (?) và dấu nặng (.): `lể` -> `lệ` (`rơi lể` -> `rơi lệ`, `giọt lể` -> `giọt lệ`), `nẳn`/`nẳm` -> `nắn`/`nắm` (`nẳn theo ý Ngài` -> `nắn theo ý Ngài`), `biểt riêng` -> `biệt riêng`, `Viểt Nam` -> `Việt Nam`, `mỏi mểt` -> `mỏi mệt`, `Tiểc thánh` -> `Tiệc thánh`, `hiển diện` -> `hiện diện`,...
+  - Sửa các lỗi nhầm dấu hỏi/sắc/ngã: `sung sựớng` -> `sung sướng`, `lửa sựởi ấm` -> `lửa sưởi ấm`, `chiến thẳng` -> `chiến thắng`, `khộ đau` -> `khổ đau`, `hiệm nguy` -> `hiểm nguy`, `sốt sẳng` -> `sốt sắng`, `xấu hộ` -> `xấu hổ`, `thấp sáng` -> `thắp sáng`, `thánh y` -> `Thánh ý`, `dân lên` -> `dâng lên`, `quỳ gối`, `tôn quý`,...
+  - Xóa bỏ ký tự rác từ copy-paste (`?\t`, `n\t`, `Chúaa`, `Giee0xu`, `k cách xa`).
+- **Khôi phục tính năng bấm Enter 2 lần để ngắt Slide mới (Double-Enter New Slide):**
+  - Trong Song Editor, bấm Enter lần 1 xuống dòng, bấm Enter lần 2 trên dòng trống sẽ tự động tách thành một slide/khổ thơ mới và đưa con trỏ ngay vào đầu slide mới.
+- **Kéo thả hoán đổi vị trí các Slide (Drag-and-Drop Slide Reordering):**
+  - Bổ sung khả năng kéo thả trực quan các thẻ slide trong khung soạn thảo để hoán đổi thứ tự (ví dụ kéo slide 3 lên thay slide 2).
+- **Tối ưu trải nghiệm chọn Font-Size trong Song Editor:**
+  - Cỡ chữ trong khung soạn thảo giữ kích thước chuẩn dễ đọc, không bị tràn viền khi chọn font size lớn. Chỉ áp dụng hiển thị kích thước lớn trên khung xem trước và máy chiếu.
+  - Các hiệu ứng rich text (in đậm, in nghiêng, gạch chân, đổi màu,...) đồng bộ hoàn hảo trong cả khung soạn thảo lẫn khung xem trước.
+- **Đồng bộ đóng ứng dụng và tắt màn hình chiếu Live Screen trên macOS & Windows:**
+  - Xử lý dứt điểm tình trạng tắt ứng dụng trên macOS nhưng màn hình phụ chiếu ngoài (Live Screen) không tắt theo.
+  - Bổ sung `safelyDestroyLiveWindow()` thoát toàn màn hình native macOS (`setFullScreen(false)`), gỡ cờ `alwaysOnTop` và hủy sạch sẽ cửa sổ live khi thoát app.
+
 ## [2.1.5] - 2026-09-08
 
 ### Tính năng Mới & Đổi tên Nhận diện Toàn diện (Rich Text Editor & BlessingWorship Rebrand)

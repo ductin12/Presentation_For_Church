@@ -616,32 +616,85 @@
 
         /* Lyrics Editor Styles */
         .lyrics-slide-block {
-            border: 1px dashed #fff;
+            border: 1px solid #e2e8f0;
             background: #fff;
             margin-bottom: 12px;
             padding: 0;
-            border-radius: 2px;
+            border-radius: 4px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: opacity 0.15s, border-color 0.15s, box-shadow 0.15s;
+            position: relative;
+        }
+
+        .lyrics-slide-block.dragging {
+            opacity: 0.4;
+            border: 2px dashed #3b82f6 !important;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+
+        .lyrics-slide-block.drop-above::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #2563eb;
+            z-index: 20;
+        }
+
+        .lyrics-slide-block.drop-below::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #2563eb;
+            z-index: 20;
         }
 
         .lyrics-slide-header {
-            background: #f0f0f0;
-            border-bottom: 1px solid #ddd;
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
             padding: 2px 8px;
-            gap: 8px;
-            height: 24px;
+            gap: 6px;
+            height: 26px;
+            user-select: none;
+            cursor: grab;
+        }
+
+        .lyrics-slide-header:active {
+            cursor: grabbing;
+        }
+
+        .slide-drag-handle {
+            color: #94a3b8;
+            font-size: 16px !important;
+            line-height: 1;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            transition: color 0.15s;
+        }
+
+        .lyrics-slide-header:hover .slide-drag-handle {
+            color: #3b82f6;
         }
 
         .lyrics-slide-num {
             font-size: 10px;
             font-weight: bold;
-            color: #666;
+            color: #64748b;
             width: 15px;
+            user-select: none;
         }
 
         .lyrics-slide-label-input {
@@ -666,8 +719,8 @@
         .lyrics-slide-content {
             padding: 8px 10px;
             outline: none;
-            font-size: 12px;
-            line-height: 1.5;
+            font-size: 13px !important;
+            line-height: 1.5 !important;
             color: #0f172a;
             background: #ffffff;
             min-height: 44px;
@@ -681,18 +734,44 @@
             transition: border-color 0.15s, box-shadow 0.15s;
         }
 
+        .lyrics-slide-content,
+        .lyrics-slide-content * {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            -webkit-text-stroke: 0 !important;
+            text-shadow: none !important;
+        }
+
         .lyrics-slide-content:focus {
             border-color: #3b82f6;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
             background: #f8fafc;
         }
 
-        .lyrics-slide-content i {
-            font-style: italic;
+        .lyrics-slide-content b,
+        .lyrics-slide-content strong {
+            font-weight: bold !important;
+        }
+
+        .lyrics-slide-content i,
+        .lyrics-slide-content em {
+            font-style: italic !important;
         }
 
         .lyrics-slide-content u {
-            text-decoration: underline;
+            text-decoration: underline !important;
+        }
+
+        /* Contrast badge for white or very light text in editor */
+        .lyrics-slide-content [style*="color: #fff"],
+        .lyrics-slide-content [style*="color: #FFF"],
+        .lyrics-slide-content [style*="color: rgb(255, 255, 255)"],
+        .lyrics-slide-content [style*="color: white"],
+        .lyrics-slide-content [style*="color: White"] {
+            background-color: #334155;
+            color: #ffffff !important;
+            border-radius: 2px;
+            padding: 0 2px;
         }
 
         /* Font Size Control */
@@ -1369,7 +1448,7 @@
                 <!-- Formatting Toolbar Row -->
                 <div class="p-1 flex items-center gap-1 bg-white">
                     <select class="h-6 border border-win-border bg-white text-slate-900 text-[11px] px-1 w-44"
-                        id="font-family" onchange="applyFont(this.value)">
+                        id="font-family" onmousedown="saveEditorSelection()" onchange="applyFont(this.value)">
                         <optgroup label="── Windows Fonts ──" disabled></optgroup>
                         <option value="Times New Roman" selected>Times New Roman</option>
                         <option value="Arial">Arial</option>
@@ -1452,11 +1531,11 @@
                     </div>
 
                     <div class="divider-win"></div>
-                    <button class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatDoc('bold')" title="Bold"><span
+                    <button class="toolbar-btn" id="editor-btn-bold" onmousedown="event.preventDefault()" onclick="formatDoc('bold')" title="Bold"><span
                             class="font-bold">B</span></button>
-                    <button class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatDoc('italic')" title="Italic"><span
+                    <button class="toolbar-btn" id="editor-btn-italic" onmousedown="event.preventDefault()" onclick="formatDoc('italic')" title="Italic"><span
                             class="italic font-serif">I</span></button>
-                    <button class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatDoc('underline')" title="Underline"><span
+                    <button class="toolbar-btn" id="editor-btn-underline" onmousedown="event.preventDefault()" onclick="formatDoc('underline')" title="Underline"><span
                             class="underline">U</span></button>
                     <div class="divider-win"></div>
                     <label class="toolbar-btn relative" title="Text Color" onmousedown="saveEditorSelection()">
@@ -1481,7 +1560,7 @@
                             <div class="flex items-center justify-between mb-2 px-1 border-b pb-1">
                                 <span class="text-[10px] font-bold text-slate-600 uppercase">Background Media</span>
                                 <button onclick="clearEditorBackground()"
-                                    class="text-[9px] text-red-500 font-bold hover:underline">CLEAR</button>
+                                     class="text-[9px] text-red-500 font-bold hover:underline">CLEAR</button>
                             </div>
                             <div class="media-picker-grid overflow-y-auto custom-scrollbar p-1" id="editor-media-grid"
                                 style="max-height: 240px;">
@@ -1491,20 +1570,20 @@
                     </div>
                     <div class="divider-win"></div>
                     <div class="flex gap-0.5" id="h-align-group">
-                        <button class="toolbar-btn" onclick="formatDoc('justifyLeft')" title="Align Left"><span
+                        <button class="toolbar-btn" id="editor-btn-align-left" onmousedown="event.preventDefault()" onclick="formatDoc('justifyLeft')" title="Align Left"><span
                                 class="material-symbols-outlined text-sm">format_align_left</span></button>
-                        <button class="toolbar-btn" onclick="formatDoc('justifyCenter')" title="Align Center"><span
+                        <button class="toolbar-btn" id="editor-btn-align-center" onmousedown="event.preventDefault()" onclick="formatDoc('justifyCenter')" title="Align Center"><span
                                 class="material-symbols-outlined text-sm">format_align_center</span></button>
-                        <button class="toolbar-btn" onclick="formatDoc('justifyRight')" title="Align Right"><span
+                        <button class="toolbar-btn" id="editor-btn-align-right" onmousedown="event.preventDefault()" onclick="formatDoc('justifyRight')" title="Align Right"><span
                                 class="material-symbols-outlined text-sm">format_align_right</span></button>
                     </div>
                     <div class="divider-win"></div>
                     <div class="flex gap-0.5" id="v-align-group">
-                        <button class="toolbar-btn" onclick="setVerticalAlign('top')" title="Align Top"><span
+                        <button class="toolbar-btn" id="editor-btn-valign-top" onmousedown="event.preventDefault()" onclick="setVerticalAlign('top')" title="Align Top"><span
                                 class="material-symbols-outlined text-sm">vertical_align_top</span></button>
-                        <button class="toolbar-btn" onclick="setVerticalAlign('middle')" title="Align Middle"><span
+                        <button class="toolbar-btn" id="editor-btn-valign-middle" onmousedown="event.preventDefault()" onclick="setVerticalAlign('middle')" title="Align Middle"><span
                                 class="material-symbols-outlined text-sm">vertical_align_center</span></button>
-                        <button class="toolbar-btn" onclick="setVerticalAlign('bottom')" title="Align Bottom"><span
+                        <button class="toolbar-btn" id="editor-btn-valign-bottom" onmousedown="event.preventDefault()" onclick="setVerticalAlign('bottom')" title="Align Bottom"><span
                                 class="material-symbols-outlined text-sm">vertical_align_bottom</span></button>
                     </div>
                 </div>
@@ -5339,6 +5418,12 @@
         function formatDoc(cmd, val = null) {
             const range = getActiveEditorRange();
             if (range && !range.collapsed) {
+                const container = range.commonAncestorContainer;
+                const el = container.nodeType === 1 ? container : container.parentElement;
+                const editable = el ? el.closest('.lyrics-slide-content, #editor-preview-text') : null;
+                if (editable) {
+                    editable.focus();
+                }
                 switch (cmd) {
                     case 'bold':
                         document.execCommand('bold', false, null);
@@ -5364,9 +5449,6 @@
                         document.execCommand(cmd, false, null);
                         break;
                 }
-                const container = range.commonAncestorContainer;
-                const el = container.nodeType === 1 ? container : container.parentElement;
-                const editable = el ? el.closest('.lyrics-slide-content, #editor-preview-text') : null;
                 if (editable) {
                     syncEditorContentFrom(editable);
                 }
@@ -5416,10 +5498,48 @@
         }
 
         function applyEditorStyle() {
+            if (!editorStyle) return;
             const previewEl = document.getElementById('editor-preview-text');
             if (previewEl) {
                 applyStyleToElement(previewEl, editorStyle);
             }
+
+            // Sync text styling (fontFamily, fontWeight, fontStyle, textDecoration, textAlign, color) to editor slide blocks
+            const editorSlideContents = document.querySelectorAll('.lyrics-slide-content');
+            editorSlideContents.forEach(slideEl => {
+                if (editorStyle.fontFamily) slideEl.style.fontFamily = editorStyle.fontFamily;
+                slideEl.style.fontWeight = editorStyle.fontWeight || 'normal';
+                slideEl.style.fontStyle = editorStyle.fontStyle || 'normal';
+                slideEl.style.textDecoration = editorStyle.textDecoration || 'none';
+                if (editorStyle.textAlign) slideEl.style.textAlign = editorStyle.textAlign;
+                if (editorStyle.color && editorStyle.color !== '#ffffff' && editorStyle.color !== '#fff' && editorStyle.color.toLowerCase() !== 'white') {
+                    slideEl.style.color = editorStyle.color;
+                } else {
+                    slideEl.style.color = '#0f172a';
+                }
+            });
+
+            // Update active states on toolbar buttons
+            const btnBold = document.getElementById('editor-btn-bold');
+            if (btnBold) btnBold.classList.toggle('active', editorStyle.fontWeight === 'bold');
+            const btnItalic = document.getElementById('editor-btn-italic');
+            if (btnItalic) btnItalic.classList.toggle('active', editorStyle.fontStyle === 'italic');
+            const btnUnderline = document.getElementById('editor-btn-underline');
+            if (btnUnderline) btnUnderline.classList.toggle('active', editorStyle.textDecoration === 'underline');
+
+            const btnAlignLeft = document.getElementById('editor-btn-align-left');
+            if (btnAlignLeft) btnAlignLeft.classList.toggle('active', editorStyle.textAlign === 'left');
+            const btnAlignCenter = document.getElementById('editor-btn-align-center');
+            if (btnAlignCenter) btnAlignCenter.classList.toggle('active', editorStyle.textAlign === 'center' || !editorStyle.textAlign);
+            const btnAlignRight = document.getElementById('editor-btn-align-right');
+            if (btnAlignRight) btnAlignRight.classList.toggle('active', editorStyle.textAlign === 'right');
+
+            const btnValignTop = document.getElementById('editor-btn-valign-top');
+            if (btnValignTop) btnValignTop.classList.toggle('active', editorStyle.verticalAlign === 'top');
+            const btnValignMiddle = document.getElementById('editor-btn-valign-middle');
+            if (btnValignMiddle) btnValignMiddle.classList.toggle('active', editorStyle.verticalAlign === 'middle' || !editorStyle.verticalAlign);
+            const btnValignBottom = document.getElementById('editor-btn-valign-bottom');
+            if (btnValignBottom) btnValignBottom.classList.toggle('active', editorStyle.verticalAlign === 'bottom');
 
             // Handle background media in editor preview
             if (editorStyle.background) {
@@ -5696,6 +5816,16 @@
             applyEditorStyle();
         }
 
+        let draggedSlideBlock = null;
+
+        function clearSlideDropIndicators() {
+            const container = document.getElementById('lyrics-editor-container');
+            if (!container) return;
+            container.querySelectorAll('.lyrics-slide-block').forEach(b => {
+                b.classList.remove('drop-above', 'drop-below');
+            });
+        }
+
         function renderLyricsEditor(text) {
             const container = document.getElementById('lyrics-editor-container');
             container.innerHTML = '';
@@ -5714,16 +5844,35 @@
                     updateEditorPreview(contentDiv.innerHTML);
                 }
             }
+
+            container.ondragover = (e) => {
+                if (!draggedSlideBlock) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            };
+            container.ondrop = (e) => {
+                if (!draggedSlideBlock) return;
+                if (e.target === container) {
+                    container.appendChild(draggedSlideBlock);
+                    clearSlideDropIndicators();
+                    reindexSlides();
+                    currentActiveSlideBlock = draggedSlideBlock;
+                    const activeContent = draggedSlideBlock.querySelector('.lyrics-slide-content');
+                    if (activeContent) {
+                        updateEditorPreview(activeContent.innerHTML);
+                    }
+                }
+            };
         }
 
-        function addSlideToEditor(content, index, focus = false) {
+        function addSlideToEditor(content, index, focus = false, sourceBlock = null) {
             const container = document.getElementById('lyrics-editor-container');
             const block = document.createElement('div');
             block.className = 'lyrics-slide-block';
 
-            const lines = content.split('\n');
+            const lines = (content || '').split('\n');
             let label = '';
-            let body = content;
+            let body = content || '';
 
             // Simple label detection or use first line as label if bolded later
             const firstLine = lines[0].trim();
@@ -5732,16 +5881,95 @@
                 body = lines.slice(1).join('\n');
             }
 
+            const bodyHtml = body ? body.replace(/\n/g, '<br>') : '<br>';
+
             block.innerHTML = `
             <div class="lyrics-slide-header">
+                <span class="material-symbols-outlined slide-drag-handle" title="Kéo để thay đổi thứ tự slide">drag_indicator</span>
                 <div class="lyrics-slide-num">${index + 1}</div>
                 <input class="lyrics-slide-label-input" placeholder="Nhãn (vd: Điệp khúc, Đoạn 1)..." value="${label}" spellcheck="false" title="Nhãn phân đoạn (tùy chọn)">
             </div>
-            <div class="lyrics-slide-content" contenteditable="true" spellcheck="false">${body.replace(/\n/g, '<br>')}</div>
+            <div class="lyrics-slide-content" contenteditable="true" spellcheck="false">${bodyHtml}</div>
         `;
 
             const contentDiv = block.querySelector('.lyrics-slide-content');
             const labelInput = block.querySelector('.lyrics-slide-label-input');
+
+            // Drag and Drop reordering for slide blocks
+            block.draggable = true;
+
+            block.addEventListener('dragstart', (e) => {
+                if (e.target.closest('.lyrics-slide-content') || e.target.closest('input')) {
+                    e.preventDefault();
+                    return;
+                }
+                draggedSlideBlock = block;
+                block.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', '');
+            });
+
+            block.addEventListener('dragend', () => {
+                draggedSlideBlock = null;
+                block.classList.remove('dragging');
+                clearSlideDropIndicators();
+            });
+
+            block.addEventListener('dragover', (e) => {
+                if (!draggedSlideBlock || draggedSlideBlock === block) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                const rect = block.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                clearSlideDropIndicators();
+
+                if (e.clientY < midY) {
+                    block.classList.add('drop-above');
+                } else {
+                    block.classList.add('drop-below');
+                }
+            });
+
+            block.addEventListener('dragleave', (e) => {
+                if (!block.contains(e.relatedTarget)) {
+                    block.classList.remove('drop-above', 'drop-below');
+                }
+            });
+
+            block.addEventListener('drop', (e) => {
+                if (!draggedSlideBlock || draggedSlideBlock === block) return;
+                e.preventDefault();
+                e.stopPropagation();
+
+                const rect = block.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                clearSlideDropIndicators();
+
+                if (e.clientY < midY) {
+                    container.insertBefore(draggedSlideBlock, block);
+                } else {
+                    container.insertBefore(draggedSlideBlock, block.nextSibling);
+                }
+
+                reindexSlides();
+                currentActiveSlideBlock = draggedSlideBlock;
+                const activeContent = draggedSlideBlock.querySelector('.lyrics-slide-content');
+                if (activeContent) {
+                    updateEditorPreview(activeContent.innerHTML);
+                }
+            });
+
+            if (editorStyle) {
+                if (editorStyle.fontFamily) contentDiv.style.fontFamily = editorStyle.fontFamily;
+                contentDiv.style.fontWeight = editorStyle.fontWeight || 'normal';
+                contentDiv.style.fontStyle = editorStyle.fontStyle || 'normal';
+                contentDiv.style.textDecoration = editorStyle.textDecoration || 'none';
+                if (editorStyle.textAlign) contentDiv.style.textAlign = editorStyle.textAlign;
+                if (editorStyle.color && editorStyle.color !== '#ffffff' && editorStyle.color !== '#fff' && editorStyle.color.toLowerCase() !== 'white') {
+                    contentDiv.style.color = editorStyle.color;
+                }
+            }
 
             block.onclick = () => {
                 currentActiveSlideBlock = block;
@@ -5777,23 +6005,58 @@
 
             contentDiv.onkeydown = (e) => {
                 if (e.key === 'Enter') {
+                    if (e.shiftKey) {
+                        lastEnterTime = 0;
+                        return; // Shift+Enter allows newline without slide split
+                    }
+
                     const now = Date.now();
-                    if (e.ctrlKey || (now - lastEnterTime < 400)) {
+                    const isDoubleEnter = (lastEnterTime > 0 && (now - lastEnterTime < 2500));
+                    const isExplicitSplit = (e.ctrlKey || e.metaKey);
+                    const isAtEmpty = isCursorAtEmptyLine(contentDiv);
+
+                    if (isDoubleEnter || isExplicitSplit || isAtEmpty) {
                         e.preventDefault();
-                        // Find current index dynamically
-                        const currentIndex = Array.from(container.children).indexOf(block);
-                        splitSlide(contentDiv, currentIndex);
+                        e.stopPropagation();
+                        splitSlide(block, contentDiv);
                         lastEnterTime = 0;
                         return;
                     }
+
                     lastEnterTime = now;
-                    // Default behavior (Enter) adds a line within block
+                } else if (e.key === 'Backspace') {
+                    lastEnterTime = 0;
+                    if (contentDiv.innerText.trim() === '' && container.children.length > 1) {
+                        const currentIndex = Array.from(container.children).indexOf(block);
+                        if (currentIndex > 0) {
+                            e.preventDefault();
+                            const prevBlock = container.children[currentIndex - 1];
+                            const prevContent = prevBlock.querySelector('.lyrics-slide-content');
+                            block.remove();
+                            reindexSlides();
+                            if (prevContent) {
+                                currentActiveSlideBlock = prevBlock;
+                                prevContent.focus();
+                                const sel = window.getSelection();
+                                const r = document.createRange();
+                                r.selectNodeContents(prevContent);
+                                r.collapse(false);
+                                sel.removeAllRanges();
+                                sel.addRange(r);
+                                updateEditorPreview(prevContent.innerHTML);
+                            }
+                            return;
+                        }
+                    }
+                } else {
+                    lastEnterTime = 0;
                 }
             };
 
             // Insert block into container
-            if (focus && index > 0 && container.children[index - 1]) {
-                // Splitting: insert AFTER the source block (index - 1)
+            if (sourceBlock && sourceBlock.parentNode === container) {
+                sourceBlock.after(block);
+            } else if (focus && index > 0 && container.children[index - 1]) {
                 container.children[index - 1].after(block);
             } else if (index < container.children.length) {
                 container.insertBefore(block, container.children[index]);
@@ -5801,36 +6064,118 @@
                 container.appendChild(block);
             }
 
+            reindexSlides();
+
             if (focus) {
-                contentDiv.focus();
+                currentActiveSlideBlock = block;
+                block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                const focusNewBlock = () => {
+                    contentDiv.focus();
+                    try {
+                        const sel = window.getSelection();
+                        const r = document.createRange();
+                        if (contentDiv.childNodes.length === 0 || (contentDiv.childNodes.length === 1 && contentDiv.firstChild.nodeName === 'BR')) {
+                            r.setStart(contentDiv, 0);
+                            r.collapse(true);
+                        } else {
+                            r.selectNodeContents(contentDiv);
+                            r.collapse(false);
+                        }
+                        sel.removeAllRanges();
+                        sel.addRange(r);
+                        savedEditorSelection = r.cloneRange();
+                    } catch (err) {}
+                    updateEditorPreview(contentDiv.innerHTML);
+                };
+                focusNewBlock();
+                setTimeout(focusNewBlock, 15);
             }
 
-            reindexSlides();
+            return block;
         }
 
-        function splitSlide(contentDiv, index) {
+        function isCursorAtEmptyLine(contentDiv) {
+            if (!contentDiv) return false;
             const sel = window.getSelection();
-            if (!sel.rangeCount) {
-                addSlideToEditor("", index + 1, true);
-                return;
+            if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return false;
+            const range = sel.getRangeAt(0);
+            if (!contentDiv.contains(range.startContainer)) return false;
+
+            try {
+                const preRange = document.createRange();
+                preRange.selectNodeContents(contentDiv);
+                preRange.setEnd(range.startContainer, range.startOffset);
+                const preText = preRange.toString();
+
+                const postRange = document.createRange();
+                postRange.selectNodeContents(contentDiv);
+                postRange.setStart(range.startContainer, range.startOffset);
+                const postText = postRange.toString();
+
+                const lastPreChar = preText.slice(-1);
+                const firstPostChar = postText.charAt(0);
+
+                const isPreLineEmpty = (preText === '' || lastPreChar === '\n' || lastPreChar === '\r');
+                const isPostLineEmpty = (postText === '' || firstPostChar === '\n' || firstPostChar === '\r');
+
+                return (isPreLineEmpty && isPostLineEmpty && preText.length > 0);
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function splitSlide(sourceBlock, contentDiv) {
+            const container = document.getElementById('lyrics-editor-container');
+            if (!container || !sourceBlock || !contentDiv) return null;
+
+            const sel = window.getSelection();
+            let afterHtml = "";
+
+            if (sel && sel.rangeCount > 0) {
+                try {
+                    const range = sel.getRangeAt(0);
+                    if (contentDiv.contains(range.startContainer)) {
+                        const afterRange = document.createRange();
+                        afterRange.setStart(range.startContainer, range.startOffset);
+                        if (contentDiv.lastChild) {
+                            afterRange.setEndAfter(contentDiv.lastChild);
+                        } else {
+                            afterRange.setEnd(contentDiv, contentDiv.childNodes.length);
+                        }
+                        const afterFragment = afterRange.extractContents();
+                        const tempDiv = document.createElement('div');
+                        tempDiv.appendChild(afterFragment);
+                        afterHtml = tempDiv.innerHTML;
+                    }
+                } catch (e) {
+                    console.warn('Range extraction in splitSlide failed:', e);
+                }
             }
 
-            const range = sel.getRangeAt(0);
+            // Remove trailing line break / spaces from current slide created by first Enter
+            let cleanCurrent = contentDiv.innerHTML
+                .replace(/(<br\s*\/?>|\s|&nbsp;)+$/gi, '')
+                .trim();
+            if (!cleanCurrent) cleanCurrent = '<br>';
+            contentDiv.innerHTML = cleanCurrent;
 
-            // Get content after cursor
-            const afterRange = document.createRange();
-            afterRange.setStart(range.startContainer, range.startOffset);
-            afterRange.setEndAfter(contentDiv.lastChild || contentDiv);
-            const afterFragment = afterRange.extractContents();
-            const tempDiv = document.createElement('div');
-            tempDiv.appendChild(afterFragment);
-            const afterText = tempDiv.innerHTML.trim();
+            // Remove leading line break from the new slide content
+            afterHtml = (afterHtml || '')
+                .replace(/^(<br\s*\/?>|\s|&nbsp;)+/gi, '')
+                .trim();
 
-            // Update current slide preview
-            updateEditorPreview(contentDiv.innerHTML);
+            // Find current index
+            const currentIndex = Array.from(container.children).indexOf(sourceBlock);
 
-            // Add new slide with the extracted content
-            addSlideToEditor(afterText, index + 1, true);
+            // Add new slide right after sourceBlock with the extracted content and focus it
+            const newBlock = addSlideToEditor(afterHtml, currentIndex + 1, true, sourceBlock);
+
+            const newContentDiv = newBlock ? newBlock.querySelector('.lyrics-slide-content') : null;
+            if (newContentDiv) {
+                updateEditorPreview(newContentDiv.innerHTML);
+            }
+
+            return newBlock;
         }
 
         function serializeSlideContent(contentDiv) {
@@ -6252,6 +6597,35 @@
         function setupEditorPreviewSync() {
             const previewEl = document.getElementById('editor-preview-text');
             if (!previewEl) return;
+            let previewLastEnterTime = 0;
+
+            previewEl.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    if (e.shiftKey) {
+                        previewLastEnterTime = 0;
+                        return;
+                    }
+                    const now = Date.now();
+                    const isDoubleEnter = (previewLastEnterTime > 0 && (now - previewLastEnterTime < 2500));
+                    const isExplicitSplit = (e.ctrlKey || e.metaKey);
+                    const isAtEmpty = isCursorAtEmptyLine(previewEl);
+
+                    if (currentActiveSlideBlock && (isDoubleEnter || isExplicitSplit || isAtEmpty)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const slideContent = currentActiveSlideBlock.querySelector('.lyrics-slide-content');
+                        if (slideContent) {
+                            splitSlide(currentActiveSlideBlock, slideContent);
+                        }
+                        previewLastEnterTime = 0;
+                        return;
+                    }
+                    previewLastEnterTime = now;
+                } else {
+                    previewLastEnterTime = 0;
+                }
+            };
+
             previewEl.oninput = () => {
                 if (currentActiveSlideBlock) {
                     const contentDiv = currentActiveSlideBlock.querySelector('.lyrics-slide-content');

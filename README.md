@@ -48,7 +48,14 @@ Bạn có thể tải ngay bộ cài đặt tương ứng với hệ điều hà
 
 > 💡 *Để xem toàn bộ chi tiết mã nguồn và lịch sử phát triển, vui lòng xem tệp [`changelog.md`](changelog.md).*
 
-### ✨ [2.1.5] - 2026-09-08
+### ✨ [2.1.6] - 2026-09-09
+- **Sửa lỗi chính tả toàn diện thư viện bài hát:** Rà soát và sửa 223 lỗi chính tả dấu hỏi/nặng/sắc/ngã trên 126 bài hát trong `data/songs.json`, xóa ký tự rác copy-paste.
+- **Tạo slide mới bằng 2 lần Enter:** Tự động ngắt khổ thơ mới khi ấn Enter hai lần trong khung soạn thảo bài hát.
+- **Kéo thả hoán đổi slide (Drag & Drop):** Hỗ trợ kéo thả chuột trực tiếp để thay đổi vị trí các khổ thơ trong bài hát.
+- **Tối ưu hiển thị Font-Size khung soạn thảo:** Giữ cỡ chữ khung edit vừa vặn không bị tràn, hiển thị phóng to trung thực trên preview & máy chiếu.
+- **Đồng bộ tắt Live Screen khi đóng app:** Tự động thoát full-screen và hủy cửa sổ chiếu ngoài sạch sẽ trên macOS & Windows khi đóng ứng dụng.
+
+### 🚀 [2.1.5] - 2026-09-08
 - **Định dạng Rich Text độc lập từng ký tự, từng chữ và từng dòng (Word-Style):** Chỉnh sửa cỡ chữ, phông chữ, in đậm, in nghiêng, gạch chân và màu sắc riêng biệt cho từng đoạn bôi đen trong Song Editor. Tự động đồng bộ với màn hình Live và máy chiếu.
 - **Đổi tên nhận diện BlessingWorship:** Cập nhật toàn diện sang `blessingworship-app` kèm tính năng Auto-Migration tự động sao chép bảo toàn dữ liệu từ `easyworship-app` cũ.
 - **Quy chuẩn phát hành mới:** Thêm bước xác nhận người dùng trước khi build và phát hành release.

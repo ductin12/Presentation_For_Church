@@ -918,6 +918,50 @@ function initializeData() {
   }
 }
 
+function safelyDestroyLiveWindow() {
+  if (liveBoundsSaveTimer) {
+    clearTimeout(liveBoundsSaveTimer);
+    liveBoundsSaveTimer = null;
+  }
+  if (liveWindowSyncTimer) {
+    clearTimeout(liveWindowSyncTimer);
+    liveWindowSyncTimer = null;
+  }
+  if (!liveWindow || liveWindow.isDestroyed()) {
+    liveWindow = null;
+    liveWindowTargetDisplayId = null;
+    return;
+  }
+  try {
+    liveWindow.removeAllListeners();
+    if (process.platform === 'darwin') {
+      try {
+        if (liveWindow.isFullScreen()) {
+          liveWindow.setFullScreen(false);
+        }
+      } catch (e) {}
+      try {
+        liveWindow.setAlwaysOnTop(false);
+        liveWindow.setVisibleOnAllWorkspaces(false);
+      } catch (e) {}
+    }
+    try {
+      liveWindow.hide();
+    } catch (e) {}
+    liveWindow.destroy();
+  } catch (err) {
+    console.error('Error safely destroying liveWindow:', err);
+  } finally {
+    liveWindow = null;
+    liveWindowTargetDisplayId = null;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try {
+        mainWindow.webContents.send('live-window-closed');
+      } catch (e) {}
+    }
+  }
+}
+
 function createLiveWindow(initialBounds = null) {
   if (liveWindow) {
     if (initialBounds) {
@@ -1047,20 +1091,17 @@ function createWindow() {
     win.show();
   });
 
-  // When the main window is closed, also destroy the live (presentation) window.
-  // On Windows, 'window-all-closed' only fires when ALL BrowserWindows are closed.
-  // Without this, closing the main window leaves liveWindow alive, so the app
-  // never quits and the presentation screen stays visible.
+  // When the main window is closing, also cleanly destroy the live (presentation) window.
+  win.on('close', () => {
+    safelyDestroyLiveWindow();
+  });
+
+  // When the main window is closed, ensure liveWindow is gone and quit the entire app.
   win.on('closed', () => {
     mainWindow = null;
     flushLiveWindowBounds();
-    if (liveWindowSyncTimer) {
-      clearTimeout(liveWindowSyncTimer);
-      liveWindowSyncTimer = null;
-    }
-    if (liveWindow && !liveWindow.isDestroyed()) {
-      liveWindow.destroy();
-    }
+    safelyDestroyLiveWindow();
+    app.quit();
   });
 }
 
@@ -1963,7 +2004,7 @@ app.whenReady().then(() => {
         persistLiveWindowBounds(liveWindow.getBounds());
         flushLiveWindowBounds();
       }
-      liveWindow.destroy();
+      safelyDestroyLiveWindow();
     }
     return true;
   });
@@ -1984,6 +2025,7 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('quit-app', () => {
+    safelyDestroyLiveWindow();
     app.quit();
     return true;
   });
@@ -2053,7 +2095,11 @@ app.whenReady().then(() => {
 });
 
 
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+app.on('window-all-closed', () => {
+  safelyDestroyLiveWindow();
+  app.quit();
+});
+
 app.on('activate', () => {
   if (!app.isReady()) return;
   if (BrowserWindow.getAllWindows().length === 0) {
@@ -2064,16 +2110,18 @@ app.on('activate', () => {
     mainWindow.focus();
   }
 });
+
 app.on('before-quit', () => {
   flushLiveWindowBounds();
-  if (liveWindowSyncTimer) {
-    clearTimeout(liveWindowSyncTimer);
-    liveWindowSyncTimer = null;
-  }
-  if (liveWindow && !liveWindow.isDestroyed()) {
-    liveWindow.destroy();
-  }
+  safelyDestroyLiveWindow();
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.destroy();
+    try {
+      mainWindow.destroy();
+    } catch (e) {}
+    mainWindow = null;
   }
+});
+
+app.on('will-quit', () => {
+  safelyDestroyLiveWindow();
 });
