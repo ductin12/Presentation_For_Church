@@ -2,6 +2,22 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.1.7] - 2026-09-09
+
+### Tính năng Mới & Cải tiến (Song Editor Block Management & Website Hub)
+- **Thêm nút `-` (xóa block) trong khung soạn thảo bài hát (Song Editor):**
+  - Bổ sung nút `[-]` ở thanh công cụ đáy bên cạnh nút `[+]`, cho phép xóa nhanh block slide đang được chọn.
+  - Tích hợp nút `-` (`.slide-delete-btn`) trực tiếp trên thanh tiêu đề của từng block slide với hiệu ứng hover trực quan, cho phép xóa nhanh bất kỳ slide nào bằng 1 click chuột.
+  - Nâng cấp nút `[+]` với hàm `addNewSlideBlock()` cho phép chèn slide mới ngay sau vị trí slide đang chọn thay vì chỉ ở cuối.
+- **Tối ưu trải nghiệm chọn & xóa slide (Active State & Reindexing):**
+  - Bổ sung viền sáng màu xanh dương và tiêu đề nổi bật (`.lyrics-slide-block.active`) giúp nhận diện chính xác slide đang thao tác.
+  - Cơ chế tự động đánh lại số thứ tự (reindexing) tức thì cho tất cả các slide còn lại sau khi xóa.
+  - Tự động chuyển tiêu điểm (focus) và đồng bộ khung xem trước (Preview) sang slide kế tiếp hoặc slide trước đó.
+  - Cơ chế bảo vệ slide cuối cùng: làm rỗng nội dung nếu chỉ còn 1 slide để tiếp tục soạn thảo mượt mà.
+- **Nâng cấp và đồng bộ Trung tâm tải về trên Website chính thức (`web/`):**
+  - Tích hợp khu vực Tải về (Download Hub) trực tiếp 4 bản cài đặt cho macOS và Windows với 1-click download.
+  - Tối ưu SEO, OpenGraph metadata chia sẻ mạng xã hội và cập nhật danh mục tính năng nổi bật.
+
 ## [2.1.6] - 2026-09-09
 
 ### Đã sửa & Cải tiến Toàn diện (Spellcheck, Song Editor Drag-Drop, Double-Enter & Live Screen Sync)

@@ -629,6 +629,15 @@
             position: relative;
         }
 
+        .lyrics-slide-block.active {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 1px #3b82f6, 0 2px 6px rgba(59, 130, 246, 0.18) !important;
+        }
+
+        .lyrics-slide-block.active .lyrics-slide-header {
+            background: #e0f2fe;
+        }
+
         .lyrics-slide-block.dragging {
             opacity: 0.4;
             border: 2px dashed #3b82f6 !important;
@@ -714,6 +723,34 @@
         .lyrics-slide-label-input:focus {
             background: #ffffff;
             border-color: #94a3b8;
+        }
+
+        .slide-delete-btn {
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 0;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #94a3b8;
+            margin-left: auto;
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+
+        .slide-delete-btn:hover {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .slide-delete-btn .material-symbols-outlined {
+            font-size: 15px !important;
+            line-height: 1;
         }
 
         .lyrics-slide-content {
@@ -1603,10 +1640,15 @@
                     <div class="flex-1 p-3 overflow-y-auto bg-white custom-scrollbar" id="lyrics-editor-container">
                         <!-- Slides will be injected here -->
                     </div>
-                    <div class="h-8 border-t border-win-border bg-[#f0f0f0] flex items-center px-1">
-                        <button class="w-6 h-6 flex items-center justify-center hover:bg-slate-200"
-                            onclick="addSlideToEditor('', document.getElementById('lyrics-editor-container').children.length, true)"><span
+                    <div class="h-8 border-t border-win-border bg-[#f0f0f0] flex items-center px-1 gap-1">
+                        <button class="w-6 h-6 flex items-center justify-center hover:bg-slate-200 text-slate-700 rounded transition-colors"
+                            title="Thêm block mới (+)"
+                            onclick="addNewSlideBlock()"><span
                                 class="material-symbols-outlined text-sm">add</span></button>
+                        <button class="w-6 h-6 flex items-center justify-center hover:bg-slate-200 text-slate-700 hover:text-red-600 rounded transition-colors"
+                            title="Xóa block đang chọn (-)"
+                            onclick="removeActiveSlideBlock()"><span
+                                class="material-symbols-outlined text-sm">remove</span></button>
                     </div>
                 </aside>
                 <!-- Right Preview -->
@@ -5817,6 +5859,7 @@
         }
 
         let draggedSlideBlock = null;
+        let currentActiveSlideBlock = null;
 
         function clearSlideDropIndicators() {
             const container = document.getElementById('lyrics-editor-container');
@@ -5824,6 +5867,85 @@
             container.querySelectorAll('.lyrics-slide-block').forEach(b => {
                 b.classList.remove('drop-above', 'drop-below');
             });
+        }
+
+        function setActiveSlideBlock(block) {
+            const container = document.getElementById('lyrics-editor-container');
+            if (!container) return;
+            container.querySelectorAll('.lyrics-slide-block').forEach(b => b.classList.remove('active'));
+            if (block && block.parentNode === container) {
+                block.classList.add('active');
+                currentActiveSlideBlock = block;
+                const contentDiv = block.querySelector('.lyrics-slide-content');
+                if (contentDiv) {
+                    updateEditorPreview(contentDiv.innerHTML);
+                }
+            } else {
+                currentActiveSlideBlock = null;
+            }
+        }
+
+        function addNewSlideBlock() {
+            const container = document.getElementById('lyrics-editor-container');
+            if (!container) return;
+            const allBlocks = Array.from(container.querySelectorAll('.lyrics-slide-block'));
+            let insertIndex = allBlocks.length;
+            let sourceBlock = null;
+            if (currentActiveSlideBlock && currentActiveSlideBlock.parentNode === container) {
+                sourceBlock = currentActiveSlideBlock;
+                insertIndex = allBlocks.indexOf(currentActiveSlideBlock) + 1;
+            }
+            addSlideToEditor('', insertIndex, true, sourceBlock);
+        }
+
+        function removeActiveSlideBlock(blockToRemove = null) {
+            const container = document.getElementById('lyrics-editor-container');
+            if (!container) return;
+
+            const targetBlock = blockToRemove || currentActiveSlideBlock || container.lastElementChild;
+            if (!targetBlock) return;
+
+            const allBlocks = Array.from(container.querySelectorAll('.lyrics-slide-block'));
+            if (allBlocks.length <= 1) {
+                // Nếu chỉ còn 1 block duy nhất, làm rỗng nội dung để người dùng tiếp tục gõ
+                const contentDiv = targetBlock.querySelector('.lyrics-slide-content');
+                const labelInput = targetBlock.querySelector('.lyrics-slide-label-input');
+                if (contentDiv) contentDiv.innerHTML = '<br>';
+                if (labelInput) labelInput.value = '';
+                setActiveSlideBlock(targetBlock);
+                if (contentDiv) contentDiv.focus();
+                return;
+            }
+
+            const targetIndex = allBlocks.indexOf(targetBlock);
+            let nextActiveBlock = null;
+            if (targetIndex < allBlocks.length - 1) {
+                nextActiveBlock = allBlocks[targetIndex + 1];
+            } else if (targetIndex > 0) {
+                nextActiveBlock = allBlocks[targetIndex - 1];
+            }
+
+            targetBlock.remove();
+            reindexSlides();
+
+            if (nextActiveBlock) {
+                setActiveSlideBlock(nextActiveBlock);
+                const nextContent = nextActiveBlock.querySelector('.lyrics-slide-content');
+                if (nextContent) nextContent.focus();
+            } else {
+                currentActiveSlideBlock = null;
+            }
+        }
+
+        function deleteSlideBlock(e, btn) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const block = btn.closest('.lyrics-slide-block');
+            if (block) {
+                removeActiveSlideBlock(block);
+            }
         }
 
         function renderLyricsEditor(text) {
@@ -5838,11 +5960,7 @@
                 addSlideToEditor(content, index);
             });
             if (container.firstElementChild) {
-                currentActiveSlideBlock = container.firstElementChild;
-                const contentDiv = currentActiveSlideBlock.querySelector('.lyrics-slide-content');
-                if (contentDiv) {
-                    updateEditorPreview(contentDiv.innerHTML);
-                }
+                setActiveSlideBlock(container.firstElementChild);
             }
 
             container.ondragover = (e) => {
@@ -5856,11 +5974,7 @@
                     container.appendChild(draggedSlideBlock);
                     clearSlideDropIndicators();
                     reindexSlides();
-                    currentActiveSlideBlock = draggedSlideBlock;
-                    const activeContent = draggedSlideBlock.querySelector('.lyrics-slide-content');
-                    if (activeContent) {
-                        updateEditorPreview(activeContent.innerHTML);
-                    }
+                    setActiveSlideBlock(draggedSlideBlock);
                 }
             };
         }
@@ -5888,6 +6002,9 @@
                 <span class="material-symbols-outlined slide-drag-handle" title="Kéo để thay đổi thứ tự slide">drag_indicator</span>
                 <div class="lyrics-slide-num">${index + 1}</div>
                 <input class="lyrics-slide-label-input" placeholder="Nhãn (vd: Điệp khúc, Đoạn 1)..." value="${label}" spellcheck="false" title="Nhãn phân đoạn (tùy chọn)">
+                <button type="button" class="slide-delete-btn" title="Xóa block này (-)" onclick="deleteSlideBlock(event, this)">
+                    <span class="material-symbols-outlined">remove</span>
+                </button>
             </div>
             <div class="lyrics-slide-content" contenteditable="true" spellcheck="false">${bodyHtml}</div>
         `;
@@ -5899,7 +6016,7 @@
             block.draggable = true;
 
             block.addEventListener('dragstart', (e) => {
-                if (e.target.closest('.lyrics-slide-content') || e.target.closest('input')) {
+                if (e.target.closest('.lyrics-slide-content') || e.target.closest('input') || e.target.closest('.slide-delete-btn')) {
                     e.preventDefault();
                     return;
                 }
@@ -5953,11 +6070,7 @@
                 }
 
                 reindexSlides();
-                currentActiveSlideBlock = draggedSlideBlock;
-                const activeContent = draggedSlideBlock.querySelector('.lyrics-slide-content');
-                if (activeContent) {
-                    updateEditorPreview(activeContent.innerHTML);
-                }
+                setActiveSlideBlock(draggedSlideBlock);
             });
 
             if (editorStyle) {
@@ -5971,8 +6084,9 @@
                 }
             }
 
-            block.onclick = () => {
-                currentActiveSlideBlock = block;
+            block.onclick = (e) => {
+                if (e.target.closest('.slide-delete-btn')) return;
+                setActiveSlideBlock(block);
             };
 
             // Apply label color immediately
@@ -5985,19 +6099,17 @@
             updateLabelColor();
             labelInput.addEventListener('input', updateLabelColor);
             labelInput.addEventListener('focus', () => {
-                currentActiveSlideBlock = block;
+                setActiveSlideBlock(block);
             });
 
             let lastEnterTime = 0;
 
             contentDiv.oninput = () => {
-                currentActiveSlideBlock = block;
-                updateEditorPreview(contentDiv.innerHTML);
+                setActiveSlideBlock(block);
             };
 
             contentDiv.onfocus = () => {
-                currentActiveSlideBlock = block;
-                updateEditorPreview(contentDiv.innerHTML);
+                setActiveSlideBlock(block);
             };
 
             contentDiv.addEventListener('mouseup', saveEditorSelection);
@@ -6034,16 +6146,18 @@
                             const prevContent = prevBlock.querySelector('.lyrics-slide-content');
                             block.remove();
                             reindexSlides();
-                            if (prevContent) {
-                                currentActiveSlideBlock = prevBlock;
-                                prevContent.focus();
-                                const sel = window.getSelection();
-                                const r = document.createRange();
-                                r.selectNodeContents(prevContent);
-                                r.collapse(false);
-                                sel.removeAllRanges();
-                                sel.addRange(r);
-                                updateEditorPreview(prevContent.innerHTML);
+                            if (prevBlock) {
+                                setActiveSlideBlock(prevBlock);
+                                if (prevContent) {
+                                    prevContent.focus();
+                                    const sel = window.getSelection();
+                                    const r = document.createRange();
+                                    r.selectNodeContents(prevContent);
+                                    r.collapse(false);
+                                    sel.removeAllRanges();
+                                    sel.addRange(r);
+                                    updateEditorPreview(prevContent.innerHTML);
+                                }
                             }
                             return;
                         }
@@ -6067,7 +6181,7 @@
             reindexSlides();
 
             if (focus) {
-                currentActiveSlideBlock = block;
+                setActiveSlideBlock(block);
                 block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 const focusNewBlock = () => {
                     contentDiv.focus();
@@ -6583,8 +6697,6 @@
                 goLive(currentSlides[currentPreviewIndex]);
             }
         }
-
-        let currentActiveSlideBlock = null;
 
         function updateEditorPreview(htmlOrText) {
             const previewEl = document.getElementById('editor-preview-text');

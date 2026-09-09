@@ -13,7 +13,7 @@ export function getAppData(): AppData {
     process.cwd(),
   ];
   
-  let version = '2.1.6'; // Default fallback v2.1.6
+  let version = '2.1.7'; // Default fallback v2.1.7
   let foundRootDir = candidateDirs[0];
 
   for (const dir of candidateDirs) {
