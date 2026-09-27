@@ -779,6 +779,21 @@
             text-shadow: none !important;
         }
 
+        /* Enforce compact typography on slide cards in Preview & Live control panels */
+        #preview-slides-container .slide-card-body,
+        #preview-slides-container .slide-card-body *,
+        #live-slides-container .slide-card-body,
+        #live-slides-container .slide-card-body *,
+        #preview-slides-container [class*="text-xs"],
+        #preview-slides-container [class*="text-xs"] *,
+        #live-slides-container [class*="text-xs"],
+        #live-slides-container [class*="text-xs"] * {
+            font-size: 11.5px !important;
+            line-height: 1.4 !important;
+            -webkit-text-stroke: 0 !important;
+            text-shadow: none !important;
+        }
+
         .lyrics-slide-content:focus {
             border-color: #3b82f6;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
@@ -1417,7 +1432,7 @@
             <span id="cpu-usage-display">CPU: 0%</span>
         </div>
         <div id="app-version-display" class="text-[9px] font-medium text-slate-500 dark:text-slate-400">
-            v2.1.3
+            v2.1.8
         </div>
     </footer>
 
@@ -5480,7 +5495,7 @@
                         applyInlineStyleToSelection({ fontFamily: val });
                         break;
                     case 'fontSize':
-                        applyInlineStyleToSelection({ fontSize: (parseInt(val, 10) || 80) + 'px' });
+                        setFontSize(val);
                         break;
                     case 'foreColor':
                         applyInlineStyleToSelection({ color: val });
@@ -5849,11 +5864,6 @@
 
         function setFontSize(size) {
             const sizePx = (parseInt(size, 10) || 80) + 'px';
-            const range = getActiveEditorRange();
-            if (range && !range.collapsed) {
-                applyInlineStyleToSelection({ fontSize: sizePx });
-                return;
-            }
             editorStyle.fontSize = sizePx;
             applyEditorStyle();
         }
@@ -6301,6 +6311,27 @@
             });
             clone.querySelectorAll('br').forEach(el => {
                 el.replaceWith('\n');
+            });
+
+            // Strip inline font-size, line-height, text-stroke so slides don't hardcode font size
+            clone.querySelectorAll('span[style], p[style], div[style], font').forEach(el => {
+                el.style.fontSize = '';
+                el.style.lineHeight = '';
+                el.style.webkitTextStroke = '';
+                el.style.textShadow = '';
+                if (el.tagName === 'FONT' && el.hasAttribute('size')) {
+                    el.removeAttribute('size');
+                }
+                const styleAttr = el.getAttribute('style');
+                if (styleAttr && !styleAttr.trim()) {
+                    el.removeAttribute('style');
+                }
+            });
+
+            clone.querySelectorAll('font').forEach(f => {
+                if (!f.attributes.length) {
+                    f.replaceWith(...f.childNodes);
+                }
             });
 
             const hasFormatting = clone.querySelector('span[style], font, b, strong, i, em, u');
@@ -6838,6 +6869,19 @@
         let _previewShouldScroll = false;
         let _liveShouldScroll = false;
 
+        function formatSlideCardLyrics(content) {
+            if (!content) return '';
+            let clean = content
+                .replace(/font-size\s*:\s*[^;"]+;?/gi, '')
+                .replace(/line-height\s*:\s*[^;"]+;?/gi, '')
+                .replace(/-webkit-text-stroke\s*:\s*[^;"]+;?/gi, '')
+                .replace(/text-shadow\s*:\s*[^;"]+;?/gi, '')
+                .replace(/\bsize\s*=\s*["'][^"']*["']/gi, '')
+                .replace(/\bsize\s*=\s*\d+/gi, '')
+                .replace(/style\s*=\s*["']\s*["']/gi, '');
+            return clean.replace(/\n/g, '<br/>');
+        }
+
         function renderPreview() {
             const container = document.getElementById('preview-slides-container');
             if (!container) return;
@@ -6852,8 +6896,8 @@
                 <div class="${isActive ? 'bg-indigo-600' : 'bg-slate-500'} text-white px-2 py-0.5 text-[9px] font-bold uppercase transition-colors" ${labelColor ? `style="background-color:${labelColor}"` : ''}>
                     ${slideLabel}
                 </div>
-                <div class="p-2 text-xs ${isActive ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'} leading-tight" ${isActive ? 'style="background-color:#b3e4ff"' : ''}>
-                    ${slide.content.replace(/\n/g, '<br/>')}
+                <div class="slide-card-body p-2 text-xs ${isActive ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'} leading-tight" ${isActive ? 'style="background-color:#b3e4ff"' : ''}>
+                    ${formatSlideCardLyrics(slide.content)}
                 </div>
             `;
                 div.onclick = () => { selectSlide(index); };
@@ -7012,8 +7056,8 @@
                     <span>${slideLabel}</span>
                     ${isActive ? '<span class="text-[7px] bg-white/20 px-1 rounded on-air-badge">ON AIR</span>' : ''}
                 </div>
-                <div class="p-2 text-xs ${isActive ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'} leading-tight" ${isActive ? 'style="background-color:#b3e4ff"' : ''}>
-                    ${slide.content.replace(/\n/g, '<br/>')}
+                <div class="slide-card-body p-2 text-xs ${isActive ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'} leading-tight" ${isActive ? 'style="background-color:#b3e4ff"' : ''}>
+                    ${formatSlideCardLyrics(slide.content)}
                 </div>
             `;
                 div.onclick = () => { goLiveSlide(index); };
@@ -8050,33 +8094,64 @@
         }
 
         // --- Live Window State ---
-        window.electronAPI.onLiveWindowOpened(() => { isLiveWindowOpen = true; });
-        window.electronAPI.onLiveWindowClosed(() => { isLiveWindowOpen = false; });
+        function updateScreenLiveButtonState() {
+            const btn = document.getElementById('btn-screen-live');
+            if (!btn) return;
+            if (isLiveWindowOpen) {
+                btn.classList.remove('bg-white/20', 'hover:bg-white/30');
+                btn.classList.add('bg-red-600', 'hover:bg-red-500', 'text-white', 'shadow-sm');
+                btn.innerHTML = `<span class="size-1.5 rounded-full bg-white animate-pulse"></span> Screen Live`;
+            } else {
+                btn.classList.remove('bg-red-600', 'hover:bg-red-500', 'shadow-sm');
+                btn.classList.add('bg-white/20', 'hover:bg-white/30', 'text-white');
+                btn.innerHTML = `Screen Live`;
+            }
+        }
+
+        window.electronAPI.onLiveWindowOpened(() => {
+            isLiveWindowOpen = true;
+            updateScreenLiveButtonState();
+        });
+        window.electronAPI.onLiveWindowClosed(() => {
+            isLiveWindowOpen = false;
+            updateScreenLiveButtonState();
+        });
+
+        if (window.electronAPI.onRequestMonitorBoxBounds) {
+            window.electronAPI.onRequestMonitorBoxBounds(() => {
+                const container = document.getElementById('media-monitor-output-box');
+                if (container && window.electronAPI.updateLiveWindowBounds) {
+                    const rect = container.getBoundingClientRect();
+                    window.electronAPI.updateLiveWindowBounds({
+                        x: Math.round(rect.left),
+                        y: Math.round(rect.top),
+                        width: Math.round(rect.width),
+                        height: Math.round(rect.height)
+                    });
+                }
+            });
+        }
 
         async function toggleLiveWindow() {
             if (isLiveWindowOpen) {
                 await window.electronAPI.closeLiveWindow();
                 isLiveWindowOpen = false;
+                updateScreenLiveButtonState();
             } else {
-                // On a single display, place the Screen Live window over the monitor surface.
-                const container = document.getElementById('media-monitor-output-box')
-                    || document.getElementById('live-output-box')
-                    || document.getElementById('live-slides-container');
-                let bounds = globalSettings.liveWindowBounds || null;
-                if (!bounds && container) {
+                // On a single display, place the Screen Live window docked over the monitor surface.
+                const container = document.getElementById('media-monitor-output-box');
+                let containerRect = null;
+                if (container) {
                     const rect = container.getBoundingClientRect();
-                    // Convert DOM coordinates to Screen coordinates
-                    // Screen X = Window Screen X + DOM X
-                    // Screen Y = Window Screen Y + DOM Y (including title bar approx)
-                    bounds = {
-                        x: Math.round(window.screenX + rect.left),
-                        y: Math.round(window.screenY + rect.top + (window.outerHeight - window.innerHeight)),
+                    containerRect = {
+                        x: Math.round(rect.left),
+                        y: Math.round(rect.top),
                         width: Math.round(rect.width),
                         height: Math.round(rect.height)
                     };
                 }
 
-                const openResult = await window.electronAPI.openLiveWindow(bounds);
+                const openResult = await window.electronAPI.openLiveWindow(containerRect);
                 if (openResult && openResult.opened === false) {
                     if (openResult.reason === 'external-required') {
                         alert('Kết nối với màn hình chiếu để xem.');
@@ -8086,6 +8161,7 @@
                     return;
                 }
                 isLiveWindowOpen = true;
+                updateScreenLiveButtonState();
                 // Send current live content immediately after opening
                 setTimeout(() => {
                     if (liveSlides.length > 0 && currentLiveIndex >= 0) {
@@ -8098,10 +8174,11 @@
                             || null;
                         sendToLiveWindow({
                             text: slide.content,
+                            style: currentLiveStyle,
                             background: background
                         });
                     }
-                }, 500); // wait for live window to load
+                }, 300);
             }
         }
 

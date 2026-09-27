@@ -2,7 +2,25 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.1.8] - 2026-09-27
+
+### Đã sửa & Cải tiến (Font Size in Slide Card List & Screen Live Improvements)
+
+- **Sửa lỗi font chữ quá lớn trong danh sách lời (Preview & Live slide card list):**
+  - Triệt tiêu lỗi font-size lớn (80px+) tràn vào khung danh sách lời bên trái của phần Preview và Live khi bài hát có định dạng rich text (màu chữ, in đậm,...).
+  - Thêm hàm `formatSlideCardLyrics()` loại bỏ hoàn toàn `font-size`, `line-height`, `-webkit-text-stroke`, `text-shadow` khỏi HTML nội dung trước khi hiển thị vào thẻ card danh sách.
+  - Bổ sung CSS rule `font-size: 11.5px !important` cho `.slide-card-body` và toàn bộ phần tử con trong `#preview-slides-container` và `#live-slides-container`, đảm bảo font card luôn nhỏ gọn dễ đọc bất kể nội dung lời bài hát có inline style gì.
+  - Đây là lý do bản đóng gói cũ bị lỗi còn `npm start` không bị: fix này chưa được đóng gói vào bản phân phối trước đó.
+
+- **Cải tiến Screen Live Window (Single/Multi Display):**
+  - Phân biệt rõ chế độ 1 màn hình và nhiều màn hình: cửa sổ Live tự động neo đúng vị trí ô Monitor khi dùng 1 màn hình, tự động toàn màn hình trên màn hình thứ 2 khi cắm thêm màn hình ngoài.
+  - Cửa sổ Live theo đúng vị trí ô Monitor khi người dùng di chuyển hoặc resize cửa sổ chính.
+  - Tự động ẩn/hiện cửa sổ Live khi thu nhỏ/khôi phục cửa sổ chính trên macOS.
+  - Nút **Screen Live** trên giao diện tự động cập nhật trạng thái (đỏ/mặc định) khi mở/đóng màn hình chiếu.
+  - Gửi kèm `style` hiện tại (font, màu sắc,...) ngay khi mở cửa sổ Live để nội dung hiển thị đúng tức thì.
+
 ## [2.1.7] - 2026-09-09
+
 
 ### Tính năng Mới & Cải tiến (Song Editor Block Management & Website Hub)
 - **Thêm nút `-` (xóa block) trong khung soạn thảo bài hát (Song Editor):**

@@ -40,6 +40,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   liveSendContent: (data) => ipcRenderer.invoke('live-send-content', data),
   liveSendBackground: (data) => ipcRenderer.invoke('live-send-background', data),
   liveSendClear: () => ipcRenderer.invoke('live-send-clear'),
+  updateLiveWindowBounds: (bounds) => ipcRenderer.invoke('update-live-window-bounds', bounds),
+  onRequestMonitorBoxBounds: (callback) => {
+    ipcRenderer.removeAllListeners('request-monitor-box-bounds');
+    ipcRenderer.on('request-monitor-box-bounds', callback);
+  },
   quitApp: () => ipcRenderer.invoke('quit-app'),
   getCpuUsage: () => ipcRenderer.invoke('get-cpu-usage'),
   onLiveWindowClosed: (callback) => {

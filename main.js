@@ -699,12 +699,15 @@ function syncLiveWindowToPreferredDisplay(reason = 'manual', force = false) {
     }
 
     if (!wasVisible || displayChanged || monitorCountChanged) {
-      const topLevel = desired.shouldFullscreen ? 'screen-saver' : 'floating';
-      liveWindow.setAlwaysOnTop(true, topLevel);
       if (desired.shouldFullscreen) {
+        liveWindow.setAlwaysOnTop(true, 'screen-saver');
+        liveWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
         try {
           liveWindow.moveTop();
         } catch (e) {}
+      } else {
+        liveWindow.setAlwaysOnTop(false);
+        liveWindow.setVisibleOnAllWorkspaces(false);
       }
     }
   } finally {
@@ -911,7 +914,7 @@ function initializeData() {
       if (typeof globalSettings.autoFitText !== 'boolean') {
         globalSettings.autoFitText = true;
       }
-      globalSettings.liveWindowBounds = sanitizeLiveWindowBounds(globalSettings.liveWindowBounds);
+      globalSettings.liveWindowBounds = null;
     } catch (e) {
       console.error('Failed to load settings:', e);
     }
@@ -973,7 +976,15 @@ function createLiveWindow(initialBounds = null) {
     return;
   }
   
-  requestedLiveBounds = sanitizeLiveWindowBounds(initialBounds) || sanitizeLiveWindowBounds(globalSettings.liveWindowBounds);
+  const displays = screen.getAllDisplays();
+  const isMultiDisplay = displays.length > 1;
+
+  if (isMultiDisplay) {
+    requestedLiveBounds = null;
+  } else {
+    requestedLiveBounds = sanitizeLiveWindowBounds(initialBounds) || getDefaultSingleDisplayBounds(displays[0]);
+  }
+
   const desired = computeDesiredLiveWindowState();
   if (!desired) return;
   liveWindowTargetDisplayId = desired.targetId;
@@ -987,13 +998,16 @@ function createLiveWindow(initialBounds = null) {
     fullscreen: false,
     kiosk: false,
     simpleFullscreen: false,
-    fullscreenable: true,
-    alwaysOnTop: true,
-    visibleOnAllWorkspaces: true,
-    skipTaskbar: process.platform === 'win32' && desired.skipTaskbar,
+    fullscreenable: isMultiDisplay,
+    alwaysOnTop: isMultiDisplay,
+    visibleOnAllWorkspaces: isMultiDisplay,
+    skipTaskbar: isMultiDisplay && process.platform === 'win32',
     autoHideMenuBar: true,
     hasShadow: false,
     show: false,
+    parent: (!isMultiDisplay && mainWindow && !mainWindow.isDestroyed()) ? mainWindow : undefined,
+    resizable: isMultiDisplay,
+    movable: isMultiDisplay,
     backgroundColor: '#000000',
     icon: fs.existsSync(path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png'))
       ? path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png')
@@ -1004,30 +1018,19 @@ function createLiveWindow(initialBounds = null) {
     }
   });
 
-  const initialTopLevel = desired.shouldFullscreen ? 'screen-saver' : 'floating';
-  liveWindow.setAlwaysOnTop(true, initialTopLevel);
-  liveWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  if (isMultiDisplay) {
+    liveWindow.setAlwaysOnTop(true, 'screen-saver');
+    liveWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  } else {
+    liveWindow.setAlwaysOnTop(false);
+    liveWindow.setVisibleOnAllWorkspaces(false);
+  }
   liveWindow.setMenuBarVisibility(false);
   liveWindow.loadFile('live.html');
-
-  const updateRequestedBounds = () => {
-    if (!liveWindow || liveWindow.isDestroyed()) return;
-    const displays = screen.getAllDisplays();
-    if (displays.length === 1 && !isApplyingLiveWindowState) {
-      requestedLiveBounds = liveWindow.getBounds();
-      persistLiveWindowBounds(requestedLiveBounds);
-    }
-  };
-
-  liveWindow.on('move', updateRequestedBounds);
-  liveWindow.on('resize', updateRequestedBounds);
 
   liveWindow.once('ready-to-show', () => {
     if (!liveWindow || liveWindow.isDestroyed()) return;
     syncLiveWindowToPreferredDisplay('ready-to-show', true);
-    if (screen.getAllDisplays().length === 1) {
-      persistLiveWindowBounds(liveWindow.getBounds());
-    }
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('live-window-opened');
       if (!mainWindow.isFocused()) {
@@ -1035,12 +1038,13 @@ function createLiveWindow(initialBounds = null) {
       }
     }
   });
+
   liveWindow.on('closed', () => {
     liveWindow = null;
     liveWindowTargetDisplayId = null;
     lastKnownMonitorCount = 0;
     lastKnownDisplayId = null;
-    requestedLiveBounds = sanitizeLiveWindowBounds(globalSettings.liveWindowBounds);
+    requestedLiveBounds = null;
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('live-window-closed');
     }
@@ -1089,6 +1093,27 @@ function createWindow() {
 
   win.once('ready-to-show', () => {
     win.show();
+  });
+
+  const syncLiveWindowWithMainWindow = () => {
+    if (!liveWindow || liveWindow.isDestroyed()) return;
+    if (screen.getAllDisplays().length > 1) return;
+    if (!win || win.isDestroyed()) return;
+    win.webContents.send('request-monitor-box-bounds');
+  };
+
+  win.on('move', syncLiveWindowWithMainWindow);
+  win.on('resize', syncLiveWindowWithMainWindow);
+  win.on('minimize', () => {
+    if (liveWindow && !liveWindow.isDestroyed() && screen.getAllDisplays().length === 1) {
+      liveWindow.hide();
+    }
+  });
+  win.on('restore', () => {
+    if (liveWindow && !liveWindow.isDestroyed() && screen.getAllDisplays().length === 1) {
+      liveWindow.showInactive();
+      syncLiveWindowWithMainWindow();
+    }
   });
 
   // When the main window is closing, also cleanly destroy the live (presentation) window.
@@ -1990,20 +2015,44 @@ app.whenReady().then(() => {
     } catch (e) { return []; }
   });
 
-  ipcMain.handle('open-live-window', (e, bounds) => {
+  ipcMain.handle('open-live-window', (e, containerRect) => {
     const displayCount = screen.getAllDisplays().length;
     if (displayCount <= 1 && globalSettings.allowSingleDisplayLiveWindow === false) {
       return { opened: false, reason: 'external-required' };
     }
-    createLiveWindow(bounds);
+    let targetBounds = null;
+    if (displayCount === 1) {
+      if (containerRect && mainWindow && !mainWindow.isDestroyed()) {
+        const contentBounds = mainWindow.getContentBounds();
+        targetBounds = {
+          x: Math.round(contentBounds.x + containerRect.x),
+          y: Math.round(contentBounds.y + containerRect.y),
+          width: Math.round(containerRect.width),
+          height: Math.round(containerRect.height)
+        };
+      }
+    }
+    createLiveWindow(targetBounds);
     return { opened: true };
+  });
+  ipcMain.handle('update-live-window-bounds', (e, containerRect) => {
+    if (!liveWindow || liveWindow.isDestroyed()) return false;
+    if (screen.getAllDisplays().length > 1) return false;
+    if (!mainWindow || mainWindow.isDestroyed()) return false;
+    if (!containerRect) return false;
+    const contentBounds = mainWindow.getContentBounds();
+    const newBounds = {
+      x: Math.round(contentBounds.x + containerRect.x),
+      y: Math.round(contentBounds.y + containerRect.y),
+      width: Math.round(containerRect.width),
+      height: Math.round(containerRect.height)
+    };
+    requestedLiveBounds = newBounds;
+    liveWindow.setBounds(newBounds, false);
+    return true;
   });
   ipcMain.handle('close-live-window', () => {
     if (liveWindow && !liveWindow.isDestroyed()) {
-      if (screen.getAllDisplays().length === 1) {
-        persistLiveWindowBounds(liveWindow.getBounds());
-        flushLiveWindowBounds();
-      }
       safelyDestroyLiveWindow();
     }
     return true;
