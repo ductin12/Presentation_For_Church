@@ -140,6 +140,13 @@
             border-radius: 6px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
+
+        .slide-line {
+            display: block;
+            line-height: 1.2 !important;
+            white-space: pre-wrap;
+            width: 100%;
+        }
     </style>
     <title>Screen Live</title>
 </head>
@@ -418,10 +425,63 @@
             showBackground(background);
         }
 
+        function splitHtmlPreservingTags(text) {
+            if (!text) return [];
+            const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            if (!normalized.includes('\n')) return [normalized];
+
+            const lines = [];
+            let currentLine = '';
+            const openTags = [];
+
+            const tokenRegex = /(<\/?([a-zA-Z0-9\-]+)(?:\s+[^>]*?)?>)|\n|([^\n<]+)|(<)/g;
+            let match;
+
+            while ((match = tokenRegex.exec(normalized)) !== null) {
+                const [full, tag, tagName, textPart, strayLess] = match;
+                if (full === '\n') {
+                    let closingStr = '';
+                    for (let i = openTags.length - 1; i >= 0; i--) {
+                        closingStr += '</' + openTags[i].name + '>';
+                    }
+                    lines.push(currentLine + closingStr);
+
+                    let openingStr = '';
+                    for (let i = 0; i < openTags.length; i++) {
+                        openingStr += openTags[i].fullTag;
+                    }
+                    currentLine = openingStr;
+                } else if (tag) {
+                    currentLine += tag;
+                    const isClosing = tag.startsWith('</');
+                    const isSelfClosing = tag.endsWith('/>') || /^(br|hr|img|input)$/i.test(tagName);
+
+                    if (isClosing) {
+                        for (let i = openTags.length - 1; i >= 0; i--) {
+                            if (openTags[i].name.toLowerCase() === tagName.toLowerCase()) {
+                                openTags.splice(i, 1);
+                                break;
+                            }
+                        }
+                    } else if (!isSelfClosing) {
+                        openTags.push({ name: tagName, fullTag: tag });
+                    }
+                } else if (textPart) {
+                    currentLine += textPart;
+                } else if (strayLess) {
+                    currentLine += strayLess;
+                }
+            }
+
+            lines.push(currentLine);
+            return lines;
+        }
+
         function setText(text) {
             const el = document.getElementById('lyrics-text');
             if (text && /<[a-z][\s\S]*>/i.test(text)) {
-                el.innerHTML = text.split('\n').map(l => `<div class="slide-line">${l || '&nbsp;'}</div>`).join('');
+                const lines = splitHtmlPreservingTags(text);
+                el.innerHTML = lines.map(l => `<div class="slide-line">${l || '&nbsp;'}</div>`).join('');
             } else {
                 el.textContent = text || '';
             }

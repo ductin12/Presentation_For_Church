@@ -1432,7 +1432,7 @@
             <span id="cpu-usage-display">CPU: 0%</span>
         </div>
         <div id="app-version-display" class="text-[9px] font-medium text-slate-500 dark:text-slate-400">
-            v2.1.8
+            v2.1.9
         </div>
     </footer>
 
@@ -3082,6 +3082,61 @@
             return items.map(normalizeScheduleItem).filter(Boolean);
         }
 
+        // --- HTML-Safe Line Splitting (Preserves spans/formatting across lines) ---
+        function splitHtmlPreservingTags(text) {
+            if (!text) return [];
+            const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            if (!normalized.includes('\n')) return [normalized];
+
+            const lines = [];
+            let currentLine = '';
+            const openTags = []; // stack of { name, fullTag }
+
+            const tokenRegex = /(<\/?([a-zA-Z0-9\-]+)(?:\s+[^>]*?)?>)|\n|([^\n<]+)|(<)/g;
+            let match;
+
+            while ((match = tokenRegex.exec(normalized)) !== null) {
+                const [full, tag, tagName, textPart, strayLess] = match;
+                if (full === '\n') {
+                    // Close all currently open tags for this line in reverse order
+                    let closingStr = '';
+                    for (let i = openTags.length - 1; i >= 0; i--) {
+                        closingStr += '</' + openTags[i].name + '>';
+                    }
+                    lines.push(currentLine + closingStr);
+
+                    // Re-open all tags for the next line in original order
+                    let openingStr = '';
+                    for (let i = 0; i < openTags.length; i++) {
+                        openingStr += openTags[i].fullTag;
+                    }
+                    currentLine = openingStr;
+                } else if (tag) {
+                    currentLine += tag;
+                    const isClosing = tag.startsWith('</');
+                    const isSelfClosing = tag.endsWith('/>') || /^(br|hr|img|input)$/i.test(tagName);
+
+                    if (isClosing) {
+                        for (let i = openTags.length - 1; i >= 0; i--) {
+                            if (openTags[i].name.toLowerCase() === tagName.toLowerCase()) {
+                                openTags.splice(i, 1);
+                                break;
+                            }
+                        }
+                    } else if (!isSelfClosing) {
+                        openTags.push({ name: tagName, fullTag: tag });
+                    }
+                } else if (textPart) {
+                    currentLine += textPart;
+                } else if (strayLess) {
+                    currentLine += strayLess;
+                }
+            }
+
+            lines.push(currentLine);
+            return lines;
+        }
+
         // --- Chord Processing ---
         function stripChords(text) {
             if (!text) return '';
@@ -3091,7 +3146,8 @@
         function renderChordsHTML(text) {
             if (!text) return '';
 
-            return text.split('\n').map(line => {
+            const lines = splitHtmlPreservingTags(text);
+            return lines.map(line => {
                 if (!line.trim()) return '<div class="chord-line">&nbsp;</div>';
 
                 if (line.includes('[')) {
@@ -6313,12 +6369,8 @@
                 el.replaceWith('\n');
             });
 
-            // Strip inline font-size, line-height, text-stroke so slides don't hardcode font size
+            // Clean empty styles and font tags while preserving rich text formatting (font-size, color, etc.)
             clone.querySelectorAll('span[style], p[style], div[style], font').forEach(el => {
-                el.style.fontSize = '';
-                el.style.lineHeight = '';
-                el.style.webkitTextStroke = '';
-                el.style.textShadow = '';
                 if (el.tagName === 'FONT' && el.hasAttribute('size')) {
                     el.removeAttribute('size');
                 }

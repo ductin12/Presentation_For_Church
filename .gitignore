@@ -4,6 +4,7 @@ node_modules/
 Thumbs.db
 dist/
 out/
+docs/*
 task.md
 plan.md
 Long_Verses_Check.txt
@@ -16,3 +17,5 @@ Trace-*.json
 .codex/*
 .gemini/*
 .cursor/*
+
+# Ignore all Markdown files in the project

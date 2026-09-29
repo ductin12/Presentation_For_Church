@@ -2,15 +2,21 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
-## [2.1.8] - 2026-09-27
+## [2.1.9] - 2026-09-28
 
-### Đã sửa & Cải tiến (Font Size in Slide Card List & Screen Live Improvements)
+### Đã sửa & Cải tiến (Multi-line Rich Text, Font Size & Screen Live Sync)
 
 - **Sửa lỗi font chữ quá lớn trong danh sách lời (Preview & Live slide card list):**
   - Triệt tiêu lỗi font-size lớn (80px+) tràn vào khung danh sách lời bên trái của phần Preview và Live khi bài hát có định dạng rich text (màu chữ, in đậm,...).
   - Thêm hàm `formatSlideCardLyrics()` loại bỏ hoàn toàn `font-size`, `line-height`, `-webkit-text-stroke`, `text-shadow` khỏi HTML nội dung trước khi hiển thị vào thẻ card danh sách.
   - Bổ sung CSS rule `font-size: 11.5px !important` cho `.slide-card-body` và toàn bộ phần tử con trong `#preview-slides-container` và `#live-slides-container`, đảm bảo font card luôn nhỏ gọn dễ đọc bất kể nội dung lời bài hát có inline style gì.
   - Đây là lý do bản đóng gói cũ bị lỗi còn `npm start` không bị: fix này chưa được đóng gói vào bản phân phối trước đó.
+
+- **Bảo toàn định dạng Rich Text trên nhiều dòng (Multi-line Rich Text & Font Size Fix):**
+  - Khắc phục lỗi khi bôi đen nhiều dòng trong Song Editor để chỉnh sửa cỡ chữ (ví dụ 72px) hoặc định dạng (màu sắc, phông chữ), dòng đầu tiên nhận đúng style nhưng các dòng bên dưới bị mất định dạng khi chiếu ra Preview, Live và Screen Live.
+  - Nguyên nhân: Phương thức tách dòng thô `text.split('\n')` làm gãy thẻ inline `<span style="...">` bao bọc nhiều dòng khiến các dòng sau chỉ chứa thẻ đóng `</span>` mồ côi.
+  - Bổ sung hàm `splitHtmlPreservingTags(text)` phân tích cú pháp HTML theo dòng, tự động đóng thẻ ở cuối dòng và tái mở thẻ với đầy đủ thuộc tính style ở dòng tiếp theo trong cả `index.html` (`renderChordsHTML`) và `live.html` (`setText`).
+  - Tinh chỉnh `serializeSlideContent()` bảo toàn các thuộc tính inline `font-size` và rich text khi lưu bài hát vào thư viện mà không làm ảnh hưởng đến kích thước thẻ card danh sách.
 
 - **Cải tiến Screen Live Window (Single/Multi Display):**
   - Phân biệt rõ chế độ 1 màn hình và nhiều màn hình: cửa sổ Live tự động neo đúng vị trí ô Monitor khi dùng 1 màn hình, tự động toàn màn hình trên màn hình thứ 2 khi cắm thêm màn hình ngoài.

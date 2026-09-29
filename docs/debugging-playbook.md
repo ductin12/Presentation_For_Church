@@ -30,12 +30,24 @@
 - Kiểm tra `ipcMain.handle(...)` có đúng tên không
 - Kiểm tra payload có đúng shape không
 
+### Nếu lỗi slide card list (bị tràn chữ, font quá to)
+
+- Kiểm tra xem nội dung bài hát có chứa rich text inline style (`font-size: ...`) không
+- Kiểm tra hàm `formatSlideCardLyrics()` đã được áp dụng trước khi gán HTML vào slide card chưa
+- Kiểm tra container có class `slide-card-body` và CSS `font-size: 11.5px !important` có hiệu lực không
+
+### Nếu lỗi chỉ xuất hiện ở bản Packaged mà npm start không bị
+
+- Kiểm tra git status / git diff xem fix đã được commit và merge vào nhánh build chưa
+- Kiểm tra bản cài đặt có được build lại bằng `npm run build:all` sau khi sửa code hay vẫn dùng file build cũ trong `dist/`
+- Kiểm tra userData giữa môi trường dev (Electron dev profile) và packaged app (Application Support / AppData)
+
 ### Nếu lỗi live window
 
 - Kiểm tra đã mở live window chưa
-- Kiểm tra có màn hình phụ không
+- Kiểm tra chế độ 1 màn hình (dock vào monitor) hay nhiều màn hình (fullscreen display ngoài)
 - Kiểm tra `app-media://` có trỏ đúng file không
-- Kiểm tra scale/canvas và style text
+- Kiểm tra scale/canvas và style text truyền sang live window qua `sendToLiveWindow()`
 
 ### Nếu lỗi media
 

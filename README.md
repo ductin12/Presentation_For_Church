@@ -48,7 +48,16 @@ Bạn có thể tải ngay bộ cài đặt tương ứng với hệ điều hà
 
 > 💡 *Để xem toàn bộ chi tiết mã nguồn và lịch sử phát triển, vui lòng xem tệp [`changelog.md`](changelog.md).*
 
-### ✨ [2.1.6] - 2026-09-09
+### [2.1.9] - 2026-09-28
+- **Bảo toàn định dạng Rich Text nhiều dòng (Multi-line Rich Text & Font Size):** Xử lý triệt để lỗi bôi đen nhiều dòng đổi cỡ chữ (ví dụ 72px) bị mất ở các dòng bên dưới bằng bộ phân tích dòng giữ nguyên thẻ HTML (`splitHtmlPreservingTags`), đồng bộ chính xác trên cả Preview, Live, và Screen Live.
+- **Sửa lỗi font chữ quá lớn trong danh sách lời (Preview & Live card list):** Thêm hàm `formatSlideCardLyrics()` lọc bỏ thuộc tính font-size/line-height/stroke inline khỏi nội dung rich text của thẻ card; bổ sung CSS rule `font-size: 11.5px !important` cho `.slide-card-body`.
+- **Cải tiến Live Window (Single/Multi Display):** Tự động neo đúng vị trí ô Monitor khi dùng 1 màn hình; đồng bộ di chuyển/resize theo cửa sổ chính; tự động toàn màn hình khi cắm màn hình phụ.
+
+### [2.1.7] - 2026-09-09
+- **Quản lý Slide Block trong Song Editor:** Thêm nút xóa block `-` trên thanh công cụ và trên tiêu đề từng slide; hỗ trợ thêm slide mới ngay sau slide đang chọn; tự động reindex số thứ tự slide.
+- **Cập nhật Download Hub (`web/`):** Tích hợp tải trực tiếp 4 bộ cài đặt cho macOS và Windows.
+
+### [2.1.6] - 2026-09-09
 - **Sửa lỗi chính tả toàn diện thư viện bài hát:** Rà soát và sửa 223 lỗi chính tả dấu hỏi/nặng/sắc/ngã trên 126 bài hát trong `data/songs.json`, xóa ký tự rác copy-paste.
 - **Tạo slide mới bằng 2 lần Enter:** Tự động ngắt khổ thơ mới khi ấn Enter hai lần trong khung soạn thảo bài hát.
 - **Kéo thả hoán đổi slide (Drag & Drop):** Hỗ trợ kéo thả chuột trực tiếp để thay đổi vị trí các khổ thơ trong bài hát.

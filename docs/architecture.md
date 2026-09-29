@@ -2,7 +2,7 @@
 
 ## Tổng quan
 
-Đây là ứng dụng Electron desktop cho trình chiếu nhà thờ. Kiến trúc hiện tại là kiểu hai cửa sổ:
+Đây là ứng dụng Electron desktop cho trình chiếu cho Hội Thánh. Kiến trúc hiện tại là kiểu hai cửa sổ:
 
 - `main.js`: main process, tạo cửa sổ, IPC, protocol, file I/O
 - `index.html`: cửa sổ operator, chứa phần lớn UI và logic renderer
@@ -21,14 +21,14 @@
 
 ## File chịu trách nhiệm chính
 
-| File | Trách nhiệm |
-|---|---|
-| `main.js` | Cửa sổ, menu, IPC, protocol `app-media://`, lưu file an toàn |
-| `preload.js` | API cầu nối cho renderer |
-| `index.html` | Library, schedule, editor, preview, control live |
-| `live.html` | Hiển thị chữ/background trên màn hình chiếu |
-| `edit-song.html` | UI chỉnh bài hát kiểu Windows cổ điển |
-| `src/schema.js` | Migrate và validate item |
+| File               | Trách nhiệm                                                     |
+| ------------------ | ----------------------------------------------------------------- |
+| `main.js`        | Cửa sổ, menu, IPC, protocol`app-media://`, lưu file an toàn |
+| `preload.js`     | API cầu nối cho renderer                                        |
+| `index.html`     | Library, schedule, editor, preview, control live                  |
+| `live.html`      | Hiển thị chữ/background trên màn hình chiếu                |
+| `edit-song.html` | UI chỉnh bài hát kiểu Windows cổ điển                      |
+| `src/schema.js`  | Migrate và validate item                                         |
 
 ## Dữ liệu lưu ở userData
 
