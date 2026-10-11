@@ -2,6 +2,61 @@
 
 Tất cả các thay đổi và cập nhật quan trọng của dự án được ghi lại tại đây.
 
+## [2.2.0] - 2026-10-12
+
+### Sửa Lỗi Giao Diện Box Model & Triệt Tiêu Thanh Cuộn Ngang (Box Model Layout & Overflow Fix)
+- **Tái cấu trúc Khung Box Model Đồng Tâm (Concentric DevTools Layout):**
+  - Căn giữa khối Box Model với kích thước chuẩn `max-w-[340px] mx-auto`, ngăn ngừa tình trạng phình ngang làm vỡ thẻ card.
+  - Phân tách rõ ràng giữa Hộp Ngoài (Margin nét đứt xám) và Hộp Trong (Padding nền xanh bo góc).
+  - Bổ sung lõi trung tâm mang nhãn `SLIDE TEXT`, định hình khoảng cách trực quan và ngăn cách 2 ô Padding Trái / Phải dính chùm vào nhau.
+  - Khóa triệt để thanh cuộn ngang không mong muốn ở đáy Settings Modal (`overflow-x-hidden`).
+  - Bảo toàn 100% 8 DOM IDs (`settings-margin-*` và `settings-padding-*`).
+
+### Tối Ưu Hóa Trực Quan Toàn Diện Cả 6 Tab Trong Settings Modal (Visual-First Redesign)
+
+- **Chuẩn hóa Tương tác Trực quan (Visual-First Controls):**
+  - Chuyển đổi toàn bộ các thẻ `<select>` dropdown 2 trạng thái thành **iOS-Style Toggle Switch** mượt mà (Tăng tốc GPU, Câu tiếp theo, Single display live monitor, Tự co chữ, Ép sử dụng style mặc định).
+  - Chuyển đổi lựa chọn Giao diện (Theme), Căn lề ngang (Align), Vị trí câu tiếp theo (Next Verse Position) thành **Segmented Pill Buttons** và **Icon Groups** trực quan.
+  - Xây dựng **Mô hình Box Model 4 chiều** cho Margin (ngoài) & Padding (trong) của Slide, giúp người vận hành quan sát lề đệm trực quan như công cụ chuyên nghiệp.
+  - Tích hợp **Thanh trượt Slider + Preset Pills [9px\|12px\|15px] + Nút Live Preview thời gian thực** cho kích thước nút điều khiển chính.
+  - Thiết kế lại Tab Style Templates thành **Hero Management Card** với huy hiệu đếm số lượng template lưu trữ.
+  - Chuyển đổi bộ lọc Bulk Replace (Phạm vi, Phần dữ liệu, Phân biệt hoa/thường) sang Segmented Pills và Toggle Button trực quan.
+- **Bảo toàn 100% Kiến trúc Dữ liệu & Tương thích ngược:**
+  - Áp dụng cơ chế **Hidden Bridge Elements**, giữ nguyên vẹn 100% ID và contract DOM cho `openSettings()` và `saveSettings()`.
+  - Bộ kiểm thử tự động `Workflow/test-settings-modal-visual-suite.js` đạt **9/9 Pass** và hồi quy hệ thống đạt **17/17 Pass**.
+
+### Tính năng Mới & Cải tiến Toàn diện (System UX Redesign, Typography, Style Templates, Chords & Safe Shortcuts)
+
+- **Tái cấu trúc giao diện Cài đặt (Settings Modal Redesign):**
+  - Chuyển đổi modal Cài đặt từ dạng cuộn dọc 500px chật hẹp sang kiến trúc **6-Tab Sidebar hiện đại** (kích thước 820×600px), loại bỏ triệt để hiện tượng tràn nội dung và đè nút Lưu/Đóng ở chân trang.
+  - Phân chia logic rõ ràng theo 6 nhóm tính năng: **Chung** (General), **Trình chiếu** (Projection), **Font & Kiểu chữ** (Typography), **Nút & Phím tắt** (Controls), **Mẫu giao diện** (Templates), **Công cụ & Hệ thống** (Tools).
+  - Tự động kích hoạt checkbox màu sắc khi người dùng bấm chọn màu trên color picker.
+  - Hỗ trợ nhập số thập phân chuẩn định dạng tiếng Việt (tự động chuyển đổi dấu phẩy `,` thành dấu chấm `.` khi lưu cài đặt, ngăn ngừa lỗi `NaN`).
+
+- **Tùy chỉnh Typography cho văn bản trích dẫn tìm kiếm bài hát (Song Search Snippet Typography):**
+  - Bổ sung cấu hình tùy biến font chữ, cỡ chữ (px) và màu sắc riêng cho dòng text lời bài hát hiển thị khi tìm kiếm trong Thư viện (`uiFontFamilySongSnippet`, `uiFontSizeSongSnippet`, `uiColorSongSnippet`).
+  - Gắn biến CSS động `--ui-song-snippet-font`, `--ui-song-snippet-size`, `--ui-song-snippet-color` và các class `.song-snippet-text`, `.song-snippet-text.custom-color`, giúp người dùng dễ dàng phóng to đoạn trích lời khi tra cứu bài hát trên màn hình độ phân giải cao.
+
+- **Nâng cấp Style Templates & Khung Box Chữ (Style Templates & Box Enhancements):**
+  - **Đệm lề khung chữ 4 hướng (Box Padding):** Bổ sung 4 trường nhập Top, Right, Bottom, Left cho khung box nền chữ, đồng bộ chuẩn xác trong `index.html` và `live.html` để văn bản không bị dính sát viền khung viền.
+  - **Tái tổ chức giao diện Style Template:** Di dời ô Bo góc viền (Border Radius) từ hàng Font chữ xuống đúng vị trí logic của Khung box chữ.
+  - **Chuyển đổi nền xem trước (Preview Background Switcher):** Bổ sung 3 chế độ nền thử nghiệm linh hoạt: **[Đen]** (nền tối tiêu chuẩn), **[Caro]** (kiểm tra độ mờ / opacity của nền box), và **[Ảnh mẫu]** (kiểm tra độ tương phản thực tế).
+
+- **Hệ thống Xử lý & Hiển thị Hợp Âm Chuyên Nghiệp (Chords Presentation Engine):**
+  - Định dạng hợp âm thông minh: Hợp âm đặt trong ngoặc vuông `[F]`, `[Am]`, `[C7]` được render nổi phía trên lời bài hát trong khung xem trước của Song Editor (`updateEditorPreview`) bằng engine `renderChordsHTML()`.
+  - Tích hợp nút bật/tắt nhanh hợp âm **[🎵 Hợp âm: BẬT/TẮT]** trên thanh tiêu đề Preview, cho phép người điều khiển bật/tắt hiển thị hợp âm trên màn hình Monitor mà không ảnh hưởng đến màn hình chiếu.
+  - Tự động tách bỏ hoàn toàn hợp âm (`stripChords`) khi gửi tín hiệu sang màn hình máy chiếu Live (Projector), đảm bảo màn hình hội chúng luôn sạch sẽ, trang nghiêm.
+
+- **Tối ưu Phím Tắt Tiêu Chuẩn & Gợi Ý Thao Tác (Safe Shortcuts & Tooltips):**
+  - **Khắc phục xung đột macOS Cmd+H:** Thay đổi phím tắt menu Xóa màn hình Live (`Clear Live`) từ `CmdOrCtrl+H` thành `CmdOrCtrl+K` để tránh trùng với phím tắt hệ thống của macOS (Ẩn ứng dụng / Hide App).
+  - **Phím tắt điều khiển nhanh:** Hỗ trợ phím **F5** để kích hoạt Go Live từ Preview, phím **Space** để chuyển slide Live kế tiếp khi không trỏ vào ô nhập liệu, phím **Escape** để đóng modal hoặc xóa màn hình chiếu nhanh chóng.
+  - **Hover Tooltip với phím tắt trực quan:** Tích hợp tooltip nhẹ nhàng qua CSS `[data-tooltip]` cho các nút điều khiển chính (`Go Live`, `ON Monitor`, `Screen Live`, `Clear`, `Live`), giúp người dùng dễ dàng làm quen và thao tác bằng phím tắt.
+
+- **Chuẩn hóa Giao diện Soạn Thảo Bài Hát (Song Editor Modal Polish):**
+  - Việt hóa hoàn chỉnh tiêu đề và nút thao tác: `Tạo Bài Hát Mới / Chỉnh Sửa Bài Hát`, `Tên bài hát:`, `Áp dụng`, `Lưu & Đóng`, `Hủy`.
+  - Hợp nhất và tinh giản thanh tab bên trái thành một tab duy nhất: `Soạn lời (Slides)`, loại bỏ tab "Slides" trống thừa thãi.
+
+
 ## [2.1.9] - 2026-09-28
 
 ### Đã sửa & Cải tiến (Multi-line Rich Text, Font Size & Screen Live Sync)

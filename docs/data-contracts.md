@@ -1,105 +1,139 @@
-# Chuẩn Dữ Liệu
+# Chuẩn Hợp Đồng Dữ Liệu (Data Contracts v2.2.0)
 
-## Item cơ bản
+Tài liệu này định nghĩa cấu trúc dữ liệu chính xác được lưu trữ trong `userData` và truyền tải qua các kênh IPC.
 
-Item được lưu trong library thường có dạng:
+---
+
+## 1. Bài Hát (Song Item)
+
+Được lưu trong file `songs.json` hoặc truyền tải qua `save-song`, `load-songs`:
 
 ```json
 {
-  "id": 1234567890,
-  "title": "Amazing Grace",
-  "lyrics": "Line 1\nLine 2\n\nLine 3",
+  "id": 1712345678901,
+  "title": "Ơn Lạ Lùng",
+  "lyrics": "Verse 1\nƠn lạ lùng thay, tha thiết dịu êm\n\nChorus\nChúa chuộc linh hồn con",
   "type": "song",
   "style": {
+    "fontFamily": "Times New Roman",
     "fontSize": "80px",
-    "fontFamily": "CMG Sans",
     "color": "#ffffff",
+    "fontWeight": "bold",
+    "fontStyle": "normal",
+    "textDecoration": "none",
     "textAlign": "center",
     "verticalAlign": "middle",
-    "textBox": {
-      "left": 48,
-      "width": 864
+    "textStrokeWidth": 5,
+    "textStrokeColor": "#000000",
+    "textMargin": { "top": 0, "right": 0, "bottom": 0, "left": 0 },
+    "textPadding": { "top": 0, "right": 0, "bottom": 0, "left": 0 },
+    "textBox": { "left": 48, "width": 864, "top": null },
+    "boxStyle": {
+      "enabled": false,
+      "backgroundColor": "#000000",
+      "backgroundOpacity": 0.35,
+      "borderColor": "#ffffff",
+      "borderWidth": 0,
+      "borderStyle": "solid",
+      "borderRadius": 0,
+      "padding": { "top": 0, "right": 0, "bottom": 0, "left": 0 }
     }
   },
-  "background": null
+  "background": {
+    "mediaName": "worship_bg.jpg",
+    "mediaType": "image",
+    "url": "app-media://worship_bg.jpg"
+  }
 }
 ```
 
-## Quy ước migrate
+*Quy ước:*
+- `\n\n` phân tách các block slide.
+- Dòng đầu của mỗi block có thể là label (`Verse 1`, `Chorus`, `Bridge`).
+- Hợp âm nằm trong ngoặc vuông `[F]`, `[Am]` được render hiển thị trên monitor nội bộ và tự động tách lọc (`stripChords`) khi xuất sang màn hình chiếu Live.
 
-- `fontColor` là field legacy, phải được chuyển sang `color`
-- `fontSize` có thể từng là number hoặc chuỗi `pt`; dữ liệu mới nên là chuỗi `px`
-- `migrateItem()` phải giữ tương thích ngược
-- `validateItem()` phải chặn item thiếu `id`, `title`, `lyrics`
+---
 
-## Settings
+## 2. Mẫu Định Dạng (Style Template)
 
-Settings hiện lưu trong `settings.json`. Các field quan trọng gồm:
+Được lưu trong file `style-templates.json`:
 
-- `theme`
-- `gpuAcceleration`
-- `fontFamilySong`
-- `fontFamilyBible`
-- `fontSize`
-- `color`
-- `fontWeight`
-- `textAlign`
-- `verticalAlign`
-- `textStrokeWidth`
-- `textStrokeColor`
-- `textMargin` (`top`, `right`, `bottom`, `left`)
-- `textPadding` (`top`, `right`, `bottom`, `left`)
-- `autoFitText` (`true`/`false`); tự động giảm cỡ chữ khi lyric/câu Kinh Thánh dài để không tràn khung chiếu
-- `mediaPath`
-- `allowSingleDisplayLiveWindow` (`true`/`false`); cho phép mở `Screen Live` khi không có màn hình phụ và hiển thị đè lên monitor trong app
-- `liveWindowBounds` (`x`, `y`, `width`, `height`) hoặc `null`; dùng để ghi nhớ vị trí cửa sổ Live khi chỉ có một màn hình
-- `shortcuts`
-- `defaultShortcutRows`:
-  - mỗi row gồm `key1`, `key2`, `key3`, `action`
-- `customShortcuts`:
-  - danh sách động, mỗi row gồm `key1`, `key2`, `key3`, `action`
+```json
+{
+  "id": "tpl-1712345678",
+  "name": "Nền Box Tối Trọng Thể",
+  "scope": "both",
+  "style": {
+    "fontFamily": "CMG Sans",
+    "fontSize": "72px",
+    "color": "#ffffff",
+    "textStrokeWidth": 3,
+    "textStrokeColor": "#000000",
+    "textAlign": "center",
+    "verticalAlign": "middle",
+    "textMargin": { "top": 0, "right": 0, "bottom": 0, "left": 0 },
+    "textPadding": { "top": 0, "right": 0, "bottom": 0, "left": 0 },
+    "boxStyle": {
+      "enabled": true,
+      "backgroundColor": "#000000",
+      "backgroundOpacity": 0.5,
+      "borderColor": "#e2e8f0",
+      "borderWidth": 1,
+      "borderStyle": "solid",
+      "borderRadius": 8,
+      "padding": { "top": 12, "right": 16, "bottom": 12, "left": 16 }
+    }
+  }
+}
+```
 
-## Media
+---
 
-Media object thường có:
+## 3. Cài Đặt Hệ Thống (Global Settings)
 
-- `name`
-- `path`
-- `type` = `image` hoặc `video`
+Được lưu trong file `settings.json`:
 
-Media thật nằm trong `userData/media` hoặc folder được cấu hình bởi `mediaPath`.
+```json
+{
+  "theme": "dark",
+  "gpuAcceleration": true,
+  "enforceDefaultSlideStyle": false,
+  "fontSizeSong": "80px",
+  "fontFamilySong": "Times New Roman",
+  "colorSong": "#ffffff",
+  "fontSizeBible": "48px",
+  "fontFamilyBible": "Times New Roman",
+  "colorBible": "#ffffff",
+  "uiFontFamilyApp": "",
+  "uiFontFamilySong": "",
+  "uiFontSizeSong": 13,
+  "uiColorSong": "",
+  "uiFontFamilyBible": "",
+  "uiFontSizeBible": 13,
+  "uiColorBible": "",
+  "uiFontFamilySlideCards": "",
+  "uiFontSizeSlideCards": 11.5,
+  "uiColorSlideCards": "",
+  "uiFontFamilyPanelHeaders": "",
+  "uiFontSizePanelHeaders": 10,
+  "uiColorPanelHeaders": "",
+  "uiSizeControlBtn": 9,
+  "uiFontFamilySongSnippet": "",
+  "uiFontSizeSongSnippet": 9,
+  "uiColorSongSnippet": "#818cf8",
+  "shortcuts": {
+    "nextSlide": "ArrowRight",
+    "prevSlide": "ArrowLeft",
+    "clearScreen": "Escape"
+  }
+}
+```
 
-## Bulk replace
+---
 
-- Công cụ tìm kiếm và thay thế hàng loạt trong Settings áp dụng trực tiếp lên `songs.json` và các file XML trong `app.getPath('userData')/bible-versions`
-- Chế độ `Preview` chỉ đếm số match và số item/file bị ảnh hưởng, không ghi dữ liệu
-- Khi áp dụng cho Bible XML, cache theo version phải bị xóa để app parse lại nội dung mới
+## 4. Lịch Chiếu (Schedule File `.bcsch`)
 
-## Bible cache
-
-- File cache được tạo theo từng XML nguồn
-- Không nên coi cache là nguồn dữ liệu duy nhất
-- Khi XML đổi, cache phải được rebuild
-- XML bundled mặc định nằm trong `data/` của app package
-- XML do người dùng import được lưu trong `app.getPath('userData')/bible-versions`
-- Metadata quản lý tên hiển thị và trạng thái ẩn của version được lưu trong `app.getPath('userData')/bible-versions.json`
-- Khi load danh sách version, userData phải được ưu tiên hơn bundled defaults
-- `displayName` của version có thể khác tên file XML; rename chỉ đổi metadata, không đổi file vật lý
-- Xóa version `user` sẽ xóa file XML và cache liên quan; xóa version `bundled` sẽ được thực hiện bằng cách ẩn version đó khỏi UI qua metadata
-
-## Schedule
-
-- Schedule item có thể lưu `style` override riêng cho buổi trình chiếu mà không ghi đè style của item gốc trong library
-- Khi người dùng áp `Style Template`, app có thể lưu thêm `sourceStyle`, `appliedTemplateId`, `appliedTemplateName` vào schedule item để quay lại `Style mặc định` nhanh và giữ được style đã chọn khi save/open `.bcsch`
-
-- File schedule dùng đuôi `.bcsch`
-- Nội dung là JSON
-- Save/Open đi qua native dialog
-
-## Style templates và custom fonts
-
-- `Style Templates` được lưu trong `app.getPath('userData')/style-templates.json`
-- Mỗi template lưu `id`, `name`, `scope`, và `style`
-- `style.boxStyle` hỗ trợ box nền cho chữ với `enabled`, `backgroundColor`, `backgroundOpacity`, `borderColor`, `borderWidth`, `borderStyle`, `borderRadius`
-- Font custom được lưu trong `app.getPath('userData')/custom-fonts/` và metadata nằm trong `app.getPath('userData')/custom-fonts.json`
-- V1 chỉ hỗ trợ upload font `.ttf` và `.otf`
+File lưu lịch chiếu có cấu trúc JSON mảng các Schedule Items:
+- Kế thừa toàn bộ trường của Song/Bible.
+- Bổ sung `scheduleId` (duy nhất trong buổi lễ).
+- Bổ sung `appliedTemplateId`, `appliedTemplateName`, `sourceStyle` khi áp dụng mẫu định dạng.

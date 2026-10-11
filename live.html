@@ -194,7 +194,8 @@
                 borderColor: '#ffffff',
                 borderWidth: 0,
                 borderStyle: 'solid',
-                borderRadius: 0
+                borderRadius: 0,
+                padding: { top: 0, right: 0, bottom: 0, left: 0 }
             },
             autoFitText: true,
             textBox: { left: 48, width: 864, top: null }
@@ -237,6 +238,7 @@
                 ...DEFAULT_STYLE.boxStyle,
                 ...((style && style.boxStyle) || {})
             };
+            normalized.boxStyle.padding = normalizeSpacingBox(style && style.boxStyle && style.boxStyle.padding, DEFAULT_STYLE.boxStyle.padding);
 
             if (!normalized.color) normalized.color = DEFAULT_STYLE.color;
             if (!normalized.fontFamily) normalized.fontFamily = DEFAULT_STYLE.fontFamily;
@@ -523,7 +525,8 @@
             el.style.position = 'relative';
             el.style.zIndex = '1';
             el.style.margin = `${normalizedStyle.textMargin.top}px ${normalizedStyle.textMargin.right}px ${normalizedStyle.textMargin.bottom}px ${normalizedStyle.textMargin.left}px`;
-            el.style.padding = `${normalizedStyle.textPadding.top}px ${normalizedStyle.textPadding.right}px ${normalizedStyle.textPadding.bottom}px ${normalizedStyle.textPadding.left}px`;
+            const boxPad = (normalizedStyle.boxStyle && normalizedStyle.boxStyle.enabled && normalizedStyle.boxStyle.padding) ? normalizedStyle.boxStyle.padding : { top: 0, right: 0, bottom: 0, left: 0 };
+            el.style.padding = `${normalizedStyle.textPadding.top + (boxPad.top || 0)}px ${normalizedStyle.textPadding.right + (boxPad.right || 0)}px ${normalizedStyle.textPadding.bottom + (boxPad.bottom || 0)}px ${normalizedStyle.textPadding.left + (boxPad.left || 0)}px`;
             el.style.boxSizing = 'border-box';
             applyTextBoxStyleLayer(boxLayer, normalizedStyle);
 

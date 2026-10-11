@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>PFC | Live Output</title>
+    <style>
+        /* CMG Sans font family */
+        @font-face { font-family: 'CMG Sans'; src: url('./fonts/cmg-sans/CMGSans-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
+        @font-face { font-family: 'CMG Sans Thin'; src: url('./fonts/cmg-sans/CMGSans-Thin.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans ExtraLight'; src: url('./fonts/cmg-sans/CMGSans-ExtraLight.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Light'; src: url('./fonts/cmg-sans/CMGSans-Light.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Medium'; src: url('./fonts/cmg-sans/CMGSans-Medium.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans SemiBold'; src: url('./fonts/cmg-sans/CMGSans-SemiBold.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Bold'; src: url('./fonts/cmg-sans/CMGSans-Bold.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans ExtraBold'; src: url('./fonts/cmg-sans/CMGSans-ExtraBold.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Black'; src: url('./fonts/cmg-sans/CMGSans-Black.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Condensed'; src: url('./fonts/cmg-sans/CMGSans-RegularCn.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Condensed Medium'; src: url('./fonts/cmg-sans/CMGSans-MediumCn.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Condensed SemiBold'; src: url('./fonts/cmg-sans/CMGSans-SemiBoldCn.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Condensed Bold'; src: url('./fonts/cmg-sans/CMGSans-BoldCn.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Bold CAPS'; src: url('./fonts/cmg-sans/CMGSans-BoldCAPS.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Medium CAPS'; src: url('./fonts/cmg-sans/CMGSans-MediumCAPS.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans SemiBold CAPS'; src: url('./fonts/cmg-sans/CMGSans-SemiBoldCAPS.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Bold Outline'; src: url('./fonts/cmg-sans/CMGSans-BoldOutline.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Bold Rounded'; src: url('./fonts/cmg-sans/CMGSans-BoldRounded.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans Bold Slab'; src: url('./fonts/cmg-sans/CMGSans-BoldSlab.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans ExtraBold Wide'; src: url('./fonts/cmg-sans/CMGSans-ExtraBoldWide.ttf') format('truetype'); }
+        @font-face { font-family: 'CMG Sans ExtraBold Wide Outline'; src: url('./fonts/cmg-sans/CMGSans-ExtraBoldWideOutline.ttf') format('truetype'); }
+    </style>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            -webkit-app-region: drag;
+        }
+
+        .layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .bg-layer img, .bg-layer video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Virtual canvas text layer */
+        .text-layer {
+            z-index: 10;
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .virtual-canvas {
+            width: 960px;
+            height: 540px;
+            transform-origin: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            -webkit-app-region: no-drag;
+            pointer-events: auto;
+        }
+
+        .text-layer-box {
+            position: absolute;
+            box-sizing: border-box;
+        }
+
+        .lyrics-text {
+            color: #fff;
+            font-family: 'Times New Roman', serif;
+            font-size: 80px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.4;
+            -webkit-text-stroke: 5px black;
+            paint-order: stroke fill;
+            text-shadow: none;
+            white-space: pre-wrap;
+            width: 100%;
+            max-width: 100%;
+            will-change: opacity;
+        }
+
+        .lyrics-text * {
+            paint-order: stroke fill;
+        }
+
+        /* Double-buffer layers for crossfade */
+        .buffer-a, .buffer-b {
+            position: absolute;
+            inset: 0;
+            will-change: opacity;
+            transition: opacity 0.3s ease;
+        }
+        .buffer-a { z-index: 1; }
+        .buffer-b { z-index: 2; }
+
+        .bg-img, .bg-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hidden { display: none !important; }
+        .next-verse-box {
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 94%;
+            text-align: center;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .next-verse-text {
+            display: block;
+            width: 100%;
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: bold;
+            -webkit-text-stroke: 1.5px #000000;
+            paint-order: stroke fill;
+            opacity: 0.95;
+            background: #2563eb;
+            padding: 4px 16px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .slide-line {
+            display: block;
+            line-height: 1.2 !important;
+            white-space: pre-wrap;
+            width: 100%;
+        }
+    </style>
+    <title>Screen Live</title>
+</head>
+<body>
+    <!-- Background layers (double-buffer for crossfade) -->
+    <div class="buffer-a layer" id="buffer-a">
+        <img class="bg-img hidden" id="bg-img-a" />
+        <video class="bg-video hidden" id="bg-video-a" autoplay loop muted playsinline></video>
+    </div>
+    <div class="buffer-b layer" id="buffer-b" style="opacity: 0;">
+        <img class="bg-img hidden" id="bg-img-b" />
+        <video class="bg-video hidden" id="bg-video-b" autoplay loop muted playsinline></video>
+    </div>
+
+    <!-- Text overlay with virtual canvas -->
+    <div class="text-layer" id="text-layer">
+        <div class="virtual-canvas" id="virtual-canvas">
+            <div id="text-box" class="text-layer-box" style="left:48px;top:50%;transform:translateY(-50%);width:864px;max-height:454px;overflow:hidden;">
+                <div class="lyrics-text" id="lyrics-text"></div>
+            </div>
+            <div class="next-verse-box" id="next-verse-box">
+                <span class="next-verse-text" id="next-verse-text"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_STYLE = {
+            fontFamily: 'Times New Roman',
+            fontSize: '80px',
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontStyle: 'normal',
+            textDecoration: 'none',
+            textAlign: 'center',
+            verticalAlign: 'middle',
+            textStrokeWidth: 5,
+            textStrokeColor: '#000000',
+            textMargin: { top: 0, right: 0, bottom: 0, left: 0 },
+            textPadding: { top: 0, right: 0, bottom: 0, left: 0 },
+            boxStyle: {
+                enabled: false,
+                backgroundColor: '#000000',
+                backgroundOpacity: 0.35,
+                borderColor: '#ffffff',
+                borderWidth: 0,
+                borderStyle: 'solid',
+                borderRadius: 0
+            },
+            autoFitText: true,
+            textBox: { left: 48, width: 864, top: null }
+        };
+        const VIRTUAL_WIDTH = 960;
+        const VIRTUAL_HEIGHT = 540;
+
+        let activeBuffer = 'a'; // which buffer is currently visible
+        let currentBackgroundUrl = null; // track current background to avoid flicker
+        let currentStyle = normalizeStyle(DEFAULT_STYLE);
+
+        function normalizeSpacingBox(source, fallback) {
+            const input = source && typeof source === 'object' ? source : {};
+            return {
+                top: Number.isFinite(Number(input.top)) ? Number(input.top) : fallback.top,
+                right: Number.isFinite(Number(input.right)) ? Number(input.right) : fallback.right,
+                bottom: Number.isFinite(Number(input.bottom)) ? Number(input.bottom) : fallback.bottom,
+                left: Number.isFinite(Number(input.left)) ? Number(input.left) : fallback.left
+            };
+        }
+
+        function normalizeStyle(style = {}) {
+            const normalized = {
+                ...DEFAULT_STYLE,
+                ...(style || {})
+            };
+
+            if (normalized.fontColor && !normalized.color) {
+                normalized.color = normalized.fontColor;
+            }
+            delete normalized.fontColor;
+
+            normalized.textBox = {
+                ...DEFAULT_STYLE.textBox,
+                ...((style && style.textBox) || {})
+            };
+            normalized.textMargin = normalizeSpacingBox(style && style.textMargin, DEFAULT_STYLE.textMargin);
+            normalized.textPadding = normalizeSpacingBox(style && style.textPadding, DEFAULT_STYLE.textPadding);
+            normalized.boxStyle = {
+                ...DEFAULT_STYLE.boxStyle,
+                ...((style && style.boxStyle) || {})
+            };
+
+            if (!normalized.color) normalized.color = DEFAULT_STYLE.color;
+            if (!normalized.fontFamily) normalized.fontFamily = DEFAULT_STYLE.fontFamily;
+            if (!normalized.fontSize) normalized.fontSize = DEFAULT_STYLE.fontSize;
+            if (!normalized.textAlign) normalized.textAlign = DEFAULT_STYLE.textAlign;
+            if (!normalized.verticalAlign) normalized.verticalAlign = DEFAULT_STYLE.verticalAlign;
+            if (!Number.isFinite(Number(normalized.textStrokeWidth))) normalized.textStrokeWidth = DEFAULT_STYLE.textStrokeWidth;
+            if (!normalized.textStrokeColor) normalized.textStrokeColor = DEFAULT_STYLE.textStrokeColor;
+            normalized.boxStyle.enabled = normalized.boxStyle.enabled === true;
+            normalized.autoFitText = normalized.autoFitText !== false;
+
+            return normalized;
+        }
+
+        function hexToRgba(hex, alpha = 1) {
+            const normalized = String(hex || '').replace('#', '');
+            if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return `rgba(0,0,0,${alpha})`;
+            const r = parseInt(normalized.slice(0, 2), 16);
+            const g = parseInt(normalized.slice(2, 4), 16);
+            const b = parseInt(normalized.slice(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function ensureTextBoxStyleLayer(textBox) {
+            let layer = textBox.querySelector(':scope > .text-box-style-layer');
+            if (!layer) {
+                layer = document.createElement('div');
+                layer.className = 'text-box-style-layer';
+                layer.style.position = 'absolute';
+                layer.style.inset = '0';
+                layer.style.pointerEvents = 'none';
+                layer.style.zIndex = '0';
+                textBox.insertBefore(layer, textBox.firstChild || null);
+            }
+            return layer;
+        }
+
+        function applyTextBoxStyleLayer(layer, style = currentStyle) {
+            if (!layer) return;
+            const boxStyle = normalizeStyle(style).boxStyle || {};
+            if (!boxStyle.enabled) {
+                layer.style.display = 'none';
+                return;
+            }
+            layer.style.display = 'block';
+            layer.style.backgroundColor = hexToRgba(boxStyle.backgroundColor || '#000000', Number(boxStyle.backgroundOpacity ?? 0.35));
+            layer.style.borderColor = boxStyle.borderColor || '#ffffff';
+            layer.style.borderWidth = `${Math.max(0, Number(boxStyle.borderWidth || 0))}px`;
+            layer.style.borderStyle = boxStyle.borderStyle || 'solid';
+            layer.style.borderRadius = `${Math.max(0, Number(boxStyle.borderRadius || 0))}px`;
+            layer.style.boxSizing = 'border-box';
+        }
+
+        function parsePixelValue(value, fallback = 0) {
+            const numeric = Number.parseFloat(value);
+            return Number.isFinite(numeric) ? numeric : fallback;
+        }
+
+        function measureOverflow(el, textBox) {
+            if (!el || !textBox) return false;
+            if (textBox.clientWidth <= 0 || textBox.clientHeight <= 0) return false;
+            const widthOverflow = Math.ceil(el.scrollWidth) > Math.ceil(textBox.clientWidth);
+            const heightOverflow = Math.ceil(el.scrollHeight) > Math.ceil(textBox.clientHeight);
+            return widthOverflow || heightOverflow;
+        }
+
+        function applyStrokeForFontSize(el, style, fontSize, baseFontSize) {
+            const baseStrokeWidth = Math.max(0, Number(style.textStrokeWidth || 0));
+            const ratio = baseFontSize > 0 ? fontSize / baseFontSize : 1;
+            const strokeWidth = Math.max(0, Math.round(baseStrokeWidth * ratio));
+            el.style.webkitTextStroke = `${strokeWidth}px ${style.textStrokeColor}`;
+        }
+
+        function fitTextToBox(el, textBox, style = currentStyle) {
+            if (!el || !textBox) return;
+            const normalizedStyle = normalizeStyle(style || currentStyle);
+            const baseFontSize = Math.max(8, Math.round(parsePixelValue(normalizedStyle.fontSize, 80)));
+            const minFontSize = Math.max(8, Math.min(baseFontSize, 10));
+
+            el.style.fontSize = `${baseFontSize}px`;
+            applyStrokeForFontSize(el, normalizedStyle, baseFontSize, baseFontSize);
+
+            if (normalizedStyle.autoFitText === false || !el.textContent || !el.textContent.trim()) {
+                return;
+            }
+
+            if (!measureOverflow(el, textBox)) {
+                return;
+            }
+
+            let fittedSize = baseFontSize;
+            for (let nextSize = baseFontSize - 1; nextSize >= minFontSize; nextSize -= 1) {
+                el.style.fontSize = `${nextSize}px`;
+                applyStrokeForFontSize(el, normalizedStyle, nextSize, baseFontSize);
+                fittedSize = nextSize;
+                if (!measureOverflow(el, textBox)) {
+                    return;
+                }
+            }
+
+            el.style.fontSize = `${fittedSize}px`;
+            applyStrokeForFontSize(el, normalizedStyle, fittedSize, baseFontSize);
+        }
+
+        function normalizeBackground(bg) {
+            if (!bg || !bg.mediaName) return null;
+            const inferMediaType = (value) => {
+                const source = (value || '').toString().toLowerCase().split(/[?#]/)[0];
+                return /\.(mp4|mov|m4v|webm|wmv)$/.test(source) ? 'video' : 'image';
+            };
+
+            const mediaType = bg.mediaType === 'video' || bg.type === 'video'
+                ? 'video'
+                : bg.mediaType === 'image' || bg.type === 'image'
+                    ? 'image'
+                    : inferMediaType(bg.url || bg.mediaName);
+
+            return {
+                mediaName: bg.mediaName,
+                mediaType: mediaType,
+                url: bg.url || `app-media://${encodeURIComponent(bg.mediaName)}`
+            };
+        }
+
+        function hideBackgroundBuffers() {
+            document.querySelectorAll('.bg-img, .bg-video').forEach(el => {
+                el.classList.add('hidden');
+                if (el.tagName === 'VIDEO') {
+                    el.pause();
+                    el.removeAttribute('src');
+                    el.load();
+                }
+            });
+        }
+
+        function showBackground(background) {
+            const next = activeBuffer === 'a' ? 'b' : 'a';
+            const nextImg = document.getElementById(`bg-img-${next}`);
+            const nextVid = document.getElementById(`bg-video-${next}`);
+            const nextLayer = document.getElementById(`buffer-${next}`);
+            const currentLayer = document.getElementById(`buffer-${activeBuffer}`);
+
+            nextImg.classList.add('hidden');
+            nextVid.classList.add('hidden');
+
+            if (background.mediaType === 'video') {
+                nextVid.classList.remove('hidden');
+                nextVid.src = background.url;
+                nextVid.load();
+                nextVid.play().catch((error) => {
+                    console.warn('[Live] Failed to play background video:', error);
+                });
+            } else {
+                nextImg.classList.remove('hidden');
+                nextImg.src = background.url;
+            }
+
+            nextLayer.style.opacity = '1';
+            currentLayer.style.opacity = '0';
+            activeBuffer = next;
+        }
+
+        function scaleCanvas() {
+            const canvas = document.getElementById('virtual-canvas');
+            if (!canvas) return;
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const scale = Math.min(w / VIRTUAL_WIDTH, h / VIRTUAL_HEIGHT);
+            canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            console.log(`[Live] Scaled to: ${scale} (Window: ${w}x${h})`);
+        }
+
+        window.addEventListener('resize', scaleCanvas);
+        scaleCanvas();
+
+        function setBackground(bg) {
+            const background = normalizeBackground(bg);
+            if (!background) return;
+
+            if (background.url === currentBackgroundUrl) {
+                console.log('[Live] Same background URL, skipping transition');
+                return;
+            }
+
+            currentBackgroundUrl = background.url;
+            showBackground(background);
+        }
+
+        function splitHtmlPreservingTags(text) {
+            if (!text) return [];
+            const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            if (!normalized.includes('\n')) return [normalized];
+
+            const lines = [];
+            let currentLine = '';
+            const openTags = [];
+
+            const tokenRegex = /(<\/?([a-zA-Z0-9\-]+)(?:\s+[^>]*?)?>)|\n|([^\n<]+)|(<)/g;
+            let match;
+
+            while ((match = tokenRegex.exec(normalized)) !== null) {
+                const [full, tag, tagName, textPart, strayLess] = match;
+                if (full === '\n') {
+                    let closingStr = '';
+                    for (let i = openTags.length - 1; i >= 0; i--) {
+                        closingStr += '</' + openTags[i].name + '>';
+                    }
+                    lines.push(currentLine + closingStr);
+
+                    let openingStr = '';
+                    for (let i = 0; i < openTags.length; i++) {
+                        openingStr += openTags[i].fullTag;
+                    }
+                    currentLine = openingStr;
+                } else if (tag) {
+                    currentLine += tag;
+                    const isClosing = tag.startsWith('</');
+                    const isSelfClosing = tag.endsWith('/>') || /^(br|hr|img|input)$/i.test(tagName);
+
+                    if (isClosing) {
+                        for (let i = openTags.length - 1; i >= 0; i--) {
+                            if (openTags[i].name.toLowerCase() === tagName.toLowerCase()) {
+                                openTags.splice(i, 1);
+                                break;
+                            }
+                        }
+                    } else if (!isSelfClosing) {
+                        openTags.push({ name: tagName, fullTag: tag });
+                    }
+                } else if (textPart) {
+                    currentLine += textPart;
+                } else if (strayLess) {
+                    currentLine += strayLess;
+                }
+            }
+
+            lines.push(currentLine);
+            return lines;
+        }
+
+        function setText(text) {
+            const el = document.getElementById('lyrics-text');
+            if (text && /<[a-z][\s\S]*>/i.test(text)) {
+                const lines = splitHtmlPreservingTags(text);
+                el.innerHTML = lines.map(l => `<div class="slide-line">${l || '&nbsp;'}</div>`).join('');
+            } else {
+                el.textContent = text || '';
+            }
+            fitTextToBox(el, document.getElementById('text-box'), currentStyle);
+        }
+
+        function clearAll() {
+            setText('');
+            currentBackgroundUrl = null;
+            const bufferA = document.getElementById('buffer-a');
+            const bufferB = document.getElementById('buffer-b');
+            bufferA.style.opacity = '1';
+            bufferB.style.opacity = '0';
+            activeBuffer = 'a';
+            hideBackgroundBuffers();
+        }
+
+        // --- IPC Listeners ---
+        function applyStyle(style) {
+            const normalizedStyle = normalizeStyle(style);
+            currentStyle = normalizedStyle;
+            const el = document.getElementById('lyrics-text');
+            const textBox = document.getElementById('text-box');
+            const boxLayer = ensureTextBoxStyleLayer(textBox);
+
+            el.style.fontFamily = normalizedStyle.fontFamily;
+            el.style.fontSize = normalizedStyle.fontSize;
+            el.style.color = normalizedStyle.color;
+            el.style.fontWeight = normalizedStyle.fontWeight;
+            el.style.fontStyle = normalizedStyle.fontStyle;
+            el.style.textDecoration = normalizedStyle.textDecoration;
+            el.style.textAlign = normalizedStyle.textAlign;
+
+            el.style.textShadow = "none";
+            el.style.webkitTextStroke = `${normalizedStyle.textStrokeWidth}px ${normalizedStyle.textStrokeColor}`;
+            el.style.paintOrder = "stroke fill";
+            el.style.width = "100%";
+            el.style.lineHeight = "1.4";
+            el.style.position = 'relative';
+            el.style.zIndex = '1';
+            el.style.margin = `${normalizedStyle.textMargin.top}px ${normalizedStyle.textMargin.right}px ${normalizedStyle.textMargin.bottom}px ${normalizedStyle.textMargin.left}px`;
+            el.style.padding = `${normalizedStyle.textPadding.top}px ${normalizedStyle.textPadding.right}px ${normalizedStyle.textPadding.bottom}px ${normalizedStyle.textPadding.left}px`;
+            el.style.boxSizing = 'border-box';
+            applyTextBoxStyleLayer(boxLayer, normalizedStyle);
+
+            if (textBox) {
+                const tb = normalizedStyle.textBox;
+                textBox.style.left = `${tb.left}px`;
+                textBox.style.width = `${tb.width}px`;
+                textBox.style.maxHeight = '454px';
+                textBox.style.overflow = 'hidden';
+
+                if (tb && tb.top != null) {
+                    textBox.style.top = tb.top + 'px';
+                    textBox.style.bottom = '';
+                    textBox.style.transform = '';
+                } else {
+                    const align = normalizedStyle.verticalAlign || 'middle';
+                    if (align === 'top') {
+                        textBox.style.top = '43px';
+                        textBox.style.bottom = '';
+                        textBox.style.transform = '';
+                    } else if (align === 'bottom') {
+                        textBox.style.top = 'auto';
+                        textBox.style.bottom = '43px';
+                        textBox.style.transform = '';
+                    } else {
+                        textBox.style.top = '50%';
+                        textBox.style.bottom = '';
+                        textBox.style.transform = 'translateY(-50%)';
+                    }
+                }
+            }
+
+            fitTextToBox(el, textBox, normalizedStyle);
+        }
+
+        window.electronAPI.onLiveUpdateContent((event, data) => {
+            console.log('[Live] Received content:', data);
+            if (data && data.style) {
+                applyStyle(data.style);
+            }
+            if (data && data.text !== null && data.text !== undefined) {
+                setText(data.text);
+            }
+            if (data && data.nextVerse !== undefined) {
+                const nextVerseEl = document.getElementById('next-verse-text');
+                const nextVerseBox = document.getElementById('next-verse-box');
+                if (nextVerseEl) nextVerseEl.innerText = data.nextVerse || '';
+                if (nextVerseBox) nextVerseBox.style.display = data.nextVerse ? 'block' : 'none';
+            }
+            if (data && data.nextVerseStyle) {
+                const style = data.nextVerseStyle;
+                const nextVerseEl = document.getElementById('next-verse-text');
+                const nextVerseBox = document.getElementById('next-verse-box');
+                if (nextVerseBox) {
+                    const offset = (style.offset !== undefined && style.offset !== '') ? style.offset : 2;
+                    if (style.position === 'top') {
+                        nextVerseBox.style.top = offset + 'px';
+                        nextVerseBox.style.bottom = 'auto';
+                    } else {
+                        nextVerseBox.style.bottom = offset + 'px';
+                        nextVerseBox.style.top = 'auto';
+                    }
+                }
+                if (nextVerseEl) {
+                    if (style.bgColor) nextVerseEl.style.backgroundColor = style.bgColor;
+                    if (style.textColor) nextVerseEl.style.color = style.textColor;
+                    if (style.fontSize) nextVerseEl.style.fontSize = style.fontSize + 'px';
+                }
+            }
+            if (data && 'background' in data) {
+                if (data.background) {
+                    setBackground(data.background);
+                } else {
+                    currentBackgroundUrl = null;
+                    hideBackgroundBuffers();
+                }
+            }
+        });
+
+        window.electronAPI.onLiveUpdateBackground((event, data) => {
+            console.log('[Live] Received background:', data);
+            setBackground(data);
+        });
+
+        window.electronAPI.onLiveClear(() => {
+            console.log('[Live] Clear');
+            clearAll();
+        });
+
+        async function injectCustomFonts() {
+            try {
+                const fonts = await window.electronAPI.loadCustomFonts();
+                let styleEl = document.getElementById('live-custom-font-face-style');
+                if (!styleEl) {
+                    styleEl = document.createElement('style');
+                    styleEl.id = 'live-custom-font-face-style';
+                    document.head.appendChild(styleEl);
+                }
+                const escapeCssString = (value = '') => String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                styleEl.textContent = (Array.isArray(fonts) ? fonts : []).map(font => {
+                    if (!font.displayName || !font.url) return '';
+                    return `@font-face { font-family: '${escapeCssString(font.displayName)}'; src: url('${font.url}') format('${font.format || 'truetype'}'); font-display: swap; }`;
+                }).join('\n');
+            } catch (e) {
+                console.error('[Live] Failed to inject custom fonts:', e);
+            }
+        }
+
+        window.electronAPI.onLiveRefreshCustomFonts(() => {
+            injectCustomFonts();
+        });
+
+        injectCustomFonts();
+
+        console.log('[Live] Screen Live window ready');
+    </script>
+</body>
+</html>

@@ -877,17 +877,43 @@ function initializeData() {
     globalSettings = {
       theme: 'dark',
       gpuAcceleration: true,
+      enforceDefaultSlideStyle: false,
       fontFamilySong: 'CMG Sans',
       fontFamilyBible: 'Times New Roman',
       fontSize: '80px',
+      fontSizeSong: '80px',
+      fontSizeBible: '48px',
       color: '#ffffff',
+      colorSong: '#ffffff',
+      colorBible: '#ffffff',
       fontWeight: 'bold',
       textAlign: 'center',
       verticalAlign: 'middle',
       textStrokeWidth: 5,
+      textStrokeWidthSong: 5,
+      textStrokeWidthBible: 5,
       textStrokeColor: '#000000',
+      textStrokeColorSong: '#000000',
+      textStrokeColorBible: '#000000',
       textMargin: { top: 0, right: 0, bottom: 0, left: 0 },
       textPadding: { top: 0, right: 0, bottom: 0, left: 0 },
+      uiFontFamilySongTitle: '',
+      uiFontSizeSongTitle: 11,
+      uiColorSongTitle: '',
+      uiFontFamilyBibleTitle: '',
+      uiFontSizeBibleTitle: 11,
+      uiColorBibleTitle: '',
+      uiFontFamilySlideCard: '',
+      uiFontSizeSlideCard: 11.5,
+      uiColorSlideCard: '',
+      uiFontFamilySongSnippet: '',
+      uiFontSizeSongSnippet: 9,
+      uiColorSongSnippet: '',
+      uiFontFamilyPanelHeader: '',
+      uiFontSizePanelHeader: 10,
+      uiColorPanelHeader: '',
+      uiSizeControlBtn: 9,
+      uiFontFamilyApp: '',
       mediaPath: defaultMediaFolderPath,
       allowSingleDisplayLiveWindow: true,
       autoFitText: true,
@@ -913,6 +939,30 @@ function initializeData() {
       }
       if (typeof globalSettings.autoFitText !== 'boolean') {
         globalSettings.autoFitText = true;
+      }
+      if (typeof globalSettings.enforceDefaultSlideStyle !== 'boolean') {
+        globalSettings.enforceDefaultSlideStyle = false;
+      }
+      if (!globalSettings.fontSizeSong) {
+        globalSettings.fontSizeSong = globalSettings.fontSize || '80px';
+      }
+      if (!globalSettings.fontSizeBible) {
+        globalSettings.fontSizeBible = '48px';
+      }
+      if (!globalSettings.colorSong) {
+        globalSettings.colorSong = globalSettings.color || '#ffffff';
+      }
+      if (!globalSettings.colorBible) {
+        globalSettings.colorBible = globalSettings.color || '#ffffff';
+      }
+      if (globalSettings.uiFontSizeSongSnippet === undefined) {
+        globalSettings.uiFontSizeSongSnippet = 9;
+      }
+      if (globalSettings.uiFontSizePanelHeader === undefined) {
+        globalSettings.uiFontSizePanelHeader = 10;
+      }
+      if (globalSettings.uiSizeControlBtn === undefined) {
+        globalSettings.uiSizeControlBtn = 9;
       }
       globalSettings.liveWindowBounds = null;
     } catch (e) {
@@ -1144,7 +1194,7 @@ function setupMenu(win) {
         { label: 'Import Media', click: () => win.webContents.send('menu-action', 'import-media') },
         { label: 'Add To Schedule', accelerator: 'CmdOrCtrl+Shift+A', click: () => win.webContents.send('menu-action', 'add-selected-to-schedule') },
         { label: 'Screen Live', accelerator: 'CmdOrCtrl+L', click: () => win.webContents.send('menu-action', 'toggle-live-window') },
-        { label: 'Clear Live', accelerator: 'CmdOrCtrl+H', click: () => win.webContents.send('menu-action', 'clear-live') },
+        { label: 'Clear Live', accelerator: 'CmdOrCtrl+K', click: () => win.webContents.send('menu-action', 'clear-live') },
         { type: 'separator' },
         { label: 'Settings', accelerator: 'CmdOrCtrl+Shift+P', click: () => win.webContents.send('menu-action', 'open-settings') },
         { type: 'separator' },

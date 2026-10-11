@@ -1,22 +1,9 @@
-# Rule 1
-Read the repo docs before changing code.
-Use `docs/architecture.md` and `docs/rules.md` as the source of truth.
+# Operating Rules
+The single source of truth for all rules and operating workflows is `AGENTS.md`.
 
-# Rule 2
-Plan first, code later.
-If the task changes or you hit a mistake, stop and re-plan instead of forcing the same path.
-
-# Rule 3
-Protect user work.
-Do not revert unrelated changes or overwrite files you did not intend to touch.
-
-# Rule 4
-Keep changes small and aligned with the actual architecture.
-If you touch `main.js`, `preload.js`, `index.html`, `live.html`, or `src/schema.js`, update the matching docs and contracts.
-
-# Rule 5
-Prove it works.
-Run the app, verify the affected window, and inspect logs before finishing.
-
-# Rule 6
-Keep answers concise, but do not skip a risk, a broken contract, or a missing verification step.
+1. Always follow `AGENTS.md`.
+2. Plan first (`/pfc-plan`), Action later (`/pfc-action`). Never edit code during Plan phase.
+3. Always create safety backups before editing code (`Workflow/backup-*`).
+4. Keep changes surgical; never touch dead code (`src/schema.js`, `edit-song.html`).
+5. Write and execute automated test suites (`Workflow/test-*.js`) with 100% pass before completion.
+6. Observe the Release Confirmation Gate before building or publishing.

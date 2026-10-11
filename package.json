@@ -1,6 +1,6 @@
 {
   "name": "blessingworship-app",
-  "version": "2.1.9",
+  "version": "2.2.0",
   "description": "Presentation For Church - Worship Presentation App",
   "main": "main.js",
   "scripts": {

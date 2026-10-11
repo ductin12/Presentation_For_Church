@@ -17,5 +17,10 @@ Trace-*.json
 .codex/*
 .gemini/*
 .cursor/*
+.env
+.env.*
+.env.local
 
 # Ignore all Markdown files in the project
+Workflow/.telegram-state.json
+Workflow/backup-*

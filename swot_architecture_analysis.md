@@ -9,12 +9,12 @@
 
 | # | Điểm mạnh | Chi tiết |
 |---|---|---|
-| S1 | **Single-file UI, zero build step** | [index.html](file:///Users/tinpham/Presentation_For_Church/index.html) chạy ngay trong Electron, không cần webpack/vite → phát triển nhanh |
-| S2 | **Tailwind CDN** | Styling nhanh, không cần config phức tạp |
-| S3 | **Virtual canvas 1920×1080** | Render slide nhất quán trên mọi độ phân giải màn hình chiếu |
-| S4 | **Dual-window architecture** | Tách biệt Operator UI và Live Display rõ ràng qua IPC |
+| S1 | **Single-file UI, zero build step** | `index.html` chạy trực tiếp trong Electron renderer, không cần bundle webpack/vite → phát triển và kiểm thử cực nhanh |
+| S2 | **Tailwind CSS Offline** | Styling tiện lợi, đã biên dịch offline, không phụ thuộc kết nối internet lúc trình chiếu |
+| S3 | **Virtual canvas 960×540** | Render slide nhất quán trên mọi độ phân giải máy chiếu với tỷ lệ 16:9 |
+| S4 | **Dual-window architecture** | Tách biệt Operator UI và Live Display rõ ràng qua IPC bridge an toàn |
 | S5 | **Full Vietnamese Bible XML** | Data Kinh Thánh đầy đủ sẵn có, không cần API ngoài |
-| S6 | **Electron fs access** | CRUD file JSON trực tiếp, không cần backend server |
+| S6 | **Electron fs access** | CRUD file JSON trực tiếp, hỗ trợ safe-write và backup xoay vòng |
 
 ---
 
@@ -22,16 +22,11 @@
 
 | # | Điểm yếu | Hệ quả |
 |---|---|---|
-| W1 | **`nodeIntegration: true`, `contextIsolation: false`** | Remote code execution risk; cấm dùng nếu load URL ngoài |
-| W2 | **State là biến JS global trong 1 file 2300+ dòng** | Không có reactive UI → mỗi thay đổi phải gọi lại `render*()` thủ công, dễ out-of-sync |
-| W3 | **Không có data schema validation** | `songs.json` / `bible.json` không có type guard → corrupt data âm thầm |
-| W4 | **Bible XML load toàn bộ vào RAM mỗi lần start** | ~10MB+ DOM parsing, ~31k objects → startup chậm khi library lớn |
-| W5 | **Không có undo/redo** | Xóa nhầm bài hát hoặc slide là mất dữ liệu vĩnh viễn |
-| W6 | **Không lưu trạng thái UI** | Panel widths, window size, schedule hiện tại reset sau mỗi lần khởi động |
-| W7 | **[index.html](file:///Users/tinpham/Presentation_For_Church/index.html) monolith** | HTML + CSS + 2000+ dòng JS trong 1 file → impossible to test, debug khó |
-| W8 | **Không có error boundary** | 1 lỗi JS bất kỳ → cả UI đứng, không có recovery |
-| W9 | **Slide split logic dựa trên dòng trống** | Không kiểm soát overflow text → text có thể bị cắt trên màn hình chiếu |
-| W10 | **Không có keyboard shortcuts** | User phải dùng chuột cho tất cả thao tác trong khi đang dẫn chương trình |
+| W1 | **Monolith index.html (>9.200 dòng)** | Toàn bộ renderer logic, UI và state nằm chung một file → cần cẩn trọng cao độ khi sửa chữa |
+| W2 | **State là biến JS global** | Không có reactive framework → mỗi thay đổi phải gọi lại `render*()` thủ công, dễ out-of-sync nếu không rà soát kỹ |
+| W3 | **Bible XML parse lần đầu tốn tài nguyên** | ~10MB DOM parsing → đã tối ưu bằng cơ chế JSON cache nhưng cần duy trì giám sát |
+| W4 | **Không có undo/redo cho bài hát** | Xóa nhầm bài hát là mất dữ liệu (đã có backup xoay vòng nhưng chưa có nút Undo trực quan trên UI) |
+| W5 | **Chưa có đa ngôn ngữ i18n hoàn chỉnh** | Giao diện cơ bản tiếng Việt nhưng chưa có engine switch locale động |
 
 ---
 
